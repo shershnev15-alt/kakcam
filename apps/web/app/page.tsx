@@ -65,7 +65,7 @@ export default async function HomePage() {
               </span>
               <span className="flex items-center gap-2">
                 <CheckIcon className="size-4 text-[var(--success)]" />
-                Не только CS2
+                CS2 в фокусе
               </span>
             </div>
           </div>
