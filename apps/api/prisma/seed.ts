@@ -8,6 +8,7 @@ import {
 } from '@arena/rating-engine';
 import { evaluateAchievementCatalog, type ThresholdRule } from '@arena/achievements-engine';
 import { createHash } from 'node:crypto';
+import { hashPassword } from '../src/auth/password';
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error('DATABASE_URL is required for seed');
@@ -39,6 +40,14 @@ const permissionDefinitions = [
   ['claim.review', 'Рассмотрение заявок на владение профилем'],
   ['audit.read', 'Просмотр журнала аудита'],
   ['role.manage', 'Управление ролями и разрешениями'],
+  ['admin.read', 'Доступ к административной консоли'],
+  ['admin.archive', 'Архивация сущностей через admin preview'],
+  ['admin.user.manage', 'Управление статусами пользователей'],
+  ['organization.manage', 'Управление организациями'],
+  ['assertion.manage', 'Разрешение field assertions и конфликтов'],
+  ['import.manage', 'Управление очередью импортов'],
+  ['report.manage', 'Рассмотрение жалоб и репортов'],
+  ['achievement.manage', 'Управление версиями правил достижений'],
 ] as const;
 
 const roleDefinitions = [
@@ -85,6 +94,10 @@ const roleDefinitions = [
       'transfer.manage',
       'claim.review',
       'audit.read',
+      'admin.read',
+      'admin.archive',
+      'assertion.manage',
+      'report.manage',
     ],
   ],
   [
@@ -106,6 +119,14 @@ const roleDefinitions = [
       'transfer.manage',
       'claim.review',
       'audit.read',
+      'admin.read',
+      'admin.archive',
+      'admin.user.manage',
+      'organization.manage',
+      'assertion.manage',
+      'import.manage',
+      'report.manage',
+      'achievement.manage',
     ],
   ],
   [
@@ -128,6 +149,14 @@ const roleDefinitions = [
       'claim.review',
       'audit.read',
       'role.manage',
+      'admin.read',
+      'admin.archive',
+      'admin.user.manage',
+      'organization.manage',
+      'assertion.manage',
+      'import.manage',
+      'report.manage',
+      'achievement.manage',
     ],
   ],
 ] as const;
@@ -166,8 +195,36 @@ async function seedAccessControl(): Promise<void> {
   });
 }
 
+async function seedLocalAdmin(): Promise<void> {
+  const email = process.env.SEED_ADMIN_EMAIL?.trim().toLocaleLowerCase('en-US');
+  const password = process.env.SEED_ADMIN_PASSWORD;
+  if (!email && !password) return;
+  if (!email || !password || password.length < 12) {
+    throw new Error('SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD (12+ chars) must be set together');
+  }
+  const role = await prisma.role.findUniqueOrThrow({ where: { code: 'SUPER_ADMIN' } });
+  const passwordHash = await hashPassword(password);
+  const user = await prisma.user.upsert({
+    where: { email },
+    update: { displayName: 'Локальный администр', status: 'ACTIVE' },
+    create: {
+      email,
+      displayName: 'Локальный администр',
+      identities: { create: { provider: 'EMAIL', providerSubject: email, passwordHash } },
+    },
+  });
+  await prisma.identity.upsert({
+    where: { provider_providerSubject: { provider: 'EMAIL', providerSubject: email } },
+    update: { userId: user.id, passwordHash },
+    create: { userId: user.id, provider: 'EMAIL', providerSubject: email, passwordHash },
+  });
+  const assigned = await prisma.userRole.findFirst({ where: { userId: user.id, roleId: role.id } });
+  if (!assigned) await prisma.userRole.create({ data: { userId: user.id, roleId: role.id } });
+}
+
 async function main(): Promise<void> {
   await seedAccessControl();
+  await seedLocalAdmin();
 
   const game = await prisma.game.upsert({
     where: { slug: 'cs2' },

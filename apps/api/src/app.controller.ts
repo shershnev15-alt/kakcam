@@ -51,6 +51,7 @@ export class AppController {
         'claims',
         'verification',
         'moderation',
+        'admin',
       ],
     };
   }

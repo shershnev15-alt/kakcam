@@ -28,11 +28,13 @@
 
 ## Admin
 
-`/admin`, `/players`, `/players/new`, `/players/[id]`, `/teams`, `/teams/[id]`, `/matches`, `/tournaments`, `/organizations`, `/verification`, `/verification/[id]`, `/imports`, `/reports`, `/users`, `/achievements`, `/ratings`, `/audit`. Editor имеет split view «форма + публичный preview», source/evidence рядом с каждым критичным полем.
+Отдельное приложение на `http://localhost:3001`: dashboard `/` и рабочие пространства `/players`, `/teams`, `/matches`, `/tournaments`, `/organizations`, `/verification`, `/assertions`, `/imports`, `/reports`, `/users`, `/achievements`, `/ratings`, `/audit`. Таблица, выбранная запись, JSON-команда и preview находятся в одном рабочем контексте; опасные операции требуют основания и audit record.
 
 ## Mobile navigation
 
 Bottom tabs: Home, Matches, Rankings, Discover, Profile. Global search открывается из header и доступен из deep link.
+
+Этап 9 реализует shell, onboarding, tabs, offline/query foundation и deep-link routing. Продуктовые данные экранов подключаются на Этапе 10, уведомления и engagement — на Этапе 11.
 
 | Screen                       | Основная задача                             |
 | ---------------------------- | ------------------------------------------- |

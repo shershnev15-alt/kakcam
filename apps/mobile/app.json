@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Arena Passport",
+    "slug": "arena-passport",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "arenapassport",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.arenapassport.mobile",
+      "associatedDomains": ["applinks:arena-passport.example"]
+    },
+    "android": {
+      "package": "app.arenapassport.mobile",
+      "adaptiveIcon": { "backgroundColor": "#090c12" },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "arena-passport.example", "pathPrefix": "/players" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": { "bundler": "metro", "output": "static" },
+    "plugins": ["expo-router", "expo-secure-store", "expo-notifications", "expo-splash-screen"],
+    "experiments": { "typedRoutes": true },
+    "extra": {
+      "apiUrl": "http://localhost:4000/api/v1",
+      "canonicalWebUrl": "http://localhost:3000"
+    }
+  }
+}

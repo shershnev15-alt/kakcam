@@ -1,6 +1,6 @@
 # Progress
 
-Дата обновления: 2 сентября 2026. Этапы **0–7 завершены**: specification, foundation, auth/RBAC, public directory, competition flow, reproducible ratings, career/achievements и claim/verification.
+Дата обновления: 2 сентября 2026. Этапы **0–9 завершены**: specification, foundation, auth/RBAC, public directory, competition flow, reproducible ratings, career/achievements, claim/verification, full admin и mobile foundation.
 
 ## Completed
 
@@ -11,7 +11,7 @@
 - email registration/login/logout/me и UI `/register`, `/login`, `/account`;
 - Argon2id passwords, opaque HttpOnly sessions, token hashing, expiry/revocation и login enumeration protection;
 - Identity/Session/Role/Permission/RolePermission/UserRole migration;
-- 12 системных ролей, 8 permissions, policy guards, Origin/CSRF guard и auth rate limit;
+- 12 системных ролей, 24 permissions, policy guards, Origin/CSRF guard и auth rate limit;
 - PostgreSQL-backed Player/Team reads и защищённые create/update/soft-archive commands;
 - транзакционный AuditLog для регистрации, входа, выхода и Player/Team mutations;
 - idempotent PostgreSQL seed текущих PPR/TPR: 2 RatingRun, 40 PlayerRating и 8 TeamRating;
@@ -32,14 +32,23 @@
 - Claim Profile flow: submit → evidence requested → approved/rejected, restricted evidence и личная история заявок;
 - moderation queue `/moderation`, permission `claim.review`, Verification record, VERIFIED_PLAYER role projection и immutable AuditLog;
 - публичный verification summary профиля и 16 permissions для текущих доменных операций.
+- отдельная административная Next.js-консоль на порту 3001 с dashboard и 13 рабочими пространствами;
+- административные API-команды для Tournament, Organization, Assertion, Import, Report, User, Achievement и безопасной архивации;
+- обязательные preview/reason, `If-Match` optimistic concurrency, checksum idempotency, self-lockout guards и полный AuditLog;
+- локальный `SUPER_ADMIN` создаётся только при заданных seed credentials;
+- Expo SDK 57 / React Native mobile workspace с Expo Router, пятью bottom tabs и пропускаемым onboarding;
+- mobile TanStack Query offline-first cache, NetInfo, SecureStore, notification-permission adapter и canonical deep links;
+- изолированные зависимости Docker-сервисов без конкурентной записи в host `node_modules`.
 
 ## Tests
 
 - Prisma schema validation, migration deploy и idempotent seed: passed;
-- API strict typecheck, 26 unit tests и production build: passed;
+- API strict typecheck, 32 unit tests и production build: passed;
+- Admin strict typecheck, 3 component/command tests и production build: passed;
+- Mobile strict typecheck, 2 deep-link tests и Expo static export: passed;
 - Web strict typecheck, 3 component tests и production build: passed;
 - rating engine: 6 deterministic PPR/TPR tests; achievement engine: 6 tests;
-- полный monorepo test suite: 41 tests passed;
+- полный monorepo test suite: 52 tests passed;
 - auth/RBAC e2e: register 201, me 200, unauthorized mutation 403, foreign Origin 403, logout 201, revoked session 401;
 - Statistician e2e: Player/Team create 201 и update 200; временные QA-записи очищены;
 - Moderator e2e: Player/Team soft-archive 200, archived public read 404; временные QA-записи очищены;
@@ -51,8 +60,10 @@
 - visual QA match center/detail, tournament hub, DB performance snapshots and rating explainability at 1440 px/390 px: no overflow, console clean;
 - Stage 6 e2e: confirmed transfer 201, career projection 200, achievement replay 201 for 41 subjects и exact replay reused all 41 events;
 - Stage 7 e2e: claim 201, moderation queue 200, approve 201, duplicate decision 409, public verification level 2; QA records cleaned;
+- Stage 8 e2e: admin login 200, anonymous access 401, organization create/update 200, stale `If-Match` 412, assertion resolve 201, duplicate import 409 и immutable audit; QA records cleaned;
+- Stage 9 verification: 13 Expo web routes exported, onboarding/tabs/deep-link routes compiled, mobile typecheck/tests passed;
 - Web smoke: transfers, achievements, career, account claim и moderation routes return 200;
-- Docker: postgres/redis/api healthy, web HTTP 200.
+- HTTP smoke: public web 200, admin 200, current API health 200; Docker postgres/redis/API healthy and web 200.
 
 ## Known limitations
 
@@ -61,11 +72,13 @@
 - clutch/perfect-map/MVP rules остаются LOCKED до granular provider events; движок уже поддерживает безопасный replay этих версий правил;
 - player map statistics агрегированы на серию; granular per-map provider imports будут добавлены с внешними адаптерами;
 - auth rate limit хранится в памяти процесса; Redis-backed distributed limiter нужен до горизонтального масштабирования;
-- email verification/recovery, Steam/Google OAuth и управление ролями через Admin UI ещё не реализованы;
+- email verification/recovery и Steam/Google OAuth ещё не реализованы;
 - evidence reference в local prototype хранится в restricted DB field; encrypted object storage, malware scanning и retention enforcement обязательны до production;
-- field-level assertion conflict resolver и bulk moderation workspace расширяются в полном Admin на Этапе 8;
+- bulk admin operations и MFA/step-up authentication остаются обязательными до production;
+- мобильные product screens пока используют foundation/demo shell; live profiles/matches/rankings/search входят в Этап 10;
+- native device/simulator smoke и signing выполняются перед store beta;
 - изображения представлены monograms; S3 media pipeline ещё не подключён.
 
 ## Next step
 
-Этап 8: полноценная административная панель для Player/Team/Match/Tournament, assertions, reports, audit, achievement и rating operations без SQL.
+Этап 10: подключить мобильные профили, матчи, рейтинги и поиск к live API с полными loading/empty/error/offline states.

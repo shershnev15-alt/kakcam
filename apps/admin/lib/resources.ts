@@ -1,0 +1,15 @@
+export const resources = [
+  { slug: 'players', label: 'Игроки' },
+  { slug: 'teams', label: 'Команды' },
+  { slug: 'matches', label: 'Матчи' },
+  { slug: 'tournaments', label: 'Турниры' },
+  { slug: 'organizations', label: 'Организации' },
+  { slug: 'verification', label: 'Верификация' },
+  { slug: 'assertions', label: 'Assertions' },
+  { slug: 'imports', label: 'Импорты' },
+  { slug: 'reports', label: 'Жалобы' },
+  { slug: 'users', label: 'Пользователи' },
+  { slug: 'achievements', label: 'Достижения' },
+  { slug: 'ratings', label: 'Рейтинги' },
+  { slug: 'audit', label: 'Аудит' },
+] as const;

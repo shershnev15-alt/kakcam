@@ -16,6 +16,7 @@
 - `http://localhost:3000/account?claim=frostbyte` — Claim Profile; `/moderation` — защищённая очередь проверки;
 - `http://localhost:3000/rankings/players` и `/rankings/teams` — рейтинги;
 - `http://localhost:3000/register`, `/login`, `/account` — регистрация, вход и кабинет;
+- `http://localhost:3001` — отдельная административная консоль;
 - `http://localhost:4000/health`, `/ready`, `/api/v1` — API status.
 
 Все игроки и команды prototype вымышлены.
@@ -33,10 +34,18 @@ docker compose ps
 
 Email-аутентификация использует Argon2id и отзываемые HttpOnly-сессии. Новая учётная запись получает роль `REGISTERED_USER`; права на изменение реестра назначаются отдельными ролями через RBAC.
 
+Для локальной админки seed создаёт `admin@arena.local` с паролем `ArenaAdminDemo2026!`. Значения можно заменить через `SEED_ADMIN_EMAIL` и `SEED_ADMIN_PASSWORD`; без этих переменных административная учётная запись не создаётся.
+
+Мобильное Expo-приложение запускается отдельно:
+
+```bash
+pnpm --filter @arena/mobile dev
+```
+
 ## Проверки
 
 Node локально не требуется; CI выполняет `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`. Архитектура и roadmap: [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md). Текущий статус: [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Структура
 
-`apps/web` — публичный Next.js; `apps/api` — NestJS/Prisma; `apps/admin` и `apps/mobile` — зафиксированные будущие границы; `packages` — shared contracts/data/domain engines; `infrastructure` — Docker; `docs` — продуктовая и инженерная спецификация.
+`apps/web` — публичный Next.js; `apps/api` — NestJS/Prisma; `apps/admin` — защищённая Next.js-консоль; `apps/mobile` — Expo/React Native; `packages` — shared contracts/data/domain engines; `infrastructure` — Docker; `docs` — продуктовая и инженерная спецификация.

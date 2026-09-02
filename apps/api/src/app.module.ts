@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { AdminController } from './admin/admin.controller';
+import { AdminService } from './admin/admin.service';
 import { AppController } from './app.controller';
 import { AuthController } from './auth/auth.controller';
 import { AuthRateLimitGuard, CsrfGuard, PermissionsGuard, SessionGuard } from './auth/auth.guards';
@@ -20,6 +22,7 @@ import { VerificationService } from './verification/verification.service';
 
 @Module({
   controllers: [
+    AdminController,
     AppController,
     AuthController,
     CareerController,
@@ -31,6 +34,7 @@ import { VerificationService } from './verification/verification.service';
     VerificationController,
   ],
   providers: [
+    AdminService,
     PrismaService,
     DatabaseService,
     AuthService,

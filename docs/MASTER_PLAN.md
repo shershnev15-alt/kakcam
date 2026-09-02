@@ -1,6 +1,6 @@
 # Master Plan — Arena Passport
 
-Статус документа: `v0.7 / Этапы 0–7 реализованы`
+Статус документа: `v0.9 / Этапы 0–9 реализованы`
 
 Рабочее название продукта: **Arena Passport**
 
@@ -171,7 +171,9 @@ Threat modeling перед auth/admin/import; строгая validation; CSP и 
 | 6    | Achievements, career, transfers                                | Event-driven rules и timeline                               |
 | 7    | Verification, claim, moderation                                | Evidence и audit проходят end-to-end                        |
 | 8    | Full admin                                                     | Операционные сценарии без SQL/manual edits                  |
-| 9–11 | Mobile foundation, screens, notifications                      | Store-ready beta                                            |
+| 9    | Mobile foundation                                              | Expo shell, onboarding, offline cache и deep links          |
+| 10   | Mobile product screens                                         | Профили, матчи, рейтинги и поиск используют live API        |
+| 11   | Mobile notifications and engagement                            | Push, favorites, reminders и share готовы к beta            |
 | 12   | External providers                                             | Два независимых адаптера + replay/import safety             |
 | 13   | SEO, performance, security, analytics                          | Budgets, audit и observability gates                        |
 | 14   | Production deployment                                          | Runbooks, backup restore, SLO and launch checklist          |

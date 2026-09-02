@@ -2,12 +2,12 @@
   "name": "arena-passport",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@11.25.0",
+  "packageManager": "pnpm@11.19.0",
   "engines": {
     "node": ">=24.7.0"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter @arena/web --filter @arena/api dev",
+    "dev": "pnpm --parallel --filter @arena/web --filter @arena/admin --filter @arena/api dev",
     "build": "pnpm -r build",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "pnpm -r typecheck",

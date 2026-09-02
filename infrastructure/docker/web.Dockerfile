@@ -1,5 +1,5 @@
 FROM node:24-alpine AS base
-RUN corepack enable && corepack prepare pnpm@11.25.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.19.0 --activate
 WORKDIR /workspace
 
 FROM base AS dependencies

@@ -1,7 +1,15 @@
 # Mobile foundation
 
-React Native + Expo приложение начнется на Этапе 9 и использует тот же REST API и общие transport types. Контент доступен guest без регистрации.
+Этап 9 реализован как Expo SDK 57 / React Native workspace в `apps/mobile`. Приложение использует тот же REST API и общие transport types; контент доступен guest без регистрации.
 
-Bottom tabs: Home, Matches, Rankings, Discover, Profile. Onboarding: welcome → favorite games → teams → players → notification rationale → home, каждый шаг можно пропустить.
+Реализованы:
 
-Архитектура: Expo Router, TanStack Query cache, SecureStore для refresh token, push adapter, universal/deep links, offline stale data, share URLs на canonical web profiles. OS notification prompt показывается только после объяснения пользы. Полная карта: `SCREEN_MAP.md`.
+- Expo Router и bottom tabs: Home, Matches, Rankings, Discover, Profile;
+- onboarding: welcome → favorite games → teams → players → notification rationale → home, каждый шаг можно пропустить;
+- TanStack Query с `offlineFirst`, связанный с NetInfo;
+- SecureStore adapter для мобильных токенов;
+- canonical deep links `arena-passport://` и web links для player/team/match/tournament;
+- notification adapter, который запрашивает системное разрешение только после явного rationale;
+- Android intent filters, iOS associated-domain configuration и статический web export.
+
+Этап 10 подключит live API к продуктовым экранам профилей, матчей, рейтингов и поиска. Push-регистрация, favorites, reminders и share cards относятся к Этапу 11. Полная карта: `SCREEN_MAP.md`.
