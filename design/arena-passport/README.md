@@ -51,4 +51,10 @@ Research-grounded second exploration:
 - `05-season-form-board.png`
 - `06-table-first-public-record.png`
 
+Third exploration after the user rejected both earlier sets:
+
+- `07-arena-index-brutal.png`
+- `08-aurora-athlete-space.png`
+- `09-split-signal.png`
+
 Comparable-site screenshots and notes are stored in `research/`.
