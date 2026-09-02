@@ -4,9 +4,13 @@ export type AuthenticatedUser = {
   id: string;
   email: string;
   displayName: string | null;
+  emailVerifiedAt: string | null;
+  subscriptionPlan: string;
   roles: string[];
   permissions: string[];
 };
+
+export type EmailTokenInput = { token: string };
 
 export type SessionContext = {
   id: string;

@@ -129,6 +129,8 @@ model User {
   auditLogs             AuditLog[]             @relation("AuditActor")
   identities            Identity[]
   sessions              Session[]
+  emailVerificationTokens EmailVerificationToken[]
+  subscriptions         Subscription[]         @relation("UserSubscriptions")
   roles                 UserRole[]             @relation("UserRoleSubject")
   grantedRoles          UserRole[]             @relation("UserRoleGrantor")
   profileClaims         ProfileClaim[]         @relation("Claimant")
@@ -166,6 +168,18 @@ model Session {
   createdAt  DateTime  @default(now())
 
   @@index([userId, revokedAt, expiresAt])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique @db.VarChar(64)
+  expiresAt DateTime
+  usedAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@index([userId, usedAt, expiresAt])
 }
 
 model Role {
@@ -260,8 +274,31 @@ model Organization {
   isFederation       Boolean             @default(false)
   teams              Team[]
   playerPublications PlayerPublication[]
+  subscriptions      Subscription[]      @relation("OrganizationSubscriptions")
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+}
+
+model Subscription {
+  id                     String        @id @default(uuid()) @db.Uuid
+  userId                 String?       @db.Uuid
+  organizationId         String?       @db.Uuid
+  planCode               String
+  status                 String        @default("ACTIVE")
+  provider               String        @default("MANUAL")
+  providerCustomerId     String?
+  providerSubscriptionId String?       @unique
+  currentPeriodStart     DateTime
+  currentPeriodEnd       DateTime
+  cancelAtPeriodEnd      Boolean       @default(false)
+  user                   User?         @relation("UserSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  organization           Organization? @relation("OrganizationSubscriptions", fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  @@index([userId, status, currentPeriodEnd])
+  @@index([organizationId, status, currentPeriodEnd])
+  @@index([planCode, status])
 }
 
 model Player {

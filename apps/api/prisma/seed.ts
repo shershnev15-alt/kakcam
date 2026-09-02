@@ -346,6 +346,137 @@ async function main(): Promise<void> {
     playerIds.set(player.id, record.id);
   }
 
+  const demoPlayer = players[0]!;
+  const demoPlayerId = playerIds.get(demoPlayer.id)!;
+  const federation = await prisma.organization.upsert({
+    where: { slug: 'demo-cs2-federation' },
+    update: { name: 'Демо-федерация CS2', countryCode: 'RU', isFederation: true },
+    create: {
+      slug: 'demo-cs2-federation',
+      name: 'Демо-федерация CS2',
+      countryCode: 'RU',
+      isFederation: true,
+    },
+  });
+  const demoReviewer = await prisma.user.upsert({
+    where: { email: 'reviewer@demo.arena.local' },
+    update: { displayName: 'Демо-верификатор', emailVerifiedAt: new Date('2026-09-01') },
+    create: {
+      email: 'reviewer@demo.arena.local',
+      displayName: 'Демо-верификатор',
+      emailVerifiedAt: new Date('2026-09-01'),
+    },
+  });
+  const federationRole = await prisma.role.findUniqueOrThrow({
+    where: { code: 'FEDERATION_REVIEWER' },
+  });
+  const reviewerRole = await prisma.userRole.findFirst({
+    where: {
+      userId: demoReviewer.id,
+      roleId: federationRole.id,
+      scopeType: 'ORGANIZATION',
+      scopeId: federation.id,
+    },
+  });
+  if (!reviewerRole) {
+    await prisma.userRole.create({
+      data: {
+        userId: demoReviewer.id,
+        roleId: federationRole.id,
+        scopeType: 'ORGANIZATION',
+        scopeId: federation.id,
+      },
+    });
+  }
+  const demoClaimant = await prisma.user.upsert({
+    where: { email: 'frostbyte@demo.arena.local' },
+    update: { displayName: demoPlayer.nickname, emailVerifiedAt: new Date('2026-09-01') },
+    create: {
+      email: 'frostbyte@demo.arena.local',
+      displayName: demoPlayer.nickname,
+      emailVerifiedAt: new Date('2026-09-01'),
+    },
+  });
+  const demoClaim = await prisma.profileClaim.upsert({
+    where: { id: '20000000-0000-4000-8000-000000000001' },
+    update: {
+      userId: demoClaimant.id,
+      playerId: demoPlayerId,
+      status: 'APPROVED',
+      reviewerId: demoReviewer.id,
+      decidedAt: new Date('2026-09-01'),
+    },
+    create: {
+      id: '20000000-0000-4000-8000-000000000001',
+      userId: demoClaimant.id,
+      playerId: demoPlayerId,
+      status: 'APPROVED',
+      method: 'DEMO_SELF_CLAIM',
+      statement: 'Демонстрационная заявка вымышленного игрока',
+      evidenceSummary: { synthetic: true, purpose: 'local-demo' },
+      reviewerId: demoReviewer.id,
+      decisionReason: 'Approved synthetic demo record',
+      decidedAt: new Date('2026-09-01'),
+    },
+  });
+  const photoChecksum = createHash('sha256').update('demo-player-frostbyte.png:v1').digest('hex');
+  const photoEvidence = await prisma.verificationEvidence.upsert({
+    where: { id: '30000000-0000-4000-8000-000000000001' },
+    update: {
+      claimId: demoClaim.id,
+      submittedById: demoClaimant.id,
+      kind: 'PROFILE_PHOTO',
+      reference: '/demo-player-frostbyte.png',
+      checksum: photoChecksum,
+      visibility: 'RESTRICTED',
+    },
+    create: {
+      id: '30000000-0000-4000-8000-000000000001',
+      claimId: demoClaim.id,
+      submittedById: demoClaimant.id,
+      kind: 'PROFILE_PHOTO',
+      reference: '/demo-player-frostbyte.png',
+      checksum: photoChecksum,
+      visibility: 'RESTRICTED',
+    },
+  });
+  await Promise.all([
+    prisma.playerGameAccount.upsert({
+      where: { provider_externalId: { provider: 'STEAM', externalId: '76561198000000001' } },
+      update: {
+        playerId: demoPlayerId,
+        gameId: game.id,
+        handle: 'frostbyte',
+        verifiedAt: new Date('2026-09-01'),
+      },
+      create: {
+        playerId: demoPlayerId,
+        gameId: game.id,
+        provider: 'STEAM',
+        externalId: '76561198000000001',
+        handle: 'frostbyte',
+        verifiedAt: new Date('2026-09-01'),
+      },
+    }),
+    prisma.playerGameAccount.upsert({
+      where: { provider_externalId: { provider: 'FACEIT', externalId: 'demo-frostbyte' } },
+      update: {
+        playerId: demoPlayerId,
+        gameId: game.id,
+        handle: 'frostbyte',
+        verifiedAt: new Date('2026-09-01'),
+      },
+      create: {
+        playerId: demoPlayerId,
+        gameId: game.id,
+        provider: 'FACEIT',
+        externalId: 'demo-frostbyte',
+        handle: 'frostbyte',
+        verifiedAt: new Date('2026-09-01'),
+      },
+    }),
+  ]);
+
   const careerEpoch = new Date('2024-01-01T00:00:00.000Z');
   for (const [playerIndex, player] of players.entries()) {
     const playerId = playerIds.get(player.id)!;
@@ -458,6 +589,34 @@ async function main(): Promise<void> {
       },
     });
   }
+
+  await prisma.playerPublication.upsert({
+    where: { playerId: demoPlayerId },
+    update: {
+      selfClaimId: demoClaim.id,
+      federationId: federation.id,
+      photoEvidenceId: photoEvidence.id,
+      verificationId: '10000000-0000-4000-8000-000000000001',
+      reviewerId: demoReviewer.id,
+      status: 'PUBLISHED',
+      publicPhotoUrl: '/demo-player-frostbyte.png',
+      reason: 'Synthetic demo profile: all publication gates passed',
+      publishedAt: new Date('2026-09-02'),
+      revokedAt: null,
+    },
+    create: {
+      playerId: demoPlayerId,
+      selfClaimId: demoClaim.id,
+      federationId: federation.id,
+      photoEvidenceId: photoEvidence.id,
+      verificationId: '10000000-0000-4000-8000-000000000001',
+      reviewerId: demoReviewer.id,
+      status: 'PUBLISHED',
+      publicPhotoUrl: '/demo-player-frostbyte.png',
+      reason: 'Synthetic demo profile: all publication gates passed',
+      publishedAt: new Date('2026-09-02'),
+    },
+  });
 
   const ratingPublishedAt = new Date('2026-09-02T05:00:00.000Z');
   const playerRatingRun = await prisma.ratingRun.upsert({

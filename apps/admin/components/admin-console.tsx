@@ -850,7 +850,7 @@ function LoginPanel({ onLogin }: { onLogin: (user: User) => void }) {
   }
   return (
     <div className="login-page">
-      <div className="login-mark">AP</div>
+      <div className="login-mark">cyberID</div>
       <form onSubmit={(event) => void submit(event)}>
         <p>CYBER ID / OPERATIONS</p>
         <h1>Вход для оператора</h1>

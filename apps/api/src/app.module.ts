@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AuthController } from './auth/auth.controller';
 import { AuthRateLimitGuard, CsrfGuard, PermissionsGuard, SessionGuard } from './auth/auth.guards';
 import { AuthService } from './auth/auth.service';
+import { EmailDeliveryService } from './auth/email-delivery.service';
 import { CareerController } from './career/career.controller';
 import { CareerService } from './career/career.service';
 import { CompetitionController } from './competition/competition.controller';
@@ -48,6 +49,7 @@ import { GameAccountsService } from './game-accounts/game-accounts.service';
     PrismaService,
     DatabaseService,
     AuthService,
+    EmailDeliveryService,
     SessionGuard,
     PermissionsGuard,
     CsrfGuard,

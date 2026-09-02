@@ -33,12 +33,25 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const result = (await response.json()) as { message?: string | string[] };
+      const result = (await response.json()) as {
+        message?: string | string[];
+        meta?: { previewEmailVerificationToken?: string };
+      };
       if (!response.ok) {
         const message = Array.isArray(result.message) ? result.message[0] : result.message;
         throw new Error(message ?? 'Не удалось выполнить запрос');
       }
-      router.push('/account');
+      if (isRegistration) {
+        if (result.meta?.previewEmailVerificationToken) {
+          sessionStorage.setItem(
+            'cyberid-preview-email-token',
+            result.meta.previewEmailVerificationToken,
+          );
+        }
+        router.push('/verify-email');
+      } else {
+        router.push('/account');
+      }
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Сервис временно недоступен');
@@ -53,13 +66,13 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         className="surface grain w-full max-w-md overflow-hidden p-6 sm:p-8"
         aria-labelledby="auth-title"
       >
-        <p className="eyebrow">Arena ID</p>
+        <p className="eyebrow">cyberID · {isRegistration ? 'шаг 1 из 6' : 'вход'}</p>
         <h1 id="auth-title" className="mt-3 text-3xl font-black tracking-[-.04em]">
           {isRegistration ? 'Создать аккаунт' : 'С возвращением'}
         </h1>
         <p className="muted mt-2 text-sm leading-6">
           {isRegistration
-            ? 'Сохраняйте избранное и участвуйте в развитии киберспортивного реестра.'
+            ? 'Сначала создайте защищённый аккаунт и подтвердите почту. Затем обязательны Steam, FACEIT, фото и ручная проверка.'
             : 'Войдите, чтобы продолжить работу с cyberID.'}
         </p>
 

@@ -1,4 +1,10 @@
-import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
 import type { HttpRequest, HttpResponse } from '../http.types';
 import { PrismaService } from '../prisma.service';
@@ -9,9 +15,11 @@ import type {
   RegistrationInput,
 } from './auth.types';
 import { hashPassword, verifyPassword } from './password';
+import { EmailDeliveryService } from './email-delivery.service';
 
 const SESSION_COOKIE = 'arena_session';
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1_000;
+const EMAIL_TOKEN_DURATION_MS = 24 * 60 * 60 * 1_000;
 
 function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
@@ -25,7 +33,10 @@ function isUniqueConstraintError(error: unknown): boolean {
 export class AuthService {
   private readonly dummyPasswordHash = hashPassword('arena-passport-dummy-password');
 
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(EmailDeliveryService) private readonly emailDelivery: EmailDeliveryService,
+  ) {}
 
   async register(input: RegistrationInput, request: HttpRequest) {
     const passwordHash = await hashPassword(input.password);
@@ -33,6 +44,7 @@ export class AuthService {
     if (!role) throw new Error('REGISTERED_USER role is not seeded');
 
     const session = this.newSession(request);
+    const emailToken = this.newEmailToken();
     try {
       const user = await this.prisma.$transaction(async (tx) => {
         const created = await tx.user.create({
@@ -48,6 +60,7 @@ export class AuthService {
             },
             roles: { create: { roleId: role.id } },
             sessions: { create: session.data },
+            emailVerificationTokens: { create: emailToken.data },
           },
         });
         await tx.auditLog.create({
@@ -62,13 +75,73 @@ export class AuthService {
         });
         return created;
       });
-      return { user: this.publicUser(user, ['REGISTERED_USER'], []), token: session.token };
+      const delivery = await this.emailDelivery.sendVerification(user.email, emailToken.token);
+      return {
+        user: this.publicUser(user, ['REGISTERED_USER'], []),
+        token: session.token,
+        previewToken: delivery.previewToken,
+      };
     } catch (error) {
       if (isUniqueConstraintError(error)) {
         throw new ConflictException('Аккаунт с таким email уже существует');
       }
       throw error;
     }
+  }
+
+  async verifyEmail(token: string, request: HttpRequest): Promise<AuthenticatedUser> {
+    const now = new Date();
+    const record = await this.prisma.emailVerificationToken.findUnique({
+      where: { tokenHash: sha256(token) },
+      include: { user: true },
+    });
+    if (!record || record.usedAt || record.expiresAt <= now) {
+      throw new BadRequestException('Код подтверждения недействителен или истёк');
+    }
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: record.userId }, data: { emailVerifiedAt: now } }),
+      this.prisma.emailVerificationToken.updateMany({
+        where: { userId: record.userId, usedAt: null },
+        data: { usedAt: now },
+      }),
+      this.prisma.auditLog.create({
+        data: {
+          actorId: record.userId,
+          action: 'auth.email.verify',
+          targetType: 'User',
+          targetId: record.userId,
+          requestId: this.requestId(request) ?? null,
+        },
+      }),
+    ]);
+    return this.loadUser(record.userId);
+  }
+
+  async resendEmail(userId: string, request: HttpRequest) {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    if (user.emailVerifiedAt) return { sent: false, alreadyVerified: true };
+    const emailToken = this.newEmailToken();
+    await this.prisma.$transaction([
+      this.prisma.emailVerificationToken.updateMany({
+        where: { userId, usedAt: null },
+        data: { usedAt: new Date() },
+      }),
+      this.prisma.emailVerificationToken.create({ data: { userId, ...emailToken.data } }),
+      this.prisma.auditLog.create({
+        data: {
+          actorId: userId,
+          action: 'auth.email.resend',
+          targetType: 'User',
+          targetId: userId,
+          requestId: this.requestId(request) ?? null,
+        },
+      }),
+    ]);
+    const delivery = await this.emailDelivery.sendVerification(user.email, emailToken.token);
+    return {
+      sent: true,
+      ...(delivery.previewToken ? { previewToken: delivery.previewToken } : {}),
+    };
   }
 
   async login(input: LoginInput, request: HttpRequest) {
@@ -111,6 +184,11 @@ export class AuthService {
       include: {
         user: {
           include: {
+            subscriptions: {
+              where: { status: { in: ['ACTIVE', 'TRIALING'] }, currentPeriodEnd: { gt: now } },
+              orderBy: { currentPeriodEnd: 'desc' },
+              take: 1,
+            },
             roles: {
               where: { OR: [{ validUntil: null }, { validUntil: { gt: now } }] },
               include: {
@@ -189,6 +267,14 @@ export class AuthService {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
       include: {
+        subscriptions: {
+          where: {
+            status: { in: ['ACTIVE', 'TRIALING'] },
+            currentPeriodEnd: { gt: new Date() },
+          },
+          orderBy: { currentPeriodEnd: 'desc' },
+          take: 1,
+        },
         roles: {
           where: { OR: [{ validUntil: null }, { validUntil: { gt: new Date() } }] },
           include: { role: { include: { permissions: { include: { permission: true } } } } },
@@ -220,6 +306,14 @@ export class AuthService {
     };
   }
 
+  private newEmailToken() {
+    const token = randomBytes(32).toString('base64url');
+    return {
+      token,
+      data: { tokenHash: sha256(token), expiresAt: new Date(Date.now() + EMAIL_TOKEN_DURATION_MS) },
+    };
+  }
+
   private readToken(request: HttpRequest): string | undefined {
     const authorization = this.header(request, 'authorization');
     if (authorization?.startsWith('Bearer ')) return authorization.slice(7).trim() || undefined;
@@ -231,11 +325,25 @@ export class AuthService {
   }
 
   private publicUser(
-    user: { id: string; email: string; displayName: string | null },
+    user: {
+      id: string;
+      email: string;
+      displayName: string | null;
+      emailVerifiedAt: Date | null;
+      subscriptions?: Array<{ planCode: string }>;
+    },
     roles: string[],
     permissions: string[],
   ): AuthenticatedUser {
-    return { id: user.id, email: user.email, displayName: user.displayName, roles, permissions };
+    return {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      emailVerifiedAt: user.emailVerifiedAt?.toISOString() ?? null,
+      subscriptionPlan: user.subscriptions?.[0]?.planCode ?? 'B2C_FREE',
+      roles,
+      permissions,
+    };
   }
 
   private requestId(request: HttpRequest): string | undefined {

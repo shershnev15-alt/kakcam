@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import type { LoginInput, RegistrationInput } from './auth.types';
+import type { EmailTokenInput, LoginInput, RegistrationInput } from './auth.types';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -44,4 +44,14 @@ export function parseLogin(value: unknown): LoginInput {
     throw new BadRequestException('Укажите пароль');
   }
   return { email, password: body.password };
+}
+
+export function parseEmailToken(value: unknown): EmailTokenInput {
+  const body = objectBody(value);
+  if (typeof body.token !== 'string') throw new BadRequestException('Укажите код подтверждения');
+  const token = body.token.trim();
+  if (!/^[A-Za-z0-9_-]{32,128}$/.test(token)) {
+    throw new BadRequestException('Некорректный код подтверждения');
+  }
+  return { token };
 }

@@ -258,7 +258,7 @@ export const matches: MatchSummary[] = Array.from({ length: 30 }, (_, index) => 
   const bestOf = index % 4 === 0 ? 3 : 1;
   const startsAt =
     status === 'FINISHED'
-      ? new Date(Date.UTC(2026, 7, 12 + Math.floor((index - 12) / 2), 13 + (index % 2) * 3))
+      ? new Date(Date.UTC(2026, 7, 27 + Math.floor((index - 12) / 3), 13 + (index % 3) * 3))
       : new Date(Date.UTC(2026, 8, 2 + Math.floor(index / 3), 10 + (index % 3) * 3));
   return {
     id: `match-${index + 1}`,

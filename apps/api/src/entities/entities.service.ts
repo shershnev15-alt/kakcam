@@ -1,4 +1,10 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { Prisma } from '../../generated/prisma/client';
 import type { HttpRequest } from '../http.types';
 import { PrismaService } from '../prisma.service';
@@ -86,6 +92,9 @@ type PlayerRecord = Prisma.PlayerGetPayload<{ include: typeof playerInclude }>;
 type TeamRecord = Prisma.TeamGetPayload<{ include: typeof teamInclude }>;
 type TeamDetailRecord = Prisma.TeamGetPayload<{ include: typeof teamDetailInclude }>;
 type PublicMatchRecord = Prisma.MatchGetPayload<{ include: typeof publicMatchInclude }>;
+type PlayerMatchStatisticRecord = Prisma.PlayerMatchStatisticGetPayload<{
+  include: { match: { include: typeof publicMatchInclude } };
+}>;
 type PlayerStatisticRecord = Prisma.PlayerStatisticGetPayload<Record<string, never>>;
 type TeamStatisticRecord = Prisma.TeamStatisticGetPayload<Record<string, never>>;
 
@@ -191,7 +200,10 @@ export class EntitiesService {
       include: playerInclude,
     });
     if (!record) throw new NotFoundException('Player not found');
-    const [similar, performance, matchStatistics, achievements, ratingHistory] = await Promise.all([
+    const periodEnd = new Date();
+    const threeDaysAgo = new Date(periodEnd.getTime() - 3 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(periodEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const [similar, matchStatistics, achievements, ratingHistory] = await Promise.all([
       this.prisma.player.findMany({
         where: {
           AND: [publicPlayerEligibilityWhere],
@@ -202,17 +214,18 @@ export class EntitiesService {
         orderBy: { aggregateVerificationLevel: 'desc' },
         take: 4,
       }),
-      this.prisma.playerStatistic.findFirst({
-        where: { playerId: record.id },
-        orderBy: { periodEnd: 'desc' },
-      }),
       this.prisma.playerMatchStatistic.findMany({
-        where: { playerId: record.id, verifiedAt: { not: null }, mapKey: 'all' },
+        where: {
+          playerId: record.id,
+          verifiedAt: { not: null },
+          mapKey: 'all',
+          match: { startsAt: { gte: sevenDaysAgo, lte: periodEnd } },
+        },
         include: {
           match: { include: publicMatchInclude },
         },
         orderBy: { match: { startsAt: 'desc' } },
-        take: 6,
+        take: 100,
       }),
       this.prisma.playerAchievement.findMany({
         where: { playerId: record.id, status: 'GRANTED' },
@@ -220,17 +233,22 @@ export class EntitiesService {
         orderBy: { grantedAt: 'desc' },
       }),
       this.prisma.playerRating.findMany({
-        where: { playerId: record.id, run: { status: 'PUBLISHED' } },
+        where: {
+          playerId: record.id,
+          publishedAt: { gte: sevenDaysAgo, lte: periodEnd },
+          run: { status: 'PUBLISHED' },
+        },
         include: { run: { select: { formulaVersion: true } } },
         orderBy: { publishedAt: 'desc' },
-        take: 12,
+        take: 8,
       }),
     ]);
+    const detailedMatches = matchStatistics.filter((item) => item.match.startsAt >= threeDaysAgo);
     return {
       ...this.playerDto(record),
       similar: similar.map((item) => this.playerDto(item)),
-      performance: performance ? this.playerPerformanceDto(performance) : null,
-      matches: matchStatistics.map((item) => this.matchSummaryDto(item.match)),
+      performance: this.recentPlayerPerformance(matchStatistics, sevenDaysAgo, periodEnd),
+      matches: detailedMatches.slice(0, 6).map((item) => this.matchSummaryDto(item.match)),
       achievements: achievements.map((item) => ({
         code: item.achievement.code,
         title: item.achievement.title,
@@ -243,6 +261,41 @@ export class EntitiesService {
       })),
       ratingHistory: ratingHistory.map((item) => this.ratingHistoryDto(item)),
       ratingFactors: this.ratingFactors(record.ratings[0]?.explanation),
+    };
+  }
+
+  async playerArchive(slug: string, subscriptionPlan: string) {
+    if (!['B2C_PREMIUM', 'B2B_START', 'B2B_PRO'].includes(subscriptionPlan)) {
+      throw new ForbiddenException('Архив доступен по тарифу Premium или B2B');
+    }
+    const record = await this.prisma.player.findFirst({
+      where: { AND: [{ slug }, publicPlayerEligibilityWhere] },
+      select: { id: true, slug: true, nickname: true },
+    });
+    if (!record) throw new NotFoundException('Player not found');
+    const [performance, matchStatistics, ratingHistory] = await Promise.all([
+      this.prisma.playerStatistic.findFirst({
+        where: { playerId: record.id },
+        orderBy: { periodEnd: 'desc' },
+      }),
+      this.prisma.playerMatchStatistic.findMany({
+        where: { playerId: record.id, verifiedAt: { not: null }, mapKey: 'all' },
+        include: { match: { include: publicMatchInclude } },
+        orderBy: { match: { startsAt: 'desc' } },
+        take: 100,
+      }),
+      this.prisma.playerRating.findMany({
+        where: { playerId: record.id, run: { status: 'PUBLISHED' } },
+        include: { run: { select: { formulaVersion: true } } },
+        orderBy: { publishedAt: 'desc' },
+        take: 52,
+      }),
+    ]);
+    return {
+      player: record,
+      performance: performance ? this.playerPerformanceDto(performance) : null,
+      matches: matchStatistics.map((item) => this.matchSummaryDto(item.match)),
+      ratingHistory: ratingHistory.map((item) => this.ratingHistoryDto(item)),
     };
   }
 
@@ -695,6 +748,49 @@ export class EntitiesService {
       winRate: Number((record.wins / Math.max(1, record.sampleMatches)).toFixed(3)),
       performanceRating:
         typeof metrics.performanceRating === 'number' ? metrics.performanceRating : 0,
+    };
+  }
+
+  private recentPlayerPerformance(
+    records: PlayerMatchStatisticRecord[],
+    periodStart: Date,
+    periodEnd: Date,
+  ) {
+    if (!records.length) return null;
+    const total = (key: 'kills' | 'deaths' | 'assists' | 'rounds') =>
+      records.reduce((sum, item) => sum + (item[key] ?? 0), 0);
+    const average = (key: 'adr' | 'kast' | 'performanceRating') =>
+      Number(
+        (records.reduce((sum, item) => sum + Number(item[key] ?? 0), 0) / records.length).toFixed(
+          3,
+        ),
+      );
+    const wins = records.filter((item) => {
+      const { homeScore, awayScore, homeTeamId, awayTeamId } = item.match;
+      if (homeScore === null || awayScore === null || homeScore === awayScore) return false;
+      return homeScore > awayScore ? item.teamId === homeTeamId : item.teamId === awayTeamId;
+    }).length;
+    const losses =
+      records.filter((item) => item.match.homeScore !== null && item.match.awayScore !== null)
+        .length - wins;
+    const kills = total('kills');
+    const deaths = total('deaths');
+    return {
+      periodStart,
+      periodEnd,
+      sampleMatches: records.length,
+      sampleMaps: records.length,
+      rounds: total('rounds'),
+      kills,
+      deaths,
+      assists: total('assists'),
+      wins,
+      losses,
+      kd: Number((kills / Math.max(1, deaths)).toFixed(3)),
+      adr: average('adr'),
+      kast: average('kast'),
+      winRate: Number((wins / Math.max(1, records.length)).toFixed(3)),
+      performanceRating: average('performanceRating'),
     };
   }
 

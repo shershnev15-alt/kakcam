@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowIcon, CheckIcon } from '@/components/icons';
+import { AdSlot } from '@/components/ad-slot';
 import { MatchCard } from '@/components/match-card';
 import { PlayerCard, PlayerPhoto, SectionHeading, Sparkline, TeamCard } from '@/components/ui';
 import {
@@ -155,6 +156,8 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      <AdSlot placement="HOME_AFTER_HERO" />
 
       <section className="border-b border-[var(--border)] bg-[#0f0f0f]">
         <div className="container grid grid-cols-2 md:grid-cols-4">

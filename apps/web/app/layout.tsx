@@ -37,7 +37,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       <body>
         <a
           href="#content"
-          className="focus-ring fixed left-3 top-3 z-50 -translate-y-20 rounded bg-[var(--brand)] px-4 py-2 text-sm text-white focus:translate-y-0"
+          className="focus-ring fixed left-3 top-3 z-50 -translate-y-20 bg-[var(--brand)] px-4 py-2 text-sm font-bold text-[#101512] focus:translate-y-0"
         >
           К содержимому
         </a>

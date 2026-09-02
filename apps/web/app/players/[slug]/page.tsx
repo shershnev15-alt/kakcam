@@ -61,6 +61,13 @@ export default async function PlayerPage({ params }: PageProps) {
   const performance = player.performance;
   const ratingSeries = [...player.ratingHistory].reverse().map((item) => item.score);
   const periodDelta = ratingSeries.length > 1 ? ratingSeries.at(-1)! - ratingSeries[0]! : 0;
+  const ratingLabels = [...player.ratingHistory].reverse().map((item) =>
+    new Date(item.publishedAt).toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: 'short',
+      timeZone: 'Europe/Moscow',
+    }),
+  );
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
@@ -175,9 +182,9 @@ export default async function PlayerPage({ params }: PageProps) {
 
       <div className="container space-y-16 py-10 md:py-14">
         <section>
-          <SectionHeading eyebrow="Последние 90 дней" title="Форма игрока" />
+          <SectionHeading eyebrow="Бесплатно · последние 7 дней" title="Форма игрока" />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-            <StatCard label="K/D" value={(performance?.kd ?? 0).toFixed(2)} note="90 дней" />
+            <StatCard label="K/D" value={(performance?.kd ?? 0).toFixed(2)} note="7 дней" />
             <StatCard label="ADR" value={(performance?.adr ?? 0).toFixed(1)} note="Среднее" />
             <StatCard
               label="KAST"
@@ -206,7 +213,7 @@ export default async function PlayerPage({ params }: PageProps) {
           <div className="surface p-5 md:p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="eyebrow">PPR · 12 месяцев</p>
+                <p className="eyebrow">PPR · последние 7 дней</p>
                 <h2 className="mt-2 text-xl font-bold">Динамика рейтинга</h2>
               </div>
               <div className="text-right">
@@ -228,11 +235,8 @@ export default async function PlayerPage({ params }: PageProps) {
               className="mt-7 h-52 w-full"
             />
             <div className="mt-3 flex justify-between text-[10px] text-[var(--text-3)]">
-              <span>ОКТ 2025</span>
-              <span>ЯНВ</span>
-              <span>АПР</span>
-              <span>ИЮЛ</span>
-              <span>СЕН 2026</span>
+              <span>{ratingLabels[0] ?? '7 дней назад'}</span>
+              <span>{ratingLabels.at(-1) ?? 'сегодня'}</span>
             </div>
           </div>
           <aside className="surface p-5 md:p-6">
@@ -272,14 +276,36 @@ export default async function PlayerPage({ params }: PageProps) {
 
         <section>
           <SectionHeading
-            eyebrow="Матчи"
+            eyebrow="Бесплатно · последние 3 дня"
             title="Последние игры"
-            action={{ label: 'Вся история', href: '/matches' }}
+            action={{ label: 'Открыть Premium', href: '/pricing' }}
           />
           <div className="grid gap-3 lg:grid-cols-3">
             {player.matches.slice(0, 3).map((match) => (
               <MatchCard key={match.id} match={match} />
             ))}
+          </div>
+        </section>
+
+        <section className="surface overflow-hidden border-[var(--brand)]/35">
+          <div className="grid gap-7 p-6 md:grid-cols-[1fr_auto] md:items-center md:p-8">
+            <div className="min-w-0">
+              <p className="eyebrow">Premium archive</p>
+              <h2 className="mt-2 text-2xl font-black [overflow-wrap:anywhere]">
+                История за 30, 90, 365 дней и весь период
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-2)]">
+                Детальные матчи, динамика PPR, сравнение периодов и выгрузка доступны по подписке.
+                Проверка тарифа выполняется сервером — архив нельзя открыть прямой ссылкой без
+                действующего доступа.
+              </p>
+            </div>
+            <Link
+              href="/pricing"
+              className="inline-flex min-h-12 items-center justify-center gap-3 bg-[var(--brand)] px-6 py-3 text-sm font-black text-[#07110b] transition hover:bg-[var(--brand-strong)]"
+            >
+              Сравнить тарифы <ArrowIcon className="size-4" />
+            </Link>
           </div>
         </section>
 

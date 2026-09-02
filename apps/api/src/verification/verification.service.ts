@@ -30,6 +30,56 @@ function sha256(value: string): string {
 export class VerificationService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
+  async onboarding(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        emailVerifiedAt: true,
+        profileClaims: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          include: {
+            evidence: { select: { kind: true } },
+            player: {
+              select: {
+                slug: true,
+                accounts: {
+                  where: {
+                    provider: { in: ['STEAM', 'FACEIT'] },
+                    verifiedAt: { not: null },
+                    game: { is: { slug: 'cs2' } },
+                  },
+                  select: { provider: true },
+                },
+                publication: { select: { status: true, federation: { select: { name: true } } } },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    const claim = user.profileClaims[0] ?? null;
+    const providers = new Set(claim?.player.accounts.map((account) => account.provider) ?? []);
+    const published = claim?.player.publication?.status === 'PUBLISHED';
+    return {
+      emailVerified: Boolean(user.emailVerifiedAt),
+      claimSubmitted: Boolean(claim),
+      claimStatus: claim?.status ?? null,
+      playerSlug: claim?.player.slug ?? null,
+      photoSubmitted: Boolean(
+        claim?.evidence.some((evidence) =>
+          publicPhotoEvidenceKinds.includes(evidence.kind as never),
+        ),
+      ),
+      steamVerified: providers.has('STEAM'),
+      faceitVerified: providers.has('FACEIT'),
+      federationApproved: published,
+      manualApproval: published,
+      federationName: claim?.player.publication?.federation.name ?? null,
+    };
+  }
+
   async playerVerification(slug: string) {
     const player = await this.prisma.player.findFirst({
       where: { AND: [{ slug }, publicPlayerEligibilityWhere] },
@@ -263,6 +313,13 @@ export class VerificationService {
   }
 
   async submitClaim(input: SubmitClaimInput, userId: string, request: HttpRequest) {
+    const claimant = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { emailVerifiedAt: true },
+    });
+    if (!claimant?.emailVerifiedAt) {
+      throw new ForbiddenException('Сначала подтвердите email');
+    }
     const player = await this.prisma.player.findFirst({
       where: { slug: input.playerSlug, status: 'ACTIVE' },
       select: { id: true, slug: true, nickname: true },

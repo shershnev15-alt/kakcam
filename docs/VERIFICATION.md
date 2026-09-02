@@ -26,6 +26,12 @@
 
 Публикационная policy учитывает только записи `PlayerGameAccount` для игры `cs2`, провайдеров `STEAM` и `FACEIT` и с непустым `verifiedAt`. Ручного обхода этого условия в endpoint публикации нет. Реальные OpenID/OAuth callbacks и provider credentials подключаются отдельной интеграцией; до неё профиль не может получить общий доступ через честный пользовательский поток.
 
+Steam привязывается через браузерный OpenID callback и проверку ответа на backend; обычный lookup публичного профиля не выставляет `verifiedAt`. FACEIT требует собственный OAuth/challenge callback с одноразовым state. Email подтверждается одноразовым SHA-256 token со сроком 24 часа; без него claim не создаётся.
+
+## Face ID и документы
+
+Онлайн-проверка возможна через внешний KYC SDK: документ + selfie/liveness + webhook-решение. В базе cyberID нужно хранить provider applicant/check ID, статус и минимальный набор audit-метаданных, но не копию документа, если это не обязательно. Биометрия, документы, consent, residency, сроки хранения, трансграничная передача, удаление и ручная апелляция требуют отдельного юридического решения до live-запуска. Provider decision повышает confidence, но финальную публикацию всё равно подтверждает местная федерация.
+
 ## Уровни
 
 0 Unverified; 1 Account Connected; 2 Identity Verified; 3 Organizer Verified; 4 Official Verified; 5 Platform Verified.

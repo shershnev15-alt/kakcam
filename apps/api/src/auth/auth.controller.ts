@@ -3,7 +3,7 @@ import type { HttpRequest, HttpResponse } from '../http.types';
 import { AuthService } from './auth.service';
 import { AuthRateLimitGuard, CsrfGuard, SessionGuard } from './auth.guards';
 import type { AuthenticatedRequest } from './auth.types';
-import { parseLogin, parseRegistration } from './auth.validation';
+import { parseEmailToken, parseLogin, parseRegistration } from './auth.validation';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -18,7 +18,25 @@ export class AuthController {
   ) {
     const result = await this.auth.register(parseRegistration(body), request);
     this.auth.setSessionCookie(response, result.token);
-    return { data: result.user };
+    return {
+      data: result.user,
+      meta: {
+        emailVerificationRequired: true,
+        ...(result.previewToken ? { previewEmailVerificationToken: result.previewToken } : {}),
+      },
+    };
+  }
+
+  @Post('verify-email')
+  @UseGuards(CsrfGuard, AuthRateLimitGuard)
+  async verifyEmail(@Body() body: unknown, @Req() request: HttpRequest) {
+    return { data: await this.auth.verifyEmail(parseEmailToken(body).token, request) };
+  }
+
+  @Post('resend-email')
+  @UseGuards(CsrfGuard, SessionGuard, AuthRateLimitGuard)
+  async resendEmail(@Req() request: AuthenticatedRequest & HttpRequest) {
+    return { data: await this.auth.resendEmail(request.auth!.id, request) };
   }
 
   @Post('login')

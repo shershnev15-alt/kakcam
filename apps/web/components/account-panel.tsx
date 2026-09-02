@@ -8,7 +8,22 @@ type User = {
   id: string;
   email: string;
   displayName: string | null;
+  emailVerifiedAt: string | null;
+  subscriptionPlan: string;
   roles: string[];
+};
+
+type Onboarding = {
+  emailVerified: boolean;
+  claimSubmitted: boolean;
+  claimStatus: string | null;
+  playerSlug: string | null;
+  photoSubmitted: boolean;
+  steamVerified: boolean;
+  faceitVerified: boolean;
+  federationApproved: boolean;
+  manualApproval: boolean;
+  federationName: string | null;
 };
 
 type Claim = {
@@ -28,6 +43,7 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [claims, setClaims] = useState<Claim[]>([]);
+  const [onboarding, setOnboarding] = useState<Onboarding | null>(null);
   const [playerSlug, setPlayerSlug] = useState(initialPlayerSlug);
   const [method, setMethod] = useState('SOCIAL_CHALLENGE');
   const [evidenceKind, setEvidenceKind] = useState('REFERENCE');
@@ -46,13 +62,20 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
       })
       .then(async (result) => {
         setUser(result.data);
-        const claimsResponse = await fetch(`${apiUrl}/claims/me`, {
-          credentials: 'include',
-          signal: controller.signal,
-        });
+        const [claimsResponse, onboardingResponse] = await Promise.all([
+          fetch(`${apiUrl}/claims/me`, { credentials: 'include', signal: controller.signal }),
+          fetch(`${apiUrl}/claims/onboarding`, {
+            credentials: 'include',
+            signal: controller.signal,
+          }),
+        ]);
         if (claimsResponse.ok) {
           const claimsResult = (await claimsResponse.json()) as { data: Claim[] };
           setClaims(claimsResult.data);
+        }
+        if (onboardingResponse.ok) {
+          const onboardingResult = (await onboardingResponse.json()) as { data: Onboarding };
+          setOnboarding(onboardingResult.data);
         }
       })
       .catch((cause: unknown) => {
@@ -121,6 +144,15 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
 
   if (error) return <p className="text-center text-[var(--danger)]">{error}</p>;
 
+  const onboardingSteps = [
+    ['Подтвердить email', onboarding?.emailVerified ?? Boolean(user.emailVerifiedAt)],
+    ['Отправить self-claim и фото', onboarding?.claimSubmitted && onboarding.photoSubmitted],
+    ['Подтвердить Steam', onboarding?.steamVerified],
+    ['Подтвердить FACEIT', onboarding?.faceitVerified],
+    ['Проверка местной федерацией', onboarding?.federationApproved],
+    ['Ручное одобрение публикации', onboarding?.manualApproval],
+  ] as const;
+
   return (
     <section className="mx-auto max-w-3xl space-y-6">
       <div className="surface p-6 sm:p-8">
@@ -131,6 +163,9 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
               {user.displayName ?? 'Участник CYBER ID'}
             </h1>
             <p className="muted mt-2">{user.email}</p>
+            <p className="mt-2 text-xs text-[var(--text-3)]">
+              Тариф: <span className="font-bold text-[var(--brand)]">{user.subscriptionPlan}</span>
+            </p>
           </div>
           <button
             className="focus-ring rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-semibold hover:bg-[var(--surface-2)]"
@@ -139,6 +174,41 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
           >
             Выйти
           </button>
+        </div>
+        <div className="mt-7 border-t border-[var(--border)] pt-6">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="eyebrow">Допуск в публичный рейтинг</p>
+              <h2 className="mt-2 text-2xl font-black">Проверка профиля</h2>
+            </div>
+            <span className="data-number text-sm text-[var(--text-2)]">
+              {onboardingSteps.filter(([, complete]) => complete).length}/6
+            </span>
+          </div>
+          <ol className="mt-5 grid gap-2 sm:grid-cols-2">
+            {onboardingSteps.map(([label, complete], index) => (
+              <li className="surface-soft flex min-w-0 items-center gap-3 p-3 text-sm" key={label}>
+                <span
+                  className={`grid size-7 shrink-0 place-items-center border text-xs font-black ${
+                    complete
+                      ? 'border-[var(--brand)] bg-[var(--brand)] text-[#101512]'
+                      : 'border-[var(--border)] text-[var(--text-3)]'
+                  }`}
+                >
+                  {complete ? '✓' : index + 1}
+                </span>
+                <span className="min-w-0 [overflow-wrap:anywhere]">{label}</span>
+              </li>
+            ))}
+          </ol>
+          {!user.emailVerifiedAt ? (
+            <Link
+              className="mt-4 inline-flex min-h-11 items-center bg-[var(--brand)] px-4 text-sm font-black text-[#101512]"
+              href="/verify-email"
+            >
+              Подтвердить email
+            </Link>
+          ) : null}
         </div>
         <div className="surface-soft mt-7 p-5">
           <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--text-3)]">
@@ -163,6 +233,23 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
             </Link>
           ) : null}
         </div>
+      </div>
+
+      <div className="surface grid gap-5 p-6 sm:grid-cols-[1fr_auto] sm:items-center sm:p-8">
+        <div>
+          <p className="eyebrow">Статистика и архив</p>
+          <h2 className="mt-2 text-2xl font-black">Управление подпиской</h2>
+          <p className="muted mt-2 text-sm leading-6">
+            Бесплатно доступны текущий рейтинг и короткие периоды. Полный архив, сравнения и
+            выгрузки открываются по подписке.
+          </p>
+        </div>
+        <Link
+          className="inline-flex min-h-11 items-center justify-center border border-[var(--brand)] px-5 text-sm font-bold text-[var(--brand)]"
+          href="/pricing"
+        >
+          Сравнить тарифы
+        </Link>
       </div>
 
       <div className="surface p-6 sm:p-8">

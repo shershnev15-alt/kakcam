@@ -15,6 +15,8 @@ export function Footer() {
           <Link href="/about">О проекте</Link>
           <Link href="/methodology">Методология</Link>
           <Link href="/sources">Источники данных</Link>
+          <Link href="/pricing">Тарифы</Link>
+          <Link href="/partners">Партнёрам</Link>
           <Link href="/privacy">Конфиденциальность</Link>
         </nav>
       </div>

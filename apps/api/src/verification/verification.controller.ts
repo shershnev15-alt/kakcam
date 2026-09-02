@@ -38,6 +38,12 @@ export class VerificationController {
     return { data: await this.verification.myClaims(request.auth!.id) };
   }
 
+  @Get('claims/onboarding')
+  @UseGuards(SessionGuard)
+  async onboarding(@Req() request: AuthenticatedRequest) {
+    return { data: await this.verification.onboarding(request.auth!.id) };
+  }
+
   @Post('claims/:id/evidence')
   @UseGuards(CsrfGuard, SessionGuard)
   async evidence(

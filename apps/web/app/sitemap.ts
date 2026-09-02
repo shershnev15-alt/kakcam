@@ -1,8 +1,5 @@
 import { product } from '@arena/config';
-import {
-  teams as demoTeams,
-  tournaments as demoTournaments,
-} from '@arena/demo-data';
+import { teams as demoTeams, tournaments as demoTournaments } from '@arena/demo-data';
 import type { MetadataRoute } from 'next';
 import { getMatches, getPlayers, getTeams, getTournaments } from '@/lib/api';
 
@@ -40,6 +37,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/about`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${base}/methodology`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${base}/sources`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${base}/pricing`, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${base}/partners`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${base}/privacy`, changeFrequency: 'monthly', priority: 0.5 },
     ...players.map((player) => ({
       url: `${base}/players/${player.slug}`,

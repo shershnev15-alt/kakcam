@@ -124,68 +124,12 @@ function queryString(params: Record<string, string | number | undefined>): strin
   return serialized ? `?${serialized}` : '';
 }
 
-const frostbyteForm = [397, 431, 438, 466, 472, 489, 487, 502, 518, 519, 548, 541];
-
 function publicPlayerFacts<T extends PlayerSummary>(player: T): T {
-  if (player.slug === 'frostbyte') {
-    return {
-      ...player,
-      nickname: 'frostbyte',
-      realName: 'Алексей Морозов',
-      countryCode: 'RU',
-      countryName: 'Россия',
-      age: 23,
-      teamName: 'Northern Lights',
-      teamShortName: 'NL',
-      roles: ['AWP'],
-      rating: { ...player.rating, score: 541, rank: 2, confidence: 19 },
-      form: frostbyteForm,
-    };
-  }
-  if (player.rating.rank === 2) {
-    return {
-      ...player,
-      rating: { ...player.rating, score: 562, rank: 1 },
-    };
-  }
-  if (player.rating.rank > 2) {
-    return {
-      ...player,
-      rating: {
-        ...player.rating,
-        score: Math.max(280, 525 - (player.rating.rank - 3) * 11),
-      },
-    };
-  }
   return player;
 }
 
 function publicPlayerProfile(player: PlayerProfile): PlayerProfile {
-  const normalized = publicPlayerFacts(player);
-  if (normalized.slug !== 'frostbyte') return normalized;
-  return {
-    ...normalized,
-    currentTeam: normalized.currentTeam
-      ? { ...normalized.currentTeam, name: 'Northern Lights', shortName: 'NL' }
-      : normalized.currentTeam,
-    performance: {
-      periodStart: normalized.performance?.periodStart ?? '2026-06-01T00:00:00.000Z',
-      periodEnd: normalized.performance?.periodEnd ?? '2026-09-01T00:00:00.000Z',
-      sampleMatches: 5,
-      sampleMaps: normalized.performance?.sampleMaps ?? 10,
-      rounds: normalized.performance?.rounds ?? 130,
-      kills: 80,
-      deaths: 50,
-      assists: 25,
-      wins: 5,
-      losses: 0,
-      kd: 1.6,
-      adr: 94.9,
-      kast: 82.9,
-      winRate: 1,
-      performanceRating: 1.28,
-    },
-  };
+  return player;
 }
 
 export async function getPlayers(params: Record<string, string | number | undefined> = {}) {

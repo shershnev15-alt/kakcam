@@ -28,6 +28,18 @@ export class PlayersController {
     return this.entities.listPlayers(parseDirectoryQuery(query, { allowTeam: true }));
   }
 
+  @Get(':slug/archive')
+  @UseGuards(SessionGuard)
+  async archiveStatistics(
+    @Param('slug') slug: string,
+    @Req() request: AuthenticatedRequest & HttpRequest,
+  ) {
+    return {
+      data: await this.entities.playerArchive(slug, request.auth!.subscriptionPlan),
+      meta: { source: 'postgresql', entitlement: request.auth!.subscriptionPlan },
+    };
+  }
+
   @Get(':slug')
   async detail(@Param('slug') slug: string) {
     return { data: await this.entities.playerBySlug(slug), meta: { source: 'postgresql' } };

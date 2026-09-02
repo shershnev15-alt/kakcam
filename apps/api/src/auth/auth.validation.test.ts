@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
-import { parseLogin, parseRegistration } from './auth.validation';
+import { parseEmailToken, parseLogin, parseRegistration } from './auth.validation';
 
 describe('auth request validation', () => {
   it('normalizes registration data', () => {
@@ -28,5 +28,11 @@ describe('auth request validation', () => {
       email: 'user@example.com',
       password: 'x',
     });
+  });
+
+  it('accepts only base64url-shaped email verification tokens', () => {
+    const token = 'a'.repeat(43);
+    expect(parseEmailToken({ token })).toEqual({ token });
+    expect(() => parseEmailToken({ token: 'short token' })).toThrow(BadRequestException);
   });
 });

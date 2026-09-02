@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
 import { MenuIcon, SearchIcon } from './icons';
 
 const navigation = [
@@ -8,9 +11,11 @@ const navigation = [
   ['Матчи', '/matches'],
   ['Турниры', '/tournaments'],
   ['Трансферы', '/transfers'],
+  ['Подписка', '/pricing'],
 ] as const;
 
 export function Header() {
+  const [open, setOpen] = useState(false);
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--border-soft)] bg-[rgba(18,18,18,.94)] backdrop-blur-xl">
       <div className="container flex h-[62px] items-center gap-7">
@@ -46,19 +51,48 @@ export function Header() {
             </kbd>
           </Link>
           <Link
-            href="/login"
+            href="/account"
             className="hidden h-9 items-center border border-[var(--border)] px-4 text-sm font-semibold transition hover:border-[var(--brand)] hover:text-[var(--brand)] sm:flex"
           >
-            Войти
+            Кабинет
           </Link>
           <button
             className="grid size-9 place-items-center border border-[var(--border)] xl:hidden"
             aria-label="Открыть меню"
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
+            onClick={() => setOpen((current) => !current)}
+            type="button"
           >
             <MenuIcon className="size-5" />
           </button>
         </div>
       </div>
+      {open ? (
+        <nav
+          id="mobile-navigation"
+          className="container grid border-t border-[var(--border-soft)] py-3 xl:hidden"
+          aria-label="Мобильная навигация"
+        >
+          {navigation.map(([label, href]) => (
+            <Link
+              className="min-h-11 border-b border-[var(--border-soft)] py-3 text-sm font-semibold last:border-b-0"
+              href={href}
+              key={href}
+              onClick={() => setOpen(false)}
+            >
+              {label}
+            </Link>
+          ))}
+          <Link
+            className="min-h-11 py-3 text-sm font-semibold text-[var(--brand)]"
+            href="/account"
+            onClick={() => setOpen(false)}
+          >
+            Личный кабинет
+          </Link>
+        </nav>
+      ) : null}
     </header>
   );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AdSlot } from '@/components/ad-slot';
 import { DirectoryForm } from '@/components/directory-form';
 import { Pagination } from '@/components/pagination';
 import { PlayerCard, Sparkline } from '@/components/ui';
@@ -50,6 +51,7 @@ export default async function PlayersPage({ searchParams }: Props) {
       </header>
       <div className="mt-8">
         <DirectoryForm action="/players" kind="players" values={params} />
+        <AdSlot placement="PLAYER_DIRECTORY_TOP" />
         <div className="mb-4 flex items-center justify-between text-sm text-[var(--text-3)]">
           <span>Найдено: {result.meta.total}</span>
           <span>Страница {result.meta.page}</span>
