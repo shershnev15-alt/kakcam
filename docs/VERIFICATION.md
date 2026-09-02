@@ -1,5 +1,7 @@
 # Verification and Provenance
 
+Статус: Claim Profile и moderation workflow реализованы end-to-end. Evidence остаётся restricted, решение создаёт Verification, обновляет aggregate badge/роль и фиксируется в AuditLog.
+
 ## Уровни
 
 0 Unverified; 1 Account Connected; 2 Identity Verified; 3 Organizer Verified; 4 Official Verified; 5 Platform Verified.
@@ -16,4 +18,4 @@ Nickname identity, real name, date of birth, game account, roster dates, match r
 
 ## Claim profile
 
-`submitted → evidence_requested → review → approved/rejected`. Методы: connected game account, social challenge code, organizer/team confirmation, manual platform review. Документы не становятся публичными, хранятся encrypted с retention policy.
+`submitted → evidence_requested → review → approved/rejected`. Методы: connected game account, social challenge code, organizer/team confirmation, manual platform review. Доказательства не становятся публичными. В local prototype reference хранится в restricted DB field; production требует encrypted object storage и retention policy.

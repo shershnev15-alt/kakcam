@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowIcon, CheckIcon } from '@/components/icons';
 import { MatchCard } from '@/components/match-card';
-import { ApiError, getPlayer } from '@/lib/api';
+import { ApiError, getPlayer, getPlayerCareer, getPlayerVerification } from '@/lib/api';
 import {
   Delta,
   Monogram,
@@ -37,8 +37,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PlayerPage({ params }: PageProps) {
   let player;
+  let career;
+  let verification;
   try {
-    player = await getPlayer((await params).slug);
+    const slug = (await params).slug;
+    [player, career, verification] = await Promise.all([
+      getPlayer(slug),
+      getPlayerCareer(slug),
+      getPlayerVerification(slug),
+    ]);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
@@ -242,28 +249,38 @@ export default async function PlayerPage({ params }: PageProps) {
 
         <section className="grid gap-10 lg:grid-cols-[1fr_1fr]">
           <div>
-            <SectionHeading eyebrow="Карьера" title="История команд" />
+            <SectionHeading
+              eyebrow="Карьера"
+              title="История команд"
+              action={{ label: 'Полная timeline', href: `/players/${player.slug}/career` }}
+            />
             <div className="surface p-5 md:p-6">
               <div className="relative space-y-7 before:absolute before:bottom-3 before:left-[22px] before:top-3 before:w-px before:bg-[var(--border)]">
-                {[
-                  [
-                    team,
-                    'Текущий состав',
-                    `${performance?.sampleMatches ?? 0} подтвержденных матчей`,
-                  ],
-                ].map(([careerTeam, period, note]) => {
-                  const typed = careerTeam as typeof team;
+                {career.periods.slice(0, 3).map((period) => {
+                  const careerTeam = period.team ?? team;
                   return (
-                    <div key={typed.id} className="relative flex items-center gap-4">
-                      <Monogram label={typed.shortName} />
+                    <div key={period.id} className="relative flex items-center gap-4">
+                      <Monogram label={careerTeam.shortName} />
                       <div className="min-w-0 flex-1">
-                        <strong>{typed.name}</strong>
+                        <strong>{careerTeam.name}</strong>
                         <p className="mt-1 text-xs text-[var(--text-3)]">
-                          {period as string} · {note as string}
+                          {new Date(period.startedAt).toLocaleDateString('ru-RU', {
+                            month: 'short',
+                            year: 'numeric',
+                            timeZone: 'UTC',
+                          })}{' '}
+                          —{' '}
+                          {period.endedAt
+                            ? new Date(period.endedAt).toLocaleDateString('ru-RU', {
+                                month: 'short',
+                                year: 'numeric',
+                                timeZone: 'UTC',
+                              })
+                            : 'сейчас'}
                         </p>
                       </div>
                       <span className="rounded-full bg-[rgba(67,209,125,.1)] px-2 py-1 text-[10px] font-bold text-[var(--success)]">
-                        ТЕКУЩАЯ
+                        L{period.verificationLevel}
                       </span>
                     </div>
                   );
@@ -272,7 +289,14 @@ export default async function PlayerPage({ params }: PageProps) {
             </div>
           </div>
           <div>
-            <SectionHeading eyebrow="Награды" title="Достижения" />
+            <SectionHeading
+              eyebrow="Награды"
+              title="Достижения"
+              action={{
+                label: 'Все достижения',
+                href: `/players/${player.slug}/achievements`,
+              }}
+            />
             <div className="grid grid-cols-2 gap-3">
               {player.achievements.slice(0, 4).map((item, index) => (
                 <div key={item.code} className="surface p-4">
@@ -303,7 +327,7 @@ export default async function PlayerPage({ params }: PageProps) {
         <div className="flex flex-col gap-4 border-t border-[var(--border)] pt-6 text-xs text-[var(--text-3)] sm:flex-row sm:items-center">
           <span className="inline-flex items-center gap-2">
             <CheckIcon className="size-4 text-[var(--success)]" />
-            Профиль проверен платформой
+            {verification.label} · {verification.verifications.length} решений
           </span>
           <span>
             Данные обновлены{' '}
@@ -313,7 +337,12 @@ export default async function PlayerPage({ params }: PageProps) {
                 })
               : '—'}
           </span>
-          <button className="sm:ml-auto hover:text-[var(--text-1)]">Сообщить об ошибке</button>
+          <Link
+            className="sm:ml-auto font-semibold text-[var(--accent)] hover:text-white"
+            href={`/account?claim=${player.slug}`}
+          >
+            Это мой профиль
+          </Link>
         </div>
       </div>
     </>

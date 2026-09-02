@@ -1,5 +1,7 @@
 # Achievement Engine
 
+Статус: implemented v1.0.0 для canonical facts replay. Threshold/duration/rank rules работают на подтверждённых PostgreSQL facts; granular clutch/perfect-map/MVP события будут поступать из provider adapters.
+
 ## Назначение
 
 Ачивка — проверяемый карьерный факт, а не декоративная наклейка. Она всегда отвечает на вопросы: что выполнено, когда, в какой игре, на основании каких данных и насколько источник надежен.

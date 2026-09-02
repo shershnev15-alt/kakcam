@@ -8,6 +8,7 @@
 | `/players`                     | Каталог и фильтры игроков                                            | search + filter drawer + cards           |
 | `/players/[slug]`              | Digital Passport                                                     | identity → PPR → form → results → career |
 | `/players/[slug]/achievements` | Награды и прогресс                                                   | rarity filters + progress                |
+| `/players/[slug]/career`       | Проверяемая история команд и переходов                               | timeline → transfers → provenance        |
 | `/teams`                       | Каталог команд                                                       | region/game filters                      |
 | `/teams/[slug]`                | Паспорт команды                                                      | TPR → roster → matches → history         |
 | `/matches`                     | Live/upcoming/results                                                | date tabs + compact score cards          |
@@ -23,7 +24,7 @@
 
 ## Account Web
 
-`/login`, `/register`, `/claim`, `/claim/[id]`, `/me`, `/me/favorites`, `/me/notifications`, `/settings`, `/settings/security`. Guest может читать весь публичный контент; auth prompt появляется только для персональных действий.
+Реализованы `/login`, `/register`, `/account` и Claim Profile внутри `/account?claim=[slug]`; `/moderation` — защищённая очередь первичной проверки. `/me/favorites`, `/me/notifications`, `/settings`, `/settings/security` входят в следующие этапы. Guest может читать весь публичный контент; auth prompt появляется только для персональных действий.
 
 ## Admin
 

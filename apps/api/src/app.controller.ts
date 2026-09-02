@@ -37,7 +37,21 @@ export class AppController {
       version: 'v1',
       mode: 'database-backed',
       counts: demoCounts,
-      resources: ['auth', 'players', 'teams', 'rankings', 'search', 'matches', 'tournaments'],
+      resources: [
+        'auth',
+        'players',
+        'teams',
+        'rankings',
+        'search',
+        'matches',
+        'tournaments',
+        'achievements',
+        'career',
+        'transfers',
+        'claims',
+        'verification',
+        'moderation',
+      ],
     };
   }
 }

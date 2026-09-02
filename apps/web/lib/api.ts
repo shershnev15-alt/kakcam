@@ -1,5 +1,8 @@
 import type {
   AchievementSummary,
+  PlayerAchievements,
+  PlayerCareer,
+  PlayerVerificationSummary,
   MatchDetail,
   MatchSummary,
   PlayerPerformanceSummary,
@@ -10,6 +13,7 @@ import type {
   TeamSummary,
   TournamentDetail,
   TournamentSummary,
+  TransferSummary,
 } from '@arena/types';
 
 export type PageMeta = {
@@ -151,4 +155,26 @@ export async function getTournaments(params: Record<string, string | number | un
 
 export async function getTournament(slug: string) {
   return (await api<{ data: TournamentDetail }>(`/tournaments/${encodeURIComponent(slug)}`)).data;
+}
+
+export async function getPlayerCareer(slug: string) {
+  return (await api<{ data: PlayerCareer }>(`/players/${encodeURIComponent(slug)}/career`)).data;
+}
+
+export async function getPlayerAchievements(slug: string) {
+  return (
+    await api<{ data: PlayerAchievements }>(`/players/${encodeURIComponent(slug)}/achievements`)
+  ).data;
+}
+
+export async function getPlayerVerification(slug: string) {
+  return (
+    await api<{ data: PlayerVerificationSummary }>(
+      `/players/${encodeURIComponent(slug)}/verification`,
+    )
+  ).data;
+}
+
+export async function getTransfers(params: Record<string, string | number | undefined> = {}) {
+  return api<PageResult<TransferSummary>>(`/transfers${queryString(params)}`);
 }

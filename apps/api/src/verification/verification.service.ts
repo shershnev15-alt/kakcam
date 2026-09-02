@@ -1,0 +1,384 @@
+import {
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { createHash } from 'node:crypto';
+import type { HttpRequest } from '../http.types';
+import { PrismaService } from '../prisma.service';
+import type {
+  ClaimDecisionInput,
+  ClaimEvidenceInput,
+  SubmitClaimInput,
+} from './verification.validation';
+
+const ACTIVE_CLAIM_STATUSES = ['SUBMITTED', 'EVIDENCE_REQUESTED', 'IN_REVIEW'];
+
+function sha256(value: string): string {
+  return createHash('sha256').update(value).digest('hex');
+}
+
+@Injectable()
+export class VerificationService {
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+
+  async playerVerification(slug: string) {
+    const player = await this.prisma.player.findFirst({
+      where: { slug, status: 'ACTIVE' },
+      select: { id: true, slug: true, nickname: true, aggregateVerificationLevel: true },
+    });
+    if (!player) throw new NotFoundException('Player not found');
+    const [verifications, effectiveAssertions, approvedClaims] = await Promise.all([
+      this.prisma.verification.findMany({
+        where: { subjectType: 'Player', subjectId: player.id, status: 'APPROVED' },
+        select: {
+          id: true,
+          level: true,
+          method: true,
+          status: true,
+          validUntil: true,
+          decidedAt: true,
+          evidence: { select: { kind: true, visibility: true, createdAt: true } },
+        },
+        orderBy: { level: 'desc' },
+      }),
+      this.prisma.fieldAssertion.count({
+        where: { entityType: 'Player', entityId: player.id, status: 'EFFECTIVE' },
+      }),
+      this.prisma.profileClaim.count({ where: { playerId: player.id, status: 'APPROVED' } }),
+    ]);
+    return {
+      player: { id: player.id, slug: player.slug, nickname: player.nickname },
+      level: player.aggregateVerificationLevel,
+      label: this.levelLabel(player.aggregateVerificationLevel),
+      approvedClaim: approvedClaims > 0,
+      effectiveAssertions,
+      verifications,
+    };
+  }
+
+  async submitClaim(input: SubmitClaimInput, userId: string, request: HttpRequest) {
+    const player = await this.prisma.player.findFirst({
+      where: { slug: input.playerSlug, status: 'ACTIVE' },
+      select: { id: true, slug: true, nickname: true },
+    });
+    if (!player) throw new NotFoundException('Player not found');
+    const active = await this.prisma.profileClaim.findFirst({
+      where: { userId, playerId: player.id, status: { in: ACTIVE_CLAIM_STATUSES } },
+    });
+    if (active) throw new ConflictException('Активная заявка на этот профиль уже существует');
+    const checksum = sha256(
+      `${userId}:${player.id}:${input.evidence.kind}:${input.evidence.reference}`,
+    );
+    const claim = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.profileClaim.create({
+        data: {
+          userId,
+          playerId: player.id,
+          status: 'SUBMITTED',
+          method: input.method,
+          statement: input.statement ?? null,
+          evidenceSummary: { count: 1, kinds: [input.evidence.kind] },
+          evidence: {
+            create: {
+              submittedById: userId,
+              kind: input.evidence.kind,
+              reference: input.evidence.reference,
+              checksum,
+              visibility: 'RESTRICTED',
+            },
+          },
+          moderationCase: { create: { status: 'OPEN', priority: 1 } },
+        },
+        include: {
+          player: { select: { id: true, slug: true, nickname: true } },
+          evidence: true,
+          moderationCase: true,
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorId: userId,
+          action: 'profile_claim.submit',
+          targetType: 'ProfileClaim',
+          targetId: created.id,
+          diff: {
+            after: {
+              playerSlug: player.slug,
+              method: input.method,
+              evidenceKind: input.evidence.kind,
+              evidenceChecksum: checksum,
+            },
+          },
+          requestId: this.requestId(request) ?? null,
+        },
+      });
+      return created;
+    });
+    return this.claimDto(claim, false);
+  }
+
+  async addEvidence(
+    claimId: string,
+    evidence: ClaimEvidenceInput,
+    userId: string,
+    request: HttpRequest,
+  ) {
+    const claim = await this.prisma.profileClaim.findUnique({ where: { id: claimId } });
+    if (!claim) throw new NotFoundException('Claim not found');
+    if (claim.userId !== userId) throw new ForbiddenException('Это не ваша заявка');
+    if (['APPROVED', 'REJECTED'].includes(claim.status)) {
+      throw new ConflictException('Рассмотренная заявка закрыта');
+    }
+    const checksum = sha256(`${claimId}:${evidence.kind}:${evidence.reference}`);
+    try {
+      await this.prisma.$transaction([
+        this.prisma.verificationEvidence.create({
+          data: {
+            claimId,
+            submittedById: userId,
+            kind: evidence.kind,
+            reference: evidence.reference,
+            checksum,
+            visibility: 'RESTRICTED',
+          },
+        }),
+        this.prisma.profileClaim.update({
+          where: { id: claimId },
+          data: { status: 'SUBMITTED', evidenceSummary: { appended: true, kind: evidence.kind } },
+        }),
+        this.prisma.moderationCase.update({
+          where: { claimId },
+          data: { status: 'OPEN', resolution: null, resolvedAt: null },
+        }),
+        this.prisma.auditLog.create({
+          data: {
+            actorId: userId,
+            action: 'profile_claim.evidence.add',
+            targetType: 'ProfileClaim',
+            targetId: claimId,
+            diff: { evidenceKind: evidence.kind, evidenceChecksum: checksum },
+            requestId: this.requestId(request) ?? null,
+          },
+        }),
+      ]);
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+        throw new ConflictException('Такое доказательство уже добавлено');
+      }
+      throw error;
+    }
+    return this.claimById(claimId, userId);
+  }
+
+  async myClaims(userId: string) {
+    const claims = await this.prisma.profileClaim.findMany({
+      where: { userId },
+      include: {
+        player: { select: { id: true, slug: true, nickname: true } },
+        evidence: true,
+        moderationCase: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return claims.map((claim) => this.claimDto(claim, false));
+  }
+
+  async moderationQueue(status: string) {
+    const cases = await this.prisma.moderationCase.findMany({
+      where: { status },
+      include: {
+        claim: {
+          include: {
+            claimant: { select: { id: true, email: true, displayName: true } },
+            player: { select: { id: true, slug: true, nickname: true } },
+            evidence: true,
+          },
+        },
+      },
+      orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
+    });
+    return cases.map((item) => ({
+      id: item.id,
+      status: item.status,
+      priority: item.priority,
+      createdAt: item.createdAt,
+      claim: this.claimDto(
+        { ...item.claim, moderationCase: { id: item.id, status: item.status } },
+        true,
+      ),
+    }));
+  }
+
+  async decideClaim(
+    claimId: string,
+    input: ClaimDecisionInput,
+    reviewerId: string,
+    request: HttpRequest,
+  ) {
+    const claim = await this.prisma.profileClaim.findUnique({
+      where: { id: claimId },
+      include: {
+        player: true,
+        evidence: true,
+        moderationCase: true,
+      },
+    });
+    if (!claim) throw new NotFoundException('Claim not found');
+    if (['APPROVED', 'REJECTED'].includes(claim.status)) {
+      throw new ConflictException('Заявка уже рассмотрена');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const terminal = input.decision === 'APPROVED' || input.decision === 'REJECTED';
+      await tx.profileClaim.update({
+        where: { id: claim.id },
+        data: {
+          status: input.decision,
+          reviewerId,
+          decisionReason: input.reason,
+          decidedAt: terminal ? new Date() : null,
+        },
+      });
+      await tx.moderationCase.update({
+        where: { claimId: claim.id },
+        data: {
+          status: terminal ? 'RESOLVED' : 'WAITING_EVIDENCE',
+          assignedToId: reviewerId,
+          resolution: input.reason,
+          resolvedAt: terminal ? new Date() : null,
+        },
+      });
+
+      if (input.decision === 'APPROVED') {
+        const verification = await tx.verification.create({
+          data: {
+            subjectType: 'Player',
+            subjectId: claim.playerId,
+            level: 2,
+            method: `PROFILE_CLAIM:${claim.method}`,
+            status: 'APPROVED',
+            reviewerId,
+            reason: input.reason,
+            decidedAt: new Date(),
+          },
+        });
+        await tx.verificationEvidence.updateMany({
+          where: { claimId: claim.id },
+          data: { verificationId: verification.id },
+        });
+        await tx.player.update({
+          where: { id: claim.playerId },
+          data: {
+            aggregateVerificationLevel: Math.max(claim.player.aggregateVerificationLevel, 2),
+          },
+        });
+        const role = await tx.role.findUnique({ where: { code: 'VERIFIED_PLAYER' } });
+        if (role) {
+          const assigned = await tx.userRole.findFirst({
+            where: { userId: claim.userId, roleId: role.id },
+          });
+          if (!assigned) {
+            await tx.userRole.create({
+              data: { userId: claim.userId, roleId: role.id, grantedById: reviewerId },
+            });
+          }
+        }
+      }
+
+      await tx.auditLog.create({
+        data: {
+          actorId: reviewerId,
+          action: `profile_claim.${input.decision.toLocaleLowerCase('en-US')}`,
+          targetType: 'ProfileClaim',
+          targetId: claim.id,
+          reason: input.reason,
+          diff: {
+            before: { status: claim.status },
+            after: { status: input.decision, evidenceCount: claim.evidence.length },
+          },
+          requestId: this.requestId(request) ?? null,
+        },
+      });
+    });
+    return this.claimById(claimId, reviewerId, true);
+  }
+
+  private async claimById(claimId: string, userId: string, moderator = false) {
+    const claim = await this.prisma.profileClaim.findUnique({
+      where: { id: claimId },
+      include: {
+        claimant: { select: { id: true, email: true, displayName: true } },
+        player: { select: { id: true, slug: true, nickname: true } },
+        evidence: true,
+        moderationCase: true,
+      },
+    });
+    if (!claim) throw new NotFoundException('Claim not found');
+    if (!moderator && claim.userId !== userId) throw new ForbiddenException('Это не ваша заявка');
+    return this.claimDto(claim, moderator);
+  }
+
+  private claimDto(
+    claim: {
+      id: string;
+      status: string;
+      method: string;
+      statement: string | null;
+      decisionReason: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+      player: { id: string; slug: string; nickname: string };
+      claimant?: { id: string; email: string; displayName: string | null };
+      evidence: Array<{
+        id: string;
+        kind: string;
+        reference: string;
+        checksum: string;
+        visibility: string;
+        createdAt: Date;
+      }>;
+      moderationCase: { id: string; status: string } | null;
+    },
+    moderator: boolean,
+  ) {
+    return {
+      id: claim.id,
+      status: claim.status,
+      method: claim.method,
+      statement: claim.statement,
+      decisionReason: claim.decisionReason,
+      player: claim.player,
+      ...(moderator && claim.claimant ? { claimant: claim.claimant } : {}),
+      evidence: claim.evidence.map((item) => ({
+        id: item.id,
+        kind: item.kind,
+        ...(moderator ? { reference: item.reference } : {}),
+        checksum: item.checksum,
+        visibility: item.visibility,
+        createdAt: item.createdAt,
+      })),
+      moderationStatus: claim.moderationCase?.status ?? null,
+      createdAt: claim.createdAt,
+      updatedAt: claim.updatedAt,
+    };
+  }
+
+  private levelLabel(level: number): string {
+    return [
+      'Не подтверждён',
+      'Аккаунт подключён',
+      'Личность подтверждена',
+      'Подтверждено организатором',
+      'Официально подтверждено',
+      'Проверено платформой',
+    ][Math.max(0, Math.min(5, level))]!;
+  }
+
+  private requestId(request: HttpRequest): string | undefined {
+    const value = request.headers['x-request-id'];
+    return typeof value === 'string' ? value.slice(0, 128) : value?.[0]?.slice(0, 128);
+  }
+}

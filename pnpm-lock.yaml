@@ -26,6 +26,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@arena/achievements-engine':
+        specifier: workspace:*
+        version: link:../../packages/achievements-engine
       '@arena/demo-data':
         specifier: workspace:*
         version: link:../../packages/demo-data

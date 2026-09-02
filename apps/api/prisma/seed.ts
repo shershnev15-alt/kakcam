@@ -6,6 +6,7 @@ import {
   calculateTprLeaderboard,
   type RatingObservation,
 } from '@arena/rating-engine';
+import { evaluateAchievementCatalog, type ThresholdRule } from '@arena/achievements-engine';
 import { createHash } from 'node:crypto';
 
 const connectionString = process.env.DATABASE_URL;
@@ -33,6 +34,9 @@ const permissionDefinitions = [
   ['match.verify', 'Финализация и подтверждение результатов'],
   ['tournament.manage', 'Управление турнирами и участниками'],
   ['rating.run', 'Запуск воспроизводимого расчёта рейтингов'],
+  ['achievement.replay', 'Идемпотентный replay правил достижений'],
+  ['transfer.manage', 'Регистрация подтверждённых переходов и карьерных периодов'],
+  ['claim.review', 'Рассмотрение заявок на владение профилем'],
   ['audit.read', 'Просмотр журнала аудита'],
   ['role.manage', 'Управление ролями и разрешениями'],
 ] as const;
@@ -53,7 +57,15 @@ const roleDefinitions = [
   [
     'STATISTICIAN',
     'Статистик',
-    ['player.create', 'player.update', 'team.create', 'team.update', 'match.update', 'rating.run'],
+    [
+      'player.create',
+      'player.update',
+      'team.create',
+      'team.update',
+      'match.update',
+      'rating.run',
+      'achievement.replay',
+    ],
   ],
   [
     'MODERATOR',
@@ -69,6 +81,9 @@ const roleDefinitions = [
       'match.update',
       'match.verify',
       'tournament.manage',
+      'achievement.replay',
+      'transfer.manage',
+      'claim.review',
       'audit.read',
     ],
   ],
@@ -87,6 +102,9 @@ const roleDefinitions = [
       'match.verify',
       'tournament.manage',
       'rating.run',
+      'achievement.replay',
+      'transfer.manage',
+      'claim.review',
       'audit.read',
     ],
   ],
@@ -105,6 +123,9 @@ const roleDefinitions = [
       'match.verify',
       'tournament.manage',
       'rating.run',
+      'achievement.replay',
+      'transfer.manage',
+      'claim.review',
       'audit.read',
       'role.manage',
     ],
@@ -154,7 +175,7 @@ async function main(): Promise<void> {
     create: { slug: 'cs2', name: 'Counter-Strike 2' },
   });
 
-  await prisma.dataSource.upsert({
+  const dataSource = await prisma.dataSource.upsert({
     where: { code: 'arena-demo' },
     update: { name: 'Arena Passport deterministic demo', type: 'INTERNAL', trustLevel: 3 },
     create: {
@@ -227,6 +248,119 @@ async function main(): Promise<void> {
       },
     });
     playerIds.set(player.id, record.id);
+  }
+
+  const careerEpoch = new Date('2024-01-01T00:00:00.000Z');
+  for (const [playerIndex, player] of players.entries()) {
+    const playerId = playerIds.get(player.id)!;
+    const currentTeamId = player.teamId ? teamIds.get(player.teamId)! : null;
+    if (!currentTeamId) continue;
+    const previousTeam = teams[(playerIndex + teams.length - 1) % teams.length]!;
+    const previousTeamId = teamIds.get(previousTeam.id)!;
+    const currentStartedAt = new Date(
+      Date.UTC(2024, careerEpoch.getUTCMonth() + (playerIndex % 12), 1),
+    );
+    const previousStartedAt = new Date(Date.UTC(2022 + (playerIndex % 2), playerIndex % 12, 1));
+    await prisma.careerHistory.upsert({
+      where: {
+        playerId_teamId_gameId_startedAt: {
+          playerId,
+          teamId: previousTeamId,
+          gameId: game.id,
+          startedAt: previousStartedAt,
+        },
+      },
+      update: {
+        endedAt: currentStartedAt,
+        role: player.roles[0] ?? 'Player',
+        sourceId: dataSource.id,
+        verificationLevel: 3,
+        evidence: { sourceCode: dataSource.code, type: 'roster_snapshot' },
+      },
+      create: {
+        playerId,
+        teamId: previousTeamId,
+        gameId: game.id,
+        role: player.roles[0] ?? 'Player',
+        startedAt: previousStartedAt,
+        endedAt: currentStartedAt,
+        sourceId: dataSource.id,
+        verificationLevel: 3,
+        evidence: { sourceCode: dataSource.code, type: 'roster_snapshot' },
+      },
+    });
+    await prisma.careerHistory.upsert({
+      where: {
+        playerId_teamId_gameId_startedAt: {
+          playerId,
+          teamId: currentTeamId,
+          gameId: game.id,
+          startedAt: currentStartedAt,
+        },
+      },
+      update: {
+        endedAt: null,
+        role: player.roles[0] ?? 'Player',
+        sourceId: dataSource.id,
+        verificationLevel: 3,
+        evidence: { sourceCode: dataSource.code, type: 'official_roster' },
+      },
+      create: {
+        playerId,
+        teamId: currentTeamId,
+        gameId: game.id,
+        role: player.roles[0] ?? 'Player',
+        startedAt: currentStartedAt,
+        sourceId: dataSource.id,
+        verificationLevel: 3,
+        evidence: { sourceCode: dataSource.code, type: 'official_roster' },
+      },
+    });
+    const transferChecksum = createHash('sha256')
+      .update(`${playerId}:${previousTeamId}:${currentTeamId}:${currentStartedAt.toISOString()}`)
+      .digest('hex');
+    await prisma.transfer.upsert({
+      where: { checksum: transferChecksum },
+      update: {
+        status: 'CONFIRMED',
+        sourceId: dataSource.id,
+        verificationLevel: 3,
+        evidence: { sourceCode: dataSource.code, type: 'official_roster' },
+      },
+      create: {
+        playerId,
+        fromTeamId: previousTeamId,
+        toTeamId: currentTeamId,
+        transferDate: currentStartedAt,
+        status: 'CONFIRMED',
+        sourceId: dataSource.id,
+        observedAt: currentStartedAt,
+        verificationLevel: 3,
+        evidence: { sourceCode: dataSource.code, type: 'official_roster' },
+        checksum: transferChecksum,
+      },
+    });
+    const verificationId = `10000000-0000-4000-8000-${String(playerIndex + 1).padStart(12, '0')}`;
+    await prisma.verification.upsert({
+      where: { id: verificationId },
+      update: {
+        level: player.verificationLevel,
+        method: 'DEMO_SOURCE',
+        status: 'APPROVED',
+        reason: 'Deterministic seed verification',
+        decidedAt: currentStartedAt,
+      },
+      create: {
+        id: verificationId,
+        subjectType: 'Player',
+        subjectId: playerId,
+        level: player.verificationLevel,
+        method: 'DEMO_SOURCE',
+        status: 'APPROVED',
+        reason: 'Deterministic seed verification',
+        decidedAt: currentStartedAt,
+      },
+    });
   }
 
   const ratingPublishedAt = new Date('2026-09-02T05:00:00.000Z');
@@ -582,47 +716,6 @@ async function main(): Promise<void> {
   const achievementRecords = new Map(
     (await prisma.achievement.findMany()).map((item) => [item.code, item]),
   );
-  for (const [playerIndex, player] of players.entries()) {
-    const grantedCodes = [
-      'career.first_match',
-      'career.first_tournament',
-      'victory.first',
-      'rating.top_100',
-      'team.loyal_365',
-      ...(playerIndex < 15 ? ['performance.30_bomb'] : []),
-      ...(playerIndex < 10 ? ['rating.top_10'] : []),
-      ...(playerIndex < 3 ? ['special.mvp'] : []),
-    ];
-    for (const code of grantedCodes) {
-      const achievement = achievementRecords.get(code)!;
-      const source = achievements.find((item) => item.code === code)!;
-      await prisma.playerAchievement.upsert({
-        where: {
-          playerId_achievementId: {
-            playerId: playerIds.get(player.id)!,
-            achievementId: achievement.id,
-          },
-        },
-        update: {
-          progress: source.target,
-          target: source.target,
-          grantedAt: new Date('2026-08-30T18:00:00.000Z'),
-          status: 'GRANTED',
-          evidence: { sourceCode: 'arena-demo', verified: true },
-        },
-        create: {
-          playerId: playerIds.get(player.id)!,
-          achievementId: achievement.id,
-          progress: source.target,
-          target: source.target,
-          grantedAt: new Date('2026-08-30T18:00:00.000Z'),
-          status: 'GRANTED',
-          evidence: { sourceCode: 'arena-demo', verified: true },
-        },
-      });
-    }
-  }
-
   for (const [teamIndex, team] of teams.entries()) {
     const grantedCodes = ['team.loyal_365', ...(teamIndex === 0 ? ['tournament.champion'] : [])];
     for (const code of grantedCodes) {
@@ -1005,8 +1098,160 @@ async function main(): Promise<void> {
     });
   }
 
+  const achievementMetricByCode: Record<string, string> = {
+    'career.first_match': 'matches',
+    'career.first_tournament': 'tournaments',
+    'career.tournaments_10': 'tournaments',
+    'career.tournaments_50': 'tournaments',
+    'victory.first': 'wins',
+    'victory.10': 'wins',
+    'victory.50': 'wins',
+    'performance.30_bomb': 'max_kills',
+    'performance.40_bomb': 'max_kills',
+    'performance.perfect_map': 'perfect_maps',
+    'clutch.1v2': 'clutch_1v2',
+    'clutch.1v3': 'clutch_1v3',
+    'clutch.1v4': 'clutch_1v4',
+    'clutch.1v5': 'clutch_1v5',
+    'team.loyal_365': 'loyal_days',
+    'tournament.first_podium': 'podiums',
+    'tournament.champion': 'championships',
+    'rating.top_100': 'top_100',
+    'rating.top_10': 'top_10',
+    'special.mvp': 'mvp_awards',
+  };
+  const achievementRules: ThresholdRule[] = achievements.map((item) => ({
+    code: item.code,
+    metric: achievementMetricByCode[item.code] ?? item.code,
+    target: item.target,
+    minimumVerificationLevel: 3,
+    ruleVersion: 1,
+  }));
+  const verifiedPlacements = await prisma.tournamentPlacement.findMany({
+    where: { verifiedAt: { not: null, lte: computedCutoff } },
+  });
+  for (const player of players) {
+    const playerId = playerIds.get(player.id)!;
+    const [statistics, tournamentStatistics, career, latestRating] = await Promise.all([
+      prisma.playerMatchStatistic.findMany({
+        where: { playerId, mapKey: 'all', verifiedAt: { not: null, lte: computedCutoff } },
+        include: { match: { include: { result: true } } },
+        orderBy: { matchId: 'asc' },
+      }),
+      prisma.playerTournamentStatistic.findMany({
+        where: { playerId, tournament: { endsAt: { lte: computedCutoff } } },
+      }),
+      prisma.careerHistory.findMany({ where: { playerId }, orderBy: { startedAt: 'asc' } }),
+      prisma.playerRating.findFirst({
+        where: { playerId, publishedAt: { lte: computedCutoff }, run: { status: 'PUBLISHED' } },
+        orderBy: { publishedAt: 'desc' },
+      }),
+    ]);
+    const teamSet = new Set(
+      statistics.map((item) => item.teamId).filter((teamId): teamId is string => Boolean(teamId)),
+    );
+    const tournamentSet = new Set(tournamentStatistics.map((item) => item.tournamentId));
+    const placements = verifiedPlacements.filter(
+      (item) => teamSet.has(item.teamId) && tournamentSet.has(item.tournamentId),
+    );
+    const loyalDays = career.reduce((maximum, period) => {
+      const end =
+        period.endedAt && period.endedAt < computedCutoff ? period.endedAt : computedCutoff;
+      return Math.max(
+        maximum,
+        Math.max(0, Math.floor((end.getTime() - period.startedAt.getTime()) / 86_400_000)),
+      );
+    }, 0);
+    const metrics = {
+      matches: new Set(statistics.map((item) => item.matchId)).size,
+      tournaments: tournamentSet.size,
+      wins: statistics.filter((item) => item.match.result?.winnerTeamId === item.teamId).length,
+      max_kills: statistics.reduce((maximum, item) => Math.max(maximum, item.kills ?? 0), 0),
+      perfect_maps: 0,
+      clutch_1v2: 0,
+      clutch_1v3: 0,
+      clutch_1v4: 0,
+      clutch_1v5: 0,
+      loyal_days: loyalDays,
+      podiums: placements.filter((item) => item.placeFrom <= 3).length,
+      championships: placements.filter((item) => item.placeFrom === 1).length,
+      top_100: latestRating?.rank && latestRating.rank <= 100 ? 1 : 0,
+      top_10: latestRating?.rank && latestRating.rank <= 10 ? 1 : 0,
+      mvp_awards: 0,
+    };
+    const checksum = createHash('sha256')
+      .update(JSON.stringify({ playerId, metrics, achievementRules }))
+      .digest('hex');
+    const eventKey = `facts:${playerId}:${checksum}`;
+    const results = evaluateAchievementCatalog(achievementRules, {
+      eventKey,
+      type: 'FactsReplayed',
+      subjectId: playerId,
+      occurredAt: computedCutoff.toISOString(),
+      verificationLevel: 3,
+      metrics,
+      evidenceKeys: statistics.map((item) => item.matchId),
+    });
+    await prisma.achievementEvent.upsert({
+      where: { eventKey },
+      update: { processedAt: new Date() },
+      create: {
+        eventKey,
+        eventType: 'FactsReplayed',
+        subjectType: 'Player',
+        subjectId: playerId,
+        occurredAt: computedCutoff,
+        checksum,
+        payload: { metrics, ruleCount: achievementRules.length },
+        processedAt: new Date(),
+      },
+    });
+    for (const result of results) {
+      const definition = achievementRecords.get(result.code)!;
+      const existing = await prisma.playerAchievement.findUnique({
+        where: { playerId_achievementId: { playerId, achievementId: definition.id } },
+      });
+      const status = result.granted
+        ? 'GRANTED'
+        : result.provisional
+          ? 'PROVISIONAL'
+          : existing?.status === 'GRANTED'
+            ? 'REVOKED'
+            : 'LOCKED';
+      await prisma.playerAchievement.upsert({
+        where: { playerId_achievementId: { playerId, achievementId: definition.id } },
+        update: {
+          progress: result.progress,
+          target: result.target,
+          grantedAt: result.granted ? (existing?.grantedAt ?? computedCutoff) : null,
+          status,
+          evidence: { eventKey, evidenceKeys: result.evidenceKeys, checksum },
+          evaluationKey: eventKey,
+          verificationLevel: result.granted ? 3 : 0,
+          firstQualifiedAt: result.firstQualifiedAt
+            ? new Date(result.firstQualifiedAt)
+            : (existing?.firstQualifiedAt ?? null),
+          ruleVersion: result.ruleVersion,
+        },
+        create: {
+          playerId,
+          achievementId: definition.id,
+          progress: result.progress,
+          target: result.target,
+          grantedAt: result.granted ? computedCutoff : null,
+          status,
+          evidence: { eventKey, evidenceKeys: result.evidenceKeys, checksum },
+          evaluationKey: eventKey,
+          verificationLevel: result.granted ? 3 : 0,
+          firstQualifiedAt: result.firstQualifiedAt ? new Date(result.firstQualifiedAt) : null,
+          ruleVersion: result.ruleVersion,
+        },
+      });
+    }
+  }
+
   console.log(
-    `Seeded ${roleDefinitions.length} roles, ${permissionDefinitions.length} permissions, ${players.length} players with PPR/stats, ${teams.length} teams with TPR/stats, ${tournaments.length} tournaments, ${matches.length} matches and ${achievements.length} achievements.`,
+    `Seeded ${roleDefinitions.length} roles, ${permissionDefinitions.length} permissions, ${players.length} players with career/PPR/achievements, ${teams.length} teams with TPR/stats, ${tournaments.length} tournaments, ${matches.length} matches and ${achievements.length} achievement definitions.`,
   );
 }
 

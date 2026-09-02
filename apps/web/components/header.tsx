@@ -7,6 +7,7 @@ const navigation = [
   ['Команды', '/teams'],
   ['Рейтинги', '/rankings/players'],
   ['Турниры', '/tournaments'],
+  ['Трансферы', '/transfers'],
 ] as const;
 
 export function Header() {

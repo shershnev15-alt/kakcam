@@ -138,6 +138,66 @@ export interface AchievementSummary {
   target: number;
 }
 
+export interface AchievementDetail extends AchievementSummary {
+  status: 'LOCKED' | 'PROVISIONAL' | 'GRANTED' | 'REVOKED';
+  grantedAt?: string;
+  firstQualifiedAt?: string;
+  verificationLevel: VerificationLevel;
+  ruleVersion: number;
+  evidence?: unknown;
+}
+
+export interface CareerPeriod {
+  id: string;
+  team: MatchTeam | null;
+  game: { slug: string; name: string };
+  role?: string;
+  startedAt: string;
+  endedAt?: string;
+  verificationLevel: VerificationLevel;
+  evidence?: unknown;
+}
+
+export interface TransferSummary {
+  id: string;
+  player?: { id: string; slug: string; nickname: string };
+  fromTeam: MatchTeam | null;
+  toTeam: MatchTeam | null;
+  transferDate: string;
+  status: 'REPORTED' | 'CONFIRMED';
+  verificationLevel: VerificationLevel;
+  evidence?: unknown;
+  checksum: string;
+}
+
+export interface PlayerCareer {
+  player: { id: string; slug: string; nickname: string };
+  periods: CareerPeriod[];
+  transfers: TransferSummary[];
+}
+
+export interface PlayerAchievements {
+  player: { id: string; slug: string; nickname: string };
+  achievements: AchievementDetail[];
+}
+
+export interface PlayerVerificationSummary {
+  player: { id: string; slug: string; nickname: string };
+  level: VerificationLevel;
+  label: string;
+  approvedClaim: boolean;
+  effectiveAssertions: number;
+  verifications: Array<{
+    id: string;
+    level: number;
+    method: string;
+    status: string;
+    validUntil?: string;
+    decidedAt?: string;
+    evidence: Array<{ kind: string; visibility: string; createdAt: string }>;
+  }>;
+}
+
 export interface PlayerPerformanceSummary {
   periodStart: string;
   periodEnd: string;

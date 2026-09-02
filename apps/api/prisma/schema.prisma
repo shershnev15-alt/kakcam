@@ -118,6 +118,11 @@ model User {
   sessions        Session[]
   roles           UserRole[]     @relation("UserRoleSubject")
   grantedRoles    UserRole[]     @relation("UserRoleGrantor")
+  profileClaims   ProfileClaim[] @relation("Claimant")
+  reviewedClaims  ProfileClaim[] @relation("ClaimReviewer")
+  submittedEvidence VerificationEvidence[] @relation("EvidenceSubmitter")
+  reviewedVerifications Verification[] @relation("VerificationReviewer")
+  moderationCases ModerationCase[] @relation("ModerationAssignee")
 }
 
 model Identity {
@@ -216,6 +221,7 @@ model Game {
   accounts    PlayerGameAccount[]
   matches     Match[]
   tournaments Tournament[]
+  career      CareerHistory[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 }
@@ -262,6 +268,7 @@ model Player {
   tournamentStatistics       PlayerTournamentStatistic[]
   career                     CareerHistory[]
   transfers                  Transfer[]
+  claims                     ProfileClaim[]
   followers                  UserFollow[]
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
@@ -320,6 +327,9 @@ model Team {
   aggregateStatistics        TeamStatistic[]
   tournamentParticipants     TournamentParticipant[]
   tournamentPlacements       TournamentPlacement[]
+  outgoingTransfers          Transfer[]               @relation("TransferFromTeam")
+  incomingTransfers          Transfer[]               @relation("TransferToTeam")
+  careerHistory              CareerHistory[]
   createdAt                  DateTime                @default(now())
   updatedAt                  DateTime                @updatedAt
 
@@ -640,10 +650,31 @@ model PlayerAchievement {
   sourceId      String?     @db.Uuid
   status        String
   evidence      Json?
+  evaluationKey String?
+  verificationLevel Int      @default(0)
+  firstQualifiedAt DateTime?
+  ruleVersion   Int          @default(1)
   player        Player      @relation(fields: [playerId], references: [id])
   achievement   Achievement @relation(fields: [achievementId], references: [id])
+  updatedAt     DateTime     @updatedAt
 
   @@unique([playerId, achievementId])
+}
+
+model AchievementEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  eventKey    String   @unique
+  eventType   String
+  subjectType String
+  subjectId   String   @db.Uuid
+  occurredAt  DateTime
+  checksum    String   @db.VarChar(64)
+  payload     Json
+  processedAt DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([subjectType, subjectId, occurredAt])
+  @@index([eventType, occurredAt])
 }
 
 model TeamAchievement {
@@ -668,8 +699,15 @@ model Transfer {
   transferDate DateTime       @db.Date
   status       TransferStatus
   sourceId     String?        @db.Uuid
+  observedAt   DateTime       @default(now())
+  verificationLevel Int       @default(0)
+  evidence     Json?
+  checksum     String         @unique @db.VarChar(64)
   player       Player         @relation(fields: [playerId], references: [id])
+  fromTeam     Team?          @relation("TransferFromTeam", fields: [fromTeamId], references: [id])
+  toTeam       Team?          @relation("TransferToTeam", fields: [toTeamId], references: [id])
   createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   @@index([status, transferDate])
 }
@@ -683,8 +721,15 @@ model CareerHistory {
   startedAt DateTime  @db.Date
   endedAt   DateTime? @db.Date
   sourceId  String?   @db.Uuid
+  verificationLevel Int @default(0)
+  evidence  Json?
   player    Player    @relation(fields: [playerId], references: [id])
+  team      Team?     @relation(fields: [teamId], references: [id])
+  game      Game      @relation(fields: [gameId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
+  @@unique([playerId, teamId, gameId, startedAt])
   @@index([playerId, startedAt])
 }
 
@@ -743,8 +788,68 @@ model Verification {
   validUntil  DateTime?
   createdAt   DateTime           @default(now())
   decidedAt   DateTime?
+  reviewer    User?              @relation("VerificationReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  evidence    VerificationEvidence[]
 
   @@index([subjectType, subjectId, status])
+}
+
+model ProfileClaim {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  playerId        String   @db.Uuid
+  status          String   @default("SUBMITTED")
+  method          String
+  statement       String?
+  evidenceSummary Json?
+  reviewerId      String?  @db.Uuid
+  decisionReason  String?
+  decidedAt       DateTime?
+  claimant        User     @relation("Claimant", fields: [userId], references: [id], onDelete: Cascade)
+  player          Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  reviewer        User?    @relation("ClaimReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  evidence        VerificationEvidence[]
+  moderationCase  ModerationCase?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, status, createdAt])
+  @@index([playerId, status, createdAt])
+}
+
+model VerificationEvidence {
+  id             String        @id @default(uuid()) @db.Uuid
+  claimId        String?       @db.Uuid
+  verificationId String?       @db.Uuid
+  submittedById  String?       @db.Uuid
+  kind           String
+  reference      String
+  checksum       String        @db.VarChar(64)
+  visibility     String        @default("RESTRICTED")
+  claim          ProfileClaim? @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  verification   Verification? @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  submittedBy    User?         @relation("EvidenceSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+
+  @@unique([claimId, checksum])
+  @@index([verificationId])
+}
+
+model ModerationCase {
+  id           String        @id @default(uuid()) @db.Uuid
+  claimId      String        @unique @db.Uuid
+  status       String        @default("OPEN")
+  priority     Int           @default(0)
+  assignedToId String?       @db.Uuid
+  resolution   String?
+  claim        ProfileClaim  @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  assignedTo   User?         @relation("ModerationAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  resolvedAt   DateTime?
+
+  @@index([status, priority, createdAt])
+  @@index([assignedToId, status])
 }
 
 model UserFollow {

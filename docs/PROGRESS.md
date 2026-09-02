@@ -1,6 +1,6 @@
 # Progress
 
-Дата обновления: 2 сентября 2026. Этапы **0–5 завершены**: specification, foundation, auth/RBAC, public directory, competition flow и reproducible ratings.
+Дата обновления: 2 сентября 2026. Этапы **0–7 завершены**: specification, foundation, auth/RBAC, public directory, competition flow, reproducible ratings, career/achievements и claim/verification.
 
 ## Completed
 
@@ -26,14 +26,20 @@
 - воспроизводимые PPR/TPR v1 engines с recency, opponent/event strength, trust, confidence и explainability;
 - immutable RatingRun, history endpoints, formula version/checksum/cutoff в leaderboard UI и защищённый recalculation command;
 - 13 permissions для Player/Team/Match/Tournament/Rating операций.
+- 40 подтверждённых transfer facts и 80 карьерных периодов с source/evidence, checksum и public timeline;
+- event-driven achievement engine: 20 versioned rules, progress/provisional/granted/revoked states, canonical events и идемпотентный replay;
+- публичные `/transfers`, `/players/[slug]/career` и `/players/[slug]/achievements`;
+- Claim Profile flow: submit → evidence requested → approved/rejected, restricted evidence и личная история заявок;
+- moderation queue `/moderation`, permission `claim.review`, Verification record, VERIFIED_PLAYER role projection и immutable AuditLog;
+- публичный verification summary профиля и 16 permissions для текущих доменных операций.
 
 ## Tests
 
 - Prisma schema validation, migration deploy и idempotent seed: passed;
-- API strict typecheck, 19 unit tests и production build: passed;
+- API strict typecheck, 26 unit tests и production build: passed;
 - Web strict typecheck, 3 component tests и production build: passed;
-- rating engine: 6 deterministic PPR/TPR tests; achievement engine: 3 tests;
-- полный monorepo test suite: 31 tests passed;
+- rating engine: 6 deterministic PPR/TPR tests; achievement engine: 6 tests;
+- полный monorepo test suite: 41 tests passed;
 - auth/RBAC e2e: register 201, me 200, unauthorized mutation 403, foreign Origin 403, logout 201, revoked session 401;
 - Statistician e2e: Player/Team create 201 и update 200; временные QA-записи очищены;
 - Moderator e2e: Player/Team soft-archive 200, archived public read 404; временные QA-записи очищены;
@@ -43,19 +49,23 @@
 - Stage 4 e2e: protected match create 201, finalize 201, maps/result/checksum/audit persisted, duplicate finalize 409; QA records cleaned;
 - Stage 5 e2e: protected PPR/TPR recalculation 201 for 40 players/8 teams; identical cutoff replay preserved run IDs and checksums; QA user cleaned;
 - visual QA match center/detail, tournament hub, DB performance snapshots and rating explainability at 1440 px/390 px: no overflow, console clean;
+- Stage 6 e2e: confirmed transfer 201, career projection 200, achievement replay 201 for 41 subjects и exact replay reused all 41 events;
+- Stage 7 e2e: claim 201, moderation queue 200, approve 201, duplicate decision 409, public verification level 2; QA records cleaned;
+- Web smoke: transfers, achievements, career, account claim и moderation routes return 200;
 - Docker: postgres/redis/api healthy, web HTTP 200.
 
 ## Known limitations
 
 - поиск Stage 3 использует индексируемый PostgreSQL `contains`; weighted FTS/`pg_trgm` projection остаётся следующим расширением;
 - competition seed использует fictional internal source; внешние provider adapters/import replay относятся к Этапу 12;
-- achievement grants пока seed/read-model; event-driven rules, career timeline и transfers входят в Этап 6;
+- clutch/perfect-map/MVP rules остаются LOCKED до granular provider events; движок уже поддерживает безопасный replay этих версий правил;
 - player map statistics агрегированы на серию; granular per-map provider imports будут добавлены с внешними адаптерами;
 - auth rate limit хранится в памяти процесса; Redis-backed distributed limiter нужен до горизонтального масштабирования;
 - email verification/recovery, Steam/Google OAuth и управление ролями через Admin UI ещё не реализованы;
-- scoped ownership policies, profile claim и verification workflow относятся к следующим этапам;
+- evidence reference в local prototype хранится в restricted DB field; encrypted object storage, malware scanning и retention enforcement обязательны до production;
+- field-level assertion conflict resolver и bulk moderation workspace расширяются в полном Admin на Этапе 8;
 - изображения представлены monograms; S3 media pipeline ещё не подключён.
 
 ## Next step
 
-Этап 6: event-driven achievements, career history и transfers с публичной timeline, идемпотентным replay и evidence.
+Этап 8: полноценная административная панель для Player/Team/Match/Tournament, assertions, reports, audit, achievement и rating operations без SQL.

@@ -11,6 +11,9 @@
 - `http://localhost:3000/teams/northern-lights` — профиль команды;
 - `http://localhost:3000/matches` — match center, карты и статистика игроков;
 - `http://localhost:3000/tournaments` — календарь, участники и итоговые места;
+- `http://localhost:3000/transfers` — подтверждённая лента переходов;
+- `http://localhost:3000/players/frostbyte/achievements` и `/career` — награды и карьерная timeline;
+- `http://localhost:3000/account?claim=frostbyte` — Claim Profile; `/moderation` — защищённая очередь проверки;
 - `http://localhost:3000/rankings/players` и `/rankings/teams` — рейтинги;
 - `http://localhost:3000/register`, `/login`, `/account` — регистрация, вход и кабинет;
 - `http://localhost:4000/health`, `/ready`, `/api/v1` — API status.

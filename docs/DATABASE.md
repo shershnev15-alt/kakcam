@@ -47,7 +47,7 @@
 | TeamMember        | rosterId, playerId, function, joinedAt, leftAt, shirtNumber                    |
 | Organization      | slug, legal/display name, countryId, website, socials                          |
 | CareerHistory     | playerId, teamId, gameId, role, startedAt, endedAt, source                     |
-| Transfer          | playerId, fromTeamId, toTeamId, date, status, fee visibility, source           |
+| Transfer          | playerId, from/to team, date, status, source, evidence, verification, checksum |
 
 Ограничения: только один active primary roster на `(team, game)`; периоды membership не должны иметь противоречивых дублей; currentTeam — projection из активного состава, а не единственный источник истории.
 
@@ -88,6 +88,7 @@ Lineup snapshot неизменяемо фиксирует состав на мо
 | PlayerRatingHistory / TeamRatingHistory | append-only snapshot per run/date                                      |
 | Achievement                             | code, game/category, rarity, ruleVersion, rule JSON, icon              |
 | PlayerAchievement / TeamAchievement     | subject, achievement, progress, grantedAt, source/evidence             |
+| AchievementEvent                        | canonical event key, subject, cutoff, checksum, payload, processedAt   |
 | Award / Trophy                          | tournament recognition and physical/title distinction                  |
 
 ### Trust and operations
@@ -99,6 +100,8 @@ Lineup snapshot неизменяемо фиксирует состав на мо
 | FieldAssertion       | entity/field/value, source, observedAt, author, verification, status |
 | Verification         | subject/assertion, level, method, status, validity, reviewer         |
 | VerificationEvidence | verificationId, evidence type, storage key/hash, visibility          |
+| ProfileClaim         | claimant, player, method, state, reviewer, decision reason           |
+| ModerationCase       | claim queue state, priority, assignee, resolution                    |
 | Report               | reporter, target, category, status, resolution                       |
 | AuditLog             | actor, action, target, before/after diff, reason, request metadata   |
 | AdminAction          | workflow wrapper for high-impact operations                          |
@@ -130,9 +133,10 @@ News/Article поддерживают draft/review/published, author, localized 
 - demo seed: 40 fictional players, 8 teams, 3 tournaments, 30 matches, 20 achievements;
 - stage 3 baseline: даты рождения профилей и первоначальные rating projections;
 - stages 4–5 seed: 18 immutable MatchResult, 39 MatchMap, 180 PlayerMatchStatistic, 24 TournamentParticipant, 8 TournamentPlacement, 40/8 aggregate statistics и computed PPR/TPR runs;
+- stages 6–7 seed: 40 immutable Transfer, 80 CareerHistory periods, 40 source verifications, 20 versioned definitions, 800 computed PlayerAchievement projections и canonical replay events;
 - production никогда не запускает demo seed автоматически.
 
-Миграция `20260902073211_auth_rbac` добавляет auth/RBAC. Миграция `20260902090915_competition_and_rating_runs` добавляет карты и immutable results, tournament participants/placements, period/tournament statistics и FK rating snapshots → RatingRun. Seed идемпотентно создаёт 12 системных ролей, 13 permissions и computed PPR/TPR projections. Пароль хранится как Argon2id PHC string, session token — только как SHA-256 hash; сырые токены и пароли не попадают в AuditLog.
+Миграция `20260902073211_auth_rbac` добавляет auth/RBAC. Миграция `20260902090915_competition_and_rating_runs` добавляет карты и immutable results, tournament participants/placements, period/tournament statistics и FK rating snapshots → RatingRun. Миграция `20260902101500_achievements_career_verification` добавляет achievement events, provenance карьерных периодов/переходов, ProfileClaim, restricted evidence и moderation cases с безопасным backfill существующих grants. Seed идемпотентно создаёт 12 системных ролей, 16 permissions и все текущие read projections. Пароль хранится как Argon2id PHC string, session token — только как SHA-256 hash; сырые токены и пароли не попадают в AuditLog.
 
 ## Backup и retention
 
