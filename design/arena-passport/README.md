@@ -1,0 +1,45 @@
+# Arena Passport — public player profile redesign
+
+## Branch isolation
+
+- Worktree: `/private/tmp/arena-passport-public-redesign`
+- Branch: `codex/arena-passport-public-redesign`
+- Base: `main` at `13338c7`
+- Application code is intentionally unchanged until a concept is selected.
+
+## Captured source
+
+- Route: `http://localhost:3000/players/frostbyte`
+- Viewport: `1440 × 1024`
+- Screenshot: `00-current-player-profile-1440x1024.png`
+- Captured: 2026-09-02
+
+## Relevant product structure
+
+- Page composition: `apps/web/app/players/[slug]/page.tsx`
+- Global tokens and shared surface utilities: `apps/web/app/globals.css`
+- Reusable profile/stat primitives: `apps/web/components/ui.tsx`
+- Global navigation: `apps/web/components/header.tsx`
+- Product principles and token documentation: `docs/DESIGN_SYSTEM.md`
+
+## Existing design language to preserve at product level
+
+- Evidence and data quality stay visible near the numbers.
+- Subject and competitive result precede explanation and details.
+- Data uses tabular mono numerals; display and UI type remain distinct.
+- Core tokens: canvas `#090C12`, surface `#10151E`, text `#F4F7FB`, brand `#5F8BFF`, performance accent `#D6FF5F`, success `#43D17D`, border `#263142`.
+- Existing type roles: display `Space Grotesk`, UI/body `Inter`, data `IBM Plex Mono`.
+- Accessibility target: WCAG 2.2 AA, keyboard-first, visible focus, chart summaries, reduced motion.
+
+## Required facts
+
+`frostbyte`; `Алексей Морозов`; `RU`; `23 года`; `AWP`; `Northern Lights`; `PPR 541`; `Рейтинг СНГ #2`; `confidence 19%`; `K/D 1.60`; `ADR 94.9`; `KAST 82.9%`; `Win rate 100%`; `Rating 1.28`; `5 матчей`.
+
+## Concept files
+
+All concept images are normalized to exactly `1440 × 1024`.
+
+- `01-broadcast-esports.png`
+- `02-editorial-passport.png`
+- `03-analytical-lab.png`
+
