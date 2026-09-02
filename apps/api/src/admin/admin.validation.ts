@@ -62,6 +62,12 @@ function integer(value: unknown, field: string, min: number, max: number): numbe
   return result;
 }
 
+function optionalBoolean(value: unknown, field: string): boolean | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'boolean') throw new BadRequestException(`${field} должен быть boolean`);
+  return value;
+}
+
 function stringArray(value: unknown, field: string): string[] {
   if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
     throw new BadRequestException(`Поле ${field} должно быть массивом строк`);
@@ -127,6 +133,7 @@ export type OrganizationInput = {
   name: string;
   countryCode?: string;
   website?: string;
+  isFederation?: boolean;
 };
 
 export function parseOrganization(value: unknown): OrganizationInput {
@@ -136,6 +143,7 @@ export function parseOrganization(value: unknown): OrganizationInput {
     throw new BadRequestException('countryCode должен состоять из двух букв');
   }
   const website = optionalText(data.website, 'website', 300);
+  const isFederation = optionalBoolean(data.isFederation, 'isFederation');
   if (website) {
     try {
       const parsed = new URL(website);
@@ -149,6 +157,26 @@ export function parseOrganization(value: unknown): OrganizationInput {
     name: text(data.name, 'name', 2, 160),
     ...(countryCode ? { countryCode } : {}),
     ...(website ? { website } : {}),
+    ...(isFederation !== undefined ? { isFederation } : {}),
+  };
+}
+
+export function parseFederationReviewer(value: unknown) {
+  const data = body(value);
+  if (typeof data.enabled !== 'boolean') {
+    throw new BadRequestException('enabled должен быть boolean');
+  }
+  const validUntil = data.validUntil ? date(data.validUntil, 'validUntil') : undefined;
+  const userId = text(data.userId, 'userId', 36, 36);
+  if (!UUID_PATTERN.test(userId)) throw new BadRequestException('Некорректный userId');
+  if (validUntil && validUntil <= new Date()) {
+    throw new BadRequestException('validUntil должен быть в будущем');
+  }
+  return {
+    userId,
+    enabled: data.enabled,
+    ...(validUntil ? { validUntil } : {}),
+    reason: text(data.reason, 'reason', 10, 500),
   };
 }
 

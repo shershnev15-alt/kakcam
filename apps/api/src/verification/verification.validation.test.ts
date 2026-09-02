@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  parsePublicationDecision,
   parseClaimDecision,
   parseClaimEvidence,
   parseModerationQuery,
@@ -37,5 +38,29 @@ describe('verification validation', () => {
       kind: 'GAME_ID',
     });
     expect(parseModerationQuery({ status: 'resolved' })).toEqual({ status: 'RESOLVED' });
+  });
+
+  it('requires complete federation publication evidence and a safe photo URL', () => {
+    expect(
+      parsePublicationDecision({
+        decision: 'PUBLISH',
+        selfClaimId: '00000000-0000-4000-8000-000000000001',
+        federationId: '00000000-0000-4000-8000-000000000002',
+        photoEvidenceId: '00000000-0000-4000-8000-000000000003',
+        publicPhotoUrl: '/media/players/frostbyte.webp',
+        reason: 'Личность подтверждена региональной федерацией',
+      }),
+    ).toMatchObject({ decision: 'PUBLISH', publicPhotoUrl: '/media/players/frostbyte.webp' });
+
+    expect(() =>
+      parsePublicationDecision({
+        decision: 'PUBLISH',
+        selfClaimId: '00000000-0000-4000-8000-000000000001',
+        federationId: '00000000-0000-4000-8000-000000000002',
+        photoEvidenceId: '00000000-0000-4000-8000-000000000003',
+        publicPhotoUrl: 'http://insecure.example/photo.jpg',
+        reason: 'Личность подтверждена региональной федерацией',
+      }),
+    ).toThrow('publicPhotoUrl');
   });
 });

@@ -7,6 +7,7 @@ import {
   parseClaimDecision,
   parseClaimEvidence,
   parseModerationQuery,
+  parsePublicationDecision,
   parseSubmitClaim,
 } from './verification.validation';
 import { VerificationService } from './verification.service';
@@ -73,6 +74,24 @@ export class VerificationController {
       data: await this.verification.decideClaim(
         id,
         parseClaimDecision(body),
+        request.auth!.id,
+        request,
+      ),
+    };
+  }
+
+  @Post('moderation/players/:slug/publication')
+  @RequirePermissions('player.publish')
+  @UseGuards(CsrfGuard, SessionGuard, PermissionsGuard)
+  async publication(
+    @Param('slug') slug: string,
+    @Body() body: unknown,
+    @Req() request: AuthenticatedRequest & HttpRequest,
+  ) {
+    return {
+      data: await this.verification.decidePublication(
+        slug,
+        parsePublicationDecision(body),
         request.auth!.id,
         request,
       ),

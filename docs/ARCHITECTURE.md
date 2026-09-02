@@ -49,6 +49,8 @@ Ratings │ Achievements │ Imports │ Notifications
 3. Read-through cache используется для дорогих leaderboard/profile projections.
 4. ETag/Cache-Control и ISR уменьшают нагрузку.
 
+Player projection — deny by default. Публичная запись существует только при `PlayerPublication=PUBLISHED`, approved self-claim, действующей местной федерации, approved photo derivative и двух подтверждённых CS2-аккаунтах Steam/FACEIT. Один общий Prisma predicate используется всеми player-bearing read models; отзыв любого связанного сигнала действует без ожидания пересборки рейтинга или кеша.
+
 ### Импорт
 
 1. Один из allow-listed CS2 adapters получает payload и вычисляет stable SHA-256 checksum.

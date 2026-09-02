@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const CLAIM_METHODS = [
   'GAME_ACCOUNT',
   'SOCIAL_CHALLENGE',
@@ -84,4 +85,43 @@ export function parseModerationQuery(value: Record<string, string | undefined>) 
     throw new BadRequestException('Некорректный статус moderation case');
   }
   return { status };
+}
+
+export type PublicationDecisionInput =
+  | {
+      decision: 'PUBLISH';
+      selfClaimId: string;
+      federationId: string;
+      photoEvidenceId: string;
+      publicPhotoUrl: string;
+      reason: string;
+    }
+  | { decision: 'REVOKE'; reason: string };
+
+function uuid(value: unknown, field: string): string {
+  const result = text(value, field, 36, 36);
+  if (!UUID.test(result)) throw new BadRequestException(`Некорректный ${field}`);
+  return result;
+}
+
+function publicPhotoUrl(value: unknown): string {
+  const result = text(value, 'publicPhotoUrl', 2, 500);
+  if (/^\/media\/players\/[a-zA-Z0-9/_-]+\.(?:avif|jpe?g|png|webp)$/i.test(result)) return result;
+  throw new BadRequestException('publicPhotoUrl должен указывать на обработанное локальное фото');
+}
+
+export function parsePublicationDecision(value: unknown): PublicationDecisionInput {
+  const body = object(value);
+  const decision = text(body.decision, 'decision', 6, 10).toUpperCase();
+  const reason = text(body.reason, 'reason', 10, 500);
+  if (decision === 'REVOKE') return { decision, reason };
+  if (decision !== 'PUBLISH') throw new BadRequestException('Некорректное решение публикации');
+  return {
+    decision,
+    selfClaimId: uuid(body.selfClaimId, 'selfClaimId'),
+    federationId: uuid(body.federationId, 'federationId'),
+    photoEvidenceId: uuid(body.photoEvidenceId, 'photoEvidenceId'),
+    publicPhotoUrl: publicPhotoUrl(body.publicPhotoUrl),
+    reason,
+  };
 }

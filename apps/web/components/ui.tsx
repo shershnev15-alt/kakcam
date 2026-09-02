@@ -48,6 +48,31 @@ export function Monogram({
   );
 }
 
+export function PlayerPhoto({
+  src,
+  label,
+  size = 'md',
+}: {
+  src?: string | null | undefined;
+  label: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+}) {
+  if (!src) return <Monogram label={label} size={size} />;
+  const sizes = {
+    sm: 'size-9 rounded-lg',
+    md: 'size-12 rounded-xl',
+    lg: 'size-16 rounded-2xl',
+    xl: 'size-28 rounded-3xl md:size-36',
+  };
+  return (
+    <img
+      src={src}
+      alt={`Фото игрока ${label}`}
+      className={`${sizes[size]} shrink-0 border border-[var(--border)] object-cover`}
+    />
+  );
+}
+
 export function SectionHeading({
   eyebrow,
   title,
@@ -181,7 +206,7 @@ export function PlayerCard({
   player,
   compact = false,
 }: {
-  player: PlayerSummary;
+  player: PlayerSummary & { avatarUrl?: string | null };
   compact?: boolean;
 }) {
   return (
@@ -192,7 +217,7 @@ export function PlayerCard({
       <span className="data-number w-7 text-center text-xs text-[var(--text-3)]">
         #{player.rating.rank}
       </span>
-      <Monogram label={player.nickname} size={compact ? 'sm' : 'md'} />
+      <PlayerPhoto src={player.avatarUrl} label={player.nickname} size={compact ? 'sm' : 'md'} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <strong className="truncate text-sm">{player.nickname}</strong>

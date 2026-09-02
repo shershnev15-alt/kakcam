@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import type { Prisma } from '../../generated/prisma/client';
 import type { HttpRequest } from '../http.types';
 import { PrismaService } from '../prisma.service';
+import { publicPlayerEligibilityWhere } from '../verification/publication.policy';
 import type { CreateTransferInput, TransferQuery } from './career.validation';
 
 const teamSelect = { id: true, slug: true, name: true, shortName: true } as const;
@@ -51,7 +52,7 @@ export class CareerService {
 
   async playerCareer(slug: string) {
     const player = await this.prisma.player.findFirst({
-      where: { slug, status: 'ACTIVE' },
+      where: { AND: [{ slug }, publicPlayerEligibilityWhere] },
       select: {
         id: true,
         slug: true,
@@ -88,7 +89,7 @@ export class CareerService {
 
   async playerAchievements(slug: string) {
     const player = await this.prisma.player.findFirst({
-      where: { slug, status: 'ACTIVE' },
+      where: { AND: [{ slug }, publicPlayerEligibilityWhere] },
       select: {
         id: true,
         slug: true,
@@ -125,7 +126,11 @@ export class CareerService {
   async listTransfers(query: TransferQuery) {
     const where: Prisma.TransferWhereInput = {
       status: { in: ['REPORTED', 'CONFIRMED'] },
-      ...(query.player ? { player: { slug: query.player, status: 'ACTIVE' } } : {}),
+      player: {
+        is: {
+          AND: [publicPlayerEligibilityWhere, ...(query.player ? [{ slug: query.player }] : [])],
+        },
+      },
       ...(query.team
         ? {
             OR: [{ fromTeam: { slug: query.team } }, { toTeam: { slug: query.team } }],

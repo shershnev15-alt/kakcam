@@ -1,8 +1,4 @@
-import {
-  players as demoPlayers,
-  teams as demoTeams,
-  tournaments as demoTournaments,
-} from '@arena/demo-data';
+import { teams as demoTeams, tournaments as demoTournaments } from '@arena/demo-data';
 import type { MetadataRoute } from 'next';
 import { getMatches, getPlayers, getTeams, getTournaments } from '@/lib/api';
 import { siteUrl } from '@/lib/seo';
@@ -11,7 +7,7 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl;
-  let players: Array<{ slug: string }> = demoPlayers;
+  let players: Array<{ slug: string }> = [];
   let teams: Array<{ slug: string }> = demoTeams;
   let tournaments: Array<{ slug: string }> = demoTournaments;
   let matches: Array<{ id: string }> = [];
@@ -27,7 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     tournaments = tournamentPage.data;
     matches = matchPage.data;
   } catch {
-    // Directory URLs remain available during a temporary API outage; match IDs are never guessed.
+    // Team/tournament directories remain discoverable; protected player and match IDs are never guessed.
   }
   return [
     { url: base, changeFrequency: 'daily', priority: 1 },

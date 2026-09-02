@@ -15,6 +15,7 @@ import type {
   parseAdminListQuery,
   parseAssertion,
   parseAssertionDecision,
+  parseFederationReviewer,
   parseImport,
   parseRoleAssignment,
   parseUserStatus,
@@ -23,6 +24,7 @@ import type {
 type AdminQuery = ReturnType<typeof parseAdminListQuery>;
 type AssertionInput = ReturnType<typeof parseAssertion>;
 type AssertionDecision = ReturnType<typeof parseAssertionDecision>;
+type FederationReviewerInput = ReturnType<typeof parseFederationReviewer>;
 type ImportInput = ReturnType<typeof parseImport>;
 type RoleAssignment = ReturnType<typeof parseRoleAssignment>;
 type UserStatusInput = ReturnType<typeof parseUserStatus>;
@@ -261,7 +263,7 @@ export class AdminService {
         const [items, total] = await this.prisma.$transaction([
           this.prisma.organization.findMany({
             where,
-            include: { _count: { select: { teams: true } } },
+            include: { _count: { select: { teams: true, playerPublications: true } } },
             orderBy: { updatedAt: 'desc' },
             skip,
             take: pageSize,
@@ -274,7 +276,9 @@ export class AdminService {
             this.row(item.id, item.name, item.slug, 'ACTIVE', item.updatedAt, {
               countryCode: item.countryCode,
               website: item.website,
+              isFederation: item.isFederation,
               teams: item._count.teams,
+              publicationRecords: item._count.playerPublications,
             }),
           ),
         };
@@ -292,7 +296,20 @@ export class AdminService {
         const [items, total] = await this.prisma.$transaction([
           this.prisma.profileClaim.findMany({
             where,
-            include: { claimant: true, player: true, evidence: true, moderationCase: true },
+            include: {
+              claimant: true,
+              player: {
+                include: {
+                  accounts: {
+                    where: { provider: { in: ['STEAM', 'FACEIT'] } },
+                    select: { provider: true, handle: true, verifiedAt: true },
+                  },
+                  publication: { include: { federation: true } },
+                },
+              },
+              evidence: true,
+              moderationCase: true,
+            },
             orderBy: { updatedAt: 'desc' },
             skip,
             take: pageSize,
@@ -310,6 +327,7 @@ export class AdminService {
               item.updatedAt,
               {
                 method: item.method,
+                playerSlug: item.player.slug,
                 statement: item.statement,
                 evidence: item.evidence.map((evidence) => ({
                   id: evidence.id,
@@ -319,6 +337,14 @@ export class AdminService {
                 })),
                 priority: item.moderationCase?.priority ?? 0,
                 decisionReason: item.decisionReason,
+                verifiedAccounts: item.player.accounts,
+                publication: item.player.publication
+                  ? {
+                      status: item.player.publication.status,
+                      federation: item.player.publication.federation.name,
+                      publicPhotoUrl: item.player.publication.publicPhotoUrl,
+                    }
+                  : null,
               },
             ),
           ),
@@ -838,6 +864,11 @@ export class AdminService {
     if (id === actorId && !input.roleCodes.includes('SUPER_ADMIN')) {
       throw new BadRequestException('Нельзя снять SUPER_ADMIN с текущей учетной записи');
     }
+    if (input.roleCodes.includes('FEDERATION_REVIEWER')) {
+      throw new BadRequestException(
+        'FEDERATION_REVIEWER назначается только для конкретной федерации',
+      );
+    }
     const [user, roles] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id },
@@ -849,7 +880,9 @@ export class AdminService {
     if (roles.length !== input.roleCodes.length)
       throw new BadRequestException('Одна или несколько ролей не найдены');
     return this.prisma.$transaction(async (tx) => {
-      await tx.userRole.deleteMany({ where: { userId: id } });
+      await tx.userRole.deleteMany({
+        where: { userId: id, scopeType: null, scopeId: null },
+      });
       await tx.userRole.createMany({
         data: roles.map((role) => ({ userId: id, roleId: role.id, grantedById: actorId })),
       });
@@ -868,6 +901,77 @@ export class AdminService {
         where: { id },
         include: { roles: { include: { role: true } } },
       });
+    });
+  }
+
+  async setFederationReviewer(
+    federationId: string,
+    userId: string,
+    input: FederationReviewerInput,
+    actorId: string,
+    request: HttpRequest,
+  ) {
+    const [federation, user, role, existing] = await Promise.all([
+      this.prisma.organization.findFirst({ where: { id: federationId, isFederation: true } }),
+      this.prisma.user.findFirst({ where: { id: userId, status: 'ACTIVE' } }),
+      this.prisma.role.findUnique({ where: { code: 'FEDERATION_REVIEWER' } }),
+      this.prisma.userRole.findFirst({
+        where: {
+          userId,
+          role: { code: 'FEDERATION_REVIEWER' },
+          scopeType: 'Organization',
+          scopeId: federationId,
+        },
+      }),
+    ]);
+    if (!federation) throw new NotFoundException('Активная федерация не найдена');
+    if (!user) throw new NotFoundException('Активный пользователь не найден');
+    if (!role) throw new NotFoundException('Роль FEDERATION_REVIEWER не настроена');
+
+    return this.prisma.$transaction(async (tx) => {
+      let assignment = existing;
+      if (input.enabled) {
+        assignment = existing
+          ? await tx.userRole.update({
+              where: { id: existing.id },
+              data: { validUntil: input.validUntil ?? null, grantedById: actorId },
+            })
+          : await tx.userRole.create({
+              data: {
+                userId,
+                roleId: role.id,
+                scopeType: 'Organization',
+                scopeId: federationId,
+                validUntil: input.validUntil ?? null,
+                grantedById: actorId,
+              },
+            });
+      } else if (existing) {
+        await tx.userRole.delete({ where: { id: existing.id } });
+        assignment = null;
+      }
+      await tx.auditLog.create({
+        data: {
+          actorId,
+          action: input.enabled ? 'federation.reviewer.grant' : 'federation.reviewer.revoke',
+          targetType: 'User',
+          targetId: userId,
+          reason: input.reason,
+          diff: {
+            federationId,
+            federationName: federation.name,
+            enabled: input.enabled,
+            validUntil: input.validUntil?.toISOString() ?? null,
+          },
+          requestId: this.requestId(request) ?? null,
+        },
+      });
+      return {
+        user: { id: user.id, email: user.email, displayName: user.displayName },
+        federation: { id: federation.id, slug: federation.slug, name: federation.name },
+        enabled: Boolean(assignment),
+        validUntil: assignment?.validUntil ?? null,
+      };
     });
   }
 

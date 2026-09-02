@@ -71,7 +71,7 @@ trust = weighted verification/completeness score
 confidence = 100 × (0.45·sample + 0.20·diversity + 0.20·freshness + 0.15·trust)
 ```
 
-Confidence ниже 40% помечает provisional rating; ниже 25% исключает из основного leaderboard, но профиль показывает оценку.
+Confidence ниже 40% помечает provisional rating; ниже 25% исключает из основного leaderboard. Независимо от confidence, PPR и профиль полностью закрыты, пока игрок не выполнит verified-only publication policy: self-claim, federation, photo, Steam и FACEIT.
 
 ## Ranks
 

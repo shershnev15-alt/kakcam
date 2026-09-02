@@ -34,6 +34,15 @@ export type PageResult<T> = { data: T[]; meta: PageMeta };
 
 export type PlayerProfile = PlayerSummary & {
   avatarUrl: string | null;
+  verifiedAccounts: Array<{
+    provider: 'STEAM' | 'FACEIT';
+    handle: string | null;
+    verifiedAt: string;
+  }>;
+  federationVerification: {
+    federation: { id: string; slug: string; name: string };
+    publishedAt: string;
+  } | null;
   currentTeam: { id: string; slug: string; name: string; shortName: string } | null;
   ratingPublishedAt: string | null;
   similar: PlayerSummary[];

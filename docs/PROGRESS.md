@@ -1,6 +1,6 @@
 # Progress
 
-Дата обновления: 2 сентября 2026. Этапы **0–13 завершены**: specification, foundation, auth/RBAC, public directory, competition flow, reproducible ratings, career/achievements, claim/verification, full admin, mobile foundation/product/engagement, CS2 external providers и production quality gates.
+Дата обновления: 2 сентября 2026. Этапы **0–13 завершены**. После Stage 13 добавлена verified-only publication policy: рейтинг и профиль игрока по умолчанию закрыты, а общий доступ требует self-claim, местную федерацию, фото, Steam и FACEIT.
 
 ## Completed
 
@@ -11,7 +11,7 @@
 - email registration/login/logout/me и UI `/register`, `/login`, `/account`;
 - Argon2id passwords, opaque HttpOnly sessions, token hashing, expiry/revocation и login enumeration protection;
 - Identity/Session/Role/Permission/RolePermission/UserRole migration;
-- 12 системных ролей, 24 permissions, policy guards, Origin/CSRF guard и auth rate limit;
+- 13 системных ролей, 25 permissions, policy guards, Origin/CSRF guard и auth rate limit;
 - PostgreSQL-backed Player/Team reads и защищённые create/update/soft-archive commands;
 - транзакционный AuditLog для регистрации, входа, выхода и Player/Team mutations;
 - idempotent PostgreSQL seed текущих PPR/TPR: 2 RatingRun, 40 PlayerRating и 8 TeamRating;
@@ -56,6 +56,10 @@
 - Web/Admin CSP и security headers, Helmet API hardening, non-root production images и Dependabot policy;
 - privacy-safe allow-listed analytics, нормализованные structured request logs, correlation id и защищённый Prometheus endpoint;
 - CI gates для измеримых JS/CSS budgets и security baseline.
+- явный `PlayerPublication`: только все пять подтверждений одновременно открывают Player/PPR, а отзыв любого сигнала динамически закрывает профиль;
+- единая server-side policy применена к каталогу, поиску, рейтингу, sitemap, карьере, достижениям, переходам, составам и player statistics в матчах;
+- scoped `FEDERATION_REVIEWER` для конкретной Organization, отдельные publish/revoke команды и audit без исходного фото/evidence reference;
+- публичный профиль показывает одобренное фото, проверенные Steam/FACEIT и федерацию; кабинет объясняет весь путь допуска.
 
 ## Tests
 
@@ -65,7 +69,7 @@
 - Mobile strict typecheck, 9 format/engagement/deep-link tests и Expo static export: passed;
 - Web strict typecheck, 3 component tests и production build: passed;
 - rating engine: 6 deterministic PPR/TPR tests; achievement engine: 6 tests;
-- полный monorepo test suite: 71 test passed;
+- полный monorepo test suite: 75 tests passed;
 - auth/RBAC e2e: register 201, me 200, unauthorized mutation 403, foreign Origin 403, logout 201, revoked session 401;
 - Statistician e2e: Player/Team create 201 и update 200; временные QA-записи очищены;
 - Moderator e2e: Player/Team soft-archive 200, archived public read 404; временные QA-записи очищены;
@@ -89,6 +93,8 @@
 - Stage 13 strict typecheck и production build: API, Web и Admin passed;
 - performance gate: Web 294354 B total gzip JS / 66289 B max JS / 34048 B max CSS; Admin 279419 B / 66288 B / 8214 B;
 - security gate: mandatory Web/Admin/API headers и tracked-file secret baseline passed.
+- verified-only integration: миграции применены к чистой PostgreSQL 17, seed создаёт 13 ролей/25 permissions, закрытые каталог/PPR пусты и detail возвращает 404;
+- positive/revocation integration: профиль появляется только при всех пяти сигналах и немедленно снова получает 404 после отзыва verified FACEIT.
 
 ## Known limitations
 
@@ -96,13 +102,13 @@
 - provider adapters пока используют локальные fixtures; реальные API credentials, rate limits и SLA подключаются отдельной интеграционной поставкой;
 - clutch/perfect-map/MVP rules остаются LOCKED до granular provider events; движок уже поддерживает безопасный replay этих версий правил;
 - auth rate limit хранится в памяти процесса; Redis-backed distributed limiter нужен до горизонтального масштабирования;
-- email verification/recovery и Steam/Google OAuth ещё не реализованы;
+- email verification/recovery, Steam OpenID и FACEIT OAuth callbacks ещё не реализованы; до реальной provider-верификации публичный допуск получить нельзя;
 - evidence reference в local prototype хранится в restricted DB field; encrypted object storage, malware scanning и retention enforcement обязательны до production;
 - bulk admin operations и MFA/step-up authentication остаются обязательными до production;
 - push-token backend registration ждёт production EAS project ID и API origin; local reminders уже работают;
 - guest favorites/inbox пока локальные; merge с account engagement потребует `/me/*` endpoints;
 - native device/simulator smoke и signing выполняются перед store beta;
-- изображения представлены monograms; S3 media pipeline ещё не подключён.
+- production media pipeline (upload, MIME/size validation, EXIF removal, malware scan, encrypted original и approved derivative) ещё не подключён; публикационная policy уже принимает только локальную обработанную копию.
 - observability counters и analytics limiter пока in-memory; production collector, Redis coordination, retention и alerts входят в Этап 14.
 
 ## Next step

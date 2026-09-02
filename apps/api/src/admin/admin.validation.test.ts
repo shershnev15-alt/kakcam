@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   parseAdminResource,
   parseAssertionDecision,
+  parseFederationReviewer,
   parseOrganization,
   parseRoleAssignment,
   parseTournament,
@@ -36,6 +37,23 @@ describe('admin validation', () => {
   it('rejects unsafe organization URLs', () => {
     expect(() =>
       parseOrganization({ slug: 'arena', name: 'Arena', website: 'javascript:alert(1)' }),
+    ).toThrow(BadRequestException);
+  });
+
+  it('requires an explicit scoped federation reviewer decision', () => {
+    expect(
+      parseFederationReviewer({
+        userId: '00000000-0000-4000-8000-000000000001',
+        enabled: true,
+        reason: 'Назначение подтверждено федерацией',
+      }),
+    ).toMatchObject({ enabled: true });
+    expect(() =>
+      parseFederationReviewer({
+        userId: '00000000-0000-4000-8000-000000000001',
+        enabled: 'yes',
+        reason: 'Назначение подтверждено федерацией',
+      }),
     ).toThrow(BadRequestException);
   });
 

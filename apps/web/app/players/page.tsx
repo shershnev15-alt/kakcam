@@ -29,7 +29,8 @@ export default async function PlayersPage({ searchParams }: Props) {
       <p className="eyebrow">Directory · PostgreSQL</p>
       <h1 className="mt-3 text-4xl font-black tracking-[-.04em] md:text-6xl">Игроки</h1>
       <p className="muted mt-4 max-w-2xl leading-7">
-        Профили, роли, команды и актуальный PPR — из канонического реестра Arena Passport.
+        Только полностью подтверждённые профили: self-claim, местная федерация, фото, Steam и
+        FACEIT.
       </p>
       <div className="mt-8">
         <DirectoryForm action="/players" values={params} />
@@ -45,8 +46,11 @@ export default async function PlayersPage({ searchParams }: Props) {
           </div>
         ) : (
           <div className="surface py-16 text-center">
-            <h2 className="text-xl font-bold">Игроки не найдены</h2>
-            <p className="muted mt-2 text-sm">Измените поиск или фильтр страны.</p>
+            <h2 className="text-xl font-bold">Нет игроков с полным допуском</h2>
+            <p className="muted mx-auto mt-2 max-w-xl text-sm">
+              В общий доступ попадают только игроки, выполнившие все пять условий верификации.
+              Измените фильтры или завершите проверку профиля.
+            </p>
           </div>
         )}
         <Pagination

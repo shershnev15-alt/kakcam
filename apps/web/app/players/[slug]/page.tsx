@@ -9,6 +9,7 @@ import {
   Delta,
   Monogram,
   PlayerCard,
+  PlayerPhoto,
   RatingRing,
   SectionHeading,
   Sparkline,
@@ -89,7 +90,7 @@ export default async function PlayerPage({ params }: PageProps) {
           </div>
           <div className="grid items-center gap-8 xl:grid-cols-[1fr_auto]">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-              <Monogram label={player.nickname} size="xl" />
+              <PlayerPhoto src={player.avatarUrl} label={player.nickname} size="xl" />
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <h1 className="text-4xl font-black tracking-[-.04em] md:text-6xl">
@@ -119,7 +120,24 @@ export default async function PlayerPage({ params }: PageProps) {
                       {role}
                     </span>
                   ))}
+                  {player.verifiedAccounts.map((account) => (
+                    <span
+                      key={account.provider}
+                      className="rounded-md border border-[var(--success)]/40 bg-[var(--success)]/10 px-3 py-2 text-xs font-bold text-[var(--success)]"
+                    >
+                      ✓ {account.provider}
+                      {account.handle ? ` · ${account.handle}` : ''}
+                    </span>
+                  ))}
                 </div>
+                {player.federationVerification ? (
+                  <p className="mt-3 text-xs text-[var(--text-3)]">
+                    Допуск к публикации подтверждён:{' '}
+                    <span className="font-semibold text-[var(--text-2)]">
+                      {player.federationVerification.federation.name}
+                    </span>
+                  </p>
+                ) : null}
               </div>
             </div>
             <div className="flex items-center gap-6 rounded-2xl border border-[var(--border)] bg-[rgba(16,21,30,.8)] p-5">

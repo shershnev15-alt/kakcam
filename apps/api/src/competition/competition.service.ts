@@ -9,6 +9,7 @@ import { createHash } from 'node:crypto';
 import type { Prisma } from '../../generated/prisma/client';
 import type { HttpRequest } from '../http.types';
 import { PrismaService } from '../prisma.service';
+import { publicPlayerEligibilityWhere } from '../verification/publication.policy';
 import type {
   CompetitionQuery,
   CreateMatchInput,
@@ -26,7 +27,7 @@ const matchDetailInclude = {
   maps: { orderBy: { mapOrder: 'asc' as const } },
   result: true,
   statistics: {
-    where: { mapKey: 'all' },
+    where: { mapKey: 'all', player: publicPlayerEligibilityWhere },
     include: { player: { select: { id: true, slug: true, nickname: true } } },
     orderBy: [{ teamId: 'asc' as const }, { performanceRating: 'desc' as const }],
   },

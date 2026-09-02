@@ -9,11 +9,29 @@ import type {
   UpdateTeamInput,
 } from './entities.validation';
 import type { DirectoryQuery } from './directory.validation';
+import { publicPlayerEligibilityWhere } from '../verification/publication.policy';
 
 const playerInclude = {
   country: { select: { code: true, name: true } },
   currentTeam: { select: { id: true, slug: true, name: true, shortName: true } },
   profile: { select: { realName: true, birthDate: true, avatarUrl: true } },
+  publication: {
+    select: {
+      status: true,
+      publicPhotoUrl: true,
+      publishedAt: true,
+      federation: { select: { id: true, slug: true, name: true } },
+    },
+  },
+  accounts: {
+    where: {
+      provider: { in: ['STEAM', 'FACEIT'] },
+      verifiedAt: { not: null },
+      game: { is: { slug: 'cs2' } },
+    },
+    select: { provider: true, handle: true, verifiedAt: true },
+    orderBy: { provider: 'asc' as const },
+  },
   ratings: {
     orderBy: { publishedAt: 'desc' as const },
     take: 1,
@@ -45,7 +63,7 @@ const teamInclude = {
 const teamDetailInclude = {
   ...teamInclude,
   currentPlayers: {
-    where: { status: 'ACTIVE' as const },
+    where: publicPlayerEligibilityWhere,
     include: playerInclude,
     orderBy: { nickname: 'asc' as const },
   },
@@ -140,14 +158,14 @@ export class EntitiesService {
 
   async playerBySlug(slug: string) {
     const record = await this.prisma.player.findFirst({
-      where: { slug, status: 'ACTIVE' },
+      where: { AND: [{ slug }, publicPlayerEligibilityWhere] },
       include: playerInclude,
     });
     if (!record) throw new NotFoundException('Player not found');
     const [similar, performance, matchStatistics, achievements, ratingHistory] = await Promise.all([
       this.prisma.player.findMany({
         where: {
-          status: 'ACTIVE',
+          AND: [publicPlayerEligibilityWhere],
           id: { not: record.id },
           ...(record.currentTeamId ? { currentTeamId: record.currentTeamId } : {}),
         },
@@ -524,7 +542,7 @@ export class EntitiesService {
       slug: player.slug,
       nickname: player.nickname,
       realName: player.profile?.realName ?? null,
-      avatarUrl: player.profile?.avatarUrl ?? null,
+      avatarUrl: player.publication?.publicPhotoUrl ?? null,
       age,
       status: player.status,
       verificationLevel: player.aggregateVerificationLevel,
@@ -536,6 +554,17 @@ export class EntitiesService {
       teamName: player.currentTeam?.name ?? 'Без команды',
       teamShortName: player.currentTeam?.shortName ?? '—',
       roles: stringList(explanation.roles).length ? stringList(explanation.roles) : ['Player'],
+      verifiedAccounts: player.accounts.map((account) => ({
+        provider: account.provider,
+        handle: account.handle,
+        verifiedAt: account.verifiedAt,
+      })),
+      federationVerification: player.publication
+        ? {
+            federation: player.publication.federation,
+            publishedAt: player.publication.publishedAt,
+          }
+        : null,
       rating: {
         score: ratingRecord?.score ?? 0,
         confidence: Math.round(Number(ratingRecord?.confidence ?? 0)),
@@ -693,8 +722,7 @@ export class EntitiesService {
   }
 
   private playerWhere(query: DirectoryQuery): Prisma.PlayerWhereInput {
-    return {
-      status: 'ACTIVE',
+    const filters: Prisma.PlayerWhereInput = {
       ...(query.q
         ? {
             OR: [
@@ -707,6 +735,7 @@ export class EntitiesService {
       ...(query.country ? { country: { is: { code: query.country } } } : {}),
       ...(query.team ? { currentTeam: { is: { slug: query.team } } } : {}),
     };
+    return { AND: [publicPlayerEligibilityWhere, filters] };
   }
 
   private teamWhere(query: DirectoryQuery): Prisma.TeamWhereInput {

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ArrowIcon, CheckIcon } from '@/components/icons';
 import { MatchCard } from '@/components/match-card';
-import { Monogram, PlayerCard, SectionHeading, Sparkline, TeamCard } from '@/components/ui';
+import { PlayerCard, PlayerPhoto, SectionHeading, Sparkline, TeamCard } from '@/components/ui';
 import {
   getMatches,
   getPlayer,
@@ -21,7 +21,7 @@ export default async function HomePage() {
   const teams = teamRanking.data;
   const matches = matchResult.data;
   const tournaments = tournamentResult.data;
-  const lead = await getPlayer(players[0]!.slug);
+  const lead = players[0] ? await getPlayer(players[0].slug) : null;
   return (
     <>
       <section className="grain overflow-hidden border-b border-[var(--border)]">
@@ -37,15 +37,16 @@ export default async function HomePage() {
               <span className="text-[var(--text-3)]">Один профиль.</span>
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-8 text-[var(--text-2)]">
-              Достоверная статистика, достижения и история выступлений киберспортсменов и команд — с
-              источниками и понятным рейтингом.
+              В общий доступ попадают только игроки с подтверждением местной федерации, фотографией
+              и проверенными аккаунтами Steam и FACEIT.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href={`/players/${lead.slug}`}
+                href={lead ? `/players/${lead.slug}` : '/account'}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-5 text-sm font-bold text-[#11160a] transition hover:brightness-110"
               >
-                Смотреть профиль игрока <ArrowIcon className="size-4" />
+                {lead ? 'Смотреть профиль игрока' : 'Пройти верификацию'}{' '}
+                <ArrowIcon className="size-4" />
               </Link>
               <Link
                 href="/rankings/players"
@@ -70,65 +71,93 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <Link
-            href={`/players/${lead.slug}`}
-            className="surface relative mx-auto w-full max-w-[520px] overflow-hidden p-5 shadow-[0_32px_90px_rgba(0,0,0,.34)] transition hover:border-[var(--text-3)] md:p-6"
-          >
-            <div className="absolute right-0 top-0 h-44 w-44 bg-[radial-gradient(circle,rgba(214,255,95,.12),transparent_65%)]" />
-            <div className="flex items-start gap-4">
-              <Monogram label={lead.nickname} size="lg" />
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-2xl font-black">{lead.nickname}</h2>
-                  <CheckIcon className="size-5 text-[var(--success)]" />
+          {lead ? (
+            <Link
+              href={`/players/${lead.slug}`}
+              className="surface relative mx-auto w-full max-w-[520px] overflow-hidden p-5 shadow-[0_32px_90px_rgba(0,0,0,.34)] transition hover:border-[var(--text-3)] md:p-6"
+            >
+              <div className="absolute right-0 top-0 h-44 w-44 bg-[radial-gradient(circle,rgba(214,255,95,.12),transparent_65%)]" />
+              <div className="flex items-start gap-4">
+                <PlayerPhoto src={lead.avatarUrl} label={lead.nickname} size="lg" />
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-2xl font-black">{lead.nickname}</h2>
+                    <CheckIcon className="size-5 text-[var(--success)]" />
+                  </div>
+                  <p className="mt-1 text-sm text-[var(--text-2)]">
+                    {lead.realName} · {lead.countryCode}
+                  </p>
+                  <p className="mt-2 text-xs text-[var(--text-3)]">
+                    {lead.teamName} · {lead.roles.join(', ')}
+                  </p>
                 </div>
-                <p className="mt-1 text-sm text-[var(--text-2)]">
-                  {lead.realName} · {lead.countryCode}
-                </p>
-                <p className="mt-2 text-xs text-[var(--text-3)]">
-                  {lead.teamName} · {lead.roles.join(', ')}
-                </p>
-              </div>
-              <span className="ml-auto rounded-md bg-[var(--surface-3)] px-2 py-1 text-[10px] font-bold tracking-wider text-[var(--text-2)]">
-                DIGITAL PASSPORT
-              </span>
-            </div>
-            <div className="mt-7 grid grid-cols-[1fr_auto] gap-5 border-y border-[var(--border)] py-5">
-              <div>
-                <p className="eyebrow">Player Performance Rating</p>
-                <div className="mt-2 flex items-baseline gap-3">
-                  <span className="data-number text-5xl font-black">{lead.rating.score}</span>
-                  <span className="text-xs font-bold text-[var(--success)]">
-                    +{lead.rating.delta30d} / 30 дней
-                  </span>
-                </div>
-                <p className="mt-2 text-sm text-[var(--text-2)]">
-                  #{lead.rating.rank} СНГ · {lead.rating.tier}
-                </p>
-              </div>
-              <div className="grid size-20 place-items-center rounded-full border-[6px] border-[var(--accent)] bg-[var(--surface-2)] text-center">
-                <span className="text-sm font-bold">
-                  {lead.rating.confidence}%
-                  <small className="block text-[8px] font-medium text-[var(--text-3)]">
-                    CONFIDENCE
-                  </small>
+                <span className="ml-auto rounded-md bg-[var(--surface-3)] px-2 py-1 text-[10px] font-bold tracking-wider text-[var(--text-2)]">
+                  DIGITAL PASSPORT
                 </span>
               </div>
-            </div>
-            <Sparkline values={lead.form} className="mt-5 h-20 w-full" />
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {[
-                ['K/D', (lead.performance?.kd ?? 0).toFixed(2)],
-                ['ADR', (lead.performance?.adr ?? 0).toFixed(1)],
-                ['KAST', `${(lead.performance?.kast ?? 0).toFixed(1)}%`],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-lg bg-[var(--surface-2)] p-3">
-                  <span className="text-[10px] text-[var(--text-3)]">{label}</span>
-                  <strong className="data-number mt-1 block">{value}</strong>
+              <div className="mt-7 grid grid-cols-[1fr_auto] gap-5 border-y border-[var(--border)] py-5">
+                <div>
+                  <p className="eyebrow">Player Performance Rating</p>
+                  <div className="mt-2 flex items-baseline gap-3">
+                    <span className="data-number text-5xl font-black">{lead.rating.score}</span>
+                    <span className="text-xs font-bold text-[var(--success)]">
+                      +{lead.rating.delta30d} / 30 дней
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-[var(--text-2)]">
+                    #{lead.rating.rank} СНГ · {lead.rating.tier}
+                  </p>
                 </div>
-              ))}
+                <div className="grid size-20 place-items-center rounded-full border-[6px] border-[var(--accent)] bg-[var(--surface-2)] text-center">
+                  <span className="text-sm font-bold">
+                    {lead.rating.confidence}%
+                    <small className="block text-[8px] font-medium text-[var(--text-3)]">
+                      CONFIDENCE
+                    </small>
+                  </span>
+                </div>
+              </div>
+              <Sparkline values={lead.form} className="mt-5 h-20 w-full" />
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {[
+                  ['K/D', (lead.performance?.kd ?? 0).toFixed(2)],
+                  ['ADR', (lead.performance?.adr ?? 0).toFixed(1)],
+                  ['KAST', `${(lead.performance?.kast ?? 0).toFixed(1)}%`],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-lg bg-[var(--surface-2)] p-3">
+                    <span className="text-[10px] text-[var(--text-3)]">{label}</span>
+                    <strong className="data-number mt-1 block">{value}</strong>
+                  </div>
+                ))}
+              </div>
+            </Link>
+          ) : (
+            <div className="surface mx-auto w-full max-w-[520px] p-6 md:p-8">
+              <p className="eyebrow">Закрытый PPR · доверенный реестр</p>
+              <h2 className="mt-3 text-3xl font-black">Публичных игроков пока нет</h2>
+              <p className="muted mt-4 leading-7">
+                Профиль появится здесь только после полной проверки личности и всех обязательных
+                связей.
+              </p>
+              <div className="mt-7 grid gap-3 text-sm">
+                {[
+                  'Самостоятельный Claim Profile',
+                  'Подтверждение местной федерации',
+                  'Проверенная фотография',
+                  'Подтверждённый Steam',
+                  'Подтверждённый FACEIT',
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-center gap-3 rounded-lg bg-[var(--surface-2)] p-3"
+                  >
+                    <CheckIcon className="size-4 text-[var(--text-3)]" />
+                    {item}
+                  </div>
+                ))}
+              </div>
             </div>
-          </Link>
+          )}
         </div>
       </section>
 
@@ -187,7 +216,10 @@ export default async function HomePage() {
                 className="surface group p-5 transition hover:-translate-y-1 hover:border-[var(--text-3)]"
               >
                 <div className="flex items-center gap-3">
-                  <Monogram label={player.nickname} />
+                  <PlayerPhoto
+                    src={(player as typeof player & { avatarUrl?: string | null }).avatarUrl}
+                    label={player.nickname}
+                  />
                   <div>
                     <strong>{player.nickname}</strong>
                     <p className="mt-1 text-xs text-[var(--text-3)]">
