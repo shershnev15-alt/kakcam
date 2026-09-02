@@ -39,7 +39,16 @@
 
 All concept images are normalized to exactly `1440 × 1024`.
 
+Initial exploration (rejected by the user):
+
 - `01-broadcast-esports.png`
 - `02-editorial-passport.png`
 - `03-analytical-lab.png`
 
+Research-grounded second exploration:
+
+- `04-scout-overview.png`
+- `05-season-form-board.png`
+- `06-table-first-public-record.png`
+
+Comparable-site screenshots and notes are stored in `research/`.
