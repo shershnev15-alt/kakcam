@@ -1,13 +1,5 @@
-import {
-  Controller,
-  Get,
-  Inject,
-  Logger,
-  NotFoundException,
-  Param,
-  ServiceUnavailableException,
-} from '@nestjs/common';
-import { demoCounts, matches, playerBySlug, players, teamBySlug, teams, tournaments } from './demo';
+import { Controller, Get, Inject, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { demoCounts, matches, tournaments } from './demo';
 import { DatabaseService } from './database.service';
 
 @Controller()
@@ -43,34 +35,10 @@ export class AppController {
     return {
       name: 'Arena Passport API',
       version: 'v1',
-      mode: 'demo',
+      mode: 'database-backed',
       counts: demoCounts,
-      resources: ['players', 'teams', 'matches', 'tournaments', 'rankings'],
+      resources: ['auth', 'players', 'teams', 'matches', 'tournaments', 'rankings'],
     };
-  }
-
-  @Get('api/v1/players')
-  listPlayers() {
-    return { data: players, meta: { total: players.length, mode: 'demo' } };
-  }
-
-  @Get('api/v1/players/:slug')
-  getPlayer(@Param('slug') slug: string) {
-    const player = playerBySlug(slug);
-    if (!player) throw new NotFoundException('Player not found');
-    return { data: player, meta: { mode: 'demo' } };
-  }
-
-  @Get('api/v1/teams')
-  listTeams() {
-    return { data: teams, meta: { total: teams.length, mode: 'demo' } };
-  }
-
-  @Get('api/v1/teams/:slug')
-  getTeam(@Param('slug') slug: string) {
-    const team = teamBySlug(slug);
-    if (!team) throw new NotFoundException('Team not found');
-    return { data: team, meta: { mode: 'demo' } };
   }
 
   @Get('api/v1/matches')

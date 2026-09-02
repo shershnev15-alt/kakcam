@@ -14,14 +14,14 @@
 
 ### Identity & access
 
-| Сущность          | Назначение и ключевые поля                                 |
-| ----------------- | ---------------------------------------------------------- |
-| User              | email, displayName, locale, status, emailVerifiedAt        |
-| Identity          | userId, provider, providerSubject, credentials metadata    |
-| Session           | userId, refreshTokenHash, expiresAt, revokedAt, device     |
-| Role / Permission | code, scope; many-to-many RolePermission                   |
-| UserRole          | userId, roleId, optional organization/team scope, validity |
-| ProfileClaim      | userId, playerId, status, method, reviewer, decisionReason |
+| Сущность          | Назначение и ключевые поля                                  |
+| ----------------- | ----------------------------------------------------------- |
+| User              | email, displayName, locale, status, emailVerifiedAt         |
+| Identity          | userId, provider, providerSubject, passwordHash             |
+| Session           | userId, tokenHash, expiresAt, lastSeenAt, revokedAt, device |
+| Role / Permission | code, scope; many-to-many RolePermission                    |
+| UserRole          | userId, roleId, optional organization/team scope, validity  |
+| ProfileClaim      | userId, playerId, status, method, reviewer, decisionReason  |
 
 ### Geography and catalog
 
@@ -129,6 +129,8 @@ News/Article поддерживают draft/review/published, author, localized 
 - seed идемпотентен по stable keys;
 - demo seed: 40 fictional players, 8 teams, 3 tournaments, 30 matches, 20 achievements;
 - production никогда не запускает demo seed автоматически.
+
+Миграция `20260902073211_auth_rbac` добавляет `Identity`, `Session`, `Role`, `Permission`, `RolePermission`, `UserRole` и enum провайдеров. Seed идемпотентно создаёт 12 системных ролей и 8 permissions. Пароль хранится как Argon2id PHC string, session token — только как SHA-256 hash; сырые токены и пароли не попадают в AuditLog.
 
 ## Backup и retention
 

@@ -8,6 +8,7 @@
 - `http://localhost:3000/players/frostbyte` — главный Player Digital Passport;
 - `http://localhost:3000/teams/northern-lights` — профиль команды;
 - `http://localhost:3000/rankings/players` и `/rankings/teams` — рейтинги;
+- `http://localhost:3000/register`, `/login`, `/account` — регистрация, вход и кабинет;
 - `http://localhost:4000/health`, `/ready`, `/api/v1` — API status.
 
 Все игроки и команды prototype вымышлены.
@@ -22,6 +23,8 @@ docker compose ps
 ```
 
 Первый запуск загружает образы и зависимости, применяет миграцию и idempotent seed. Остановка: `docker compose down`. Данные PostgreSQL/Redis остаются в named volumes.
+
+Email-аутентификация использует Argon2id и отзываемые HttpOnly-сессии. Новая учётная запись получает роль `REGISTERED_USER`; права на изменение реестра назначаются отдельными ролями через RBAC.
 
 ## Проверки
 

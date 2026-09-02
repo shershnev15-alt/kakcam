@@ -41,8 +41,11 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-arena}:${POSTGRES_PASSWORD:-arena_local_only}@postgres:5432/${POSTGRES_DB:-arena_passport}?schema=public
       REDIS_URL: redis://redis:6379
       APP_ORIGIN: http://localhost:3000
+      IP_HASH_SALT: ${IP_HASH_SALT:-arena-local-ip-salt-change-me}
     ports:
       - '4000:4000'
+    volumes:
+      - .:/workspace
     depends_on:
       postgres:
         condition: service_healthy
@@ -65,6 +68,8 @@ services:
       INTERNAL_API_URL: http://api:4000/api/v1
     ports:
       - '3000:3000'
+    volumes:
+      - .:/workspace
     depends_on:
       api:
         condition: service_healthy

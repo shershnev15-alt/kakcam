@@ -7,7 +7,106 @@ if (!connectionString) throw new Error('DATABASE_URL is required for seed');
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
+const permissionDefinitions = [
+  ['player.create', 'Создание профилей игроков'],
+  ['player.update', 'Редактирование профилей игроков'],
+  ['player.archive', 'Архивация профилей игроков'],
+  ['team.create', 'Создание команд'],
+  ['team.update', 'Редактирование команд'],
+  ['team.archive', 'Архивация команд'],
+  ['audit.read', 'Просмотр журнала аудита'],
+  ['role.manage', 'Управление ролями и разрешениями'],
+] as const;
+
+const roleDefinitions = [
+  ['GUEST', 'Гость', []],
+  ['REGISTERED_USER', 'Зарегистрированный пользователь', []],
+  ['PLAYER', 'Игрок', []],
+  ['VERIFIED_PLAYER', 'Подтверждённый игрок', []],
+  ['TEAM_CAPTAIN', 'Капитан команды', []],
+  ['TEAM_MANAGER', 'Менеджер команды', ['team.update']],
+  ['COACH', 'Тренер', []],
+  ['ORGANIZER', 'Организатор', ['team.create', 'team.update']],
+  ['STATISTICIAN', 'Статистик', ['player.create', 'player.update', 'team.create', 'team.update']],
+  [
+    'MODERATOR',
+    'Модератор',
+    [
+      'player.create',
+      'player.update',
+      'player.archive',
+      'team.create',
+      'team.update',
+      'team.archive',
+      'audit.read',
+    ],
+  ],
+  [
+    'ADMIN',
+    'Администратор',
+    [
+      'player.create',
+      'player.update',
+      'player.archive',
+      'team.create',
+      'team.update',
+      'team.archive',
+      'audit.read',
+    ],
+  ],
+  [
+    'SUPER_ADMIN',
+    'Суперадминистратор',
+    [
+      'player.create',
+      'player.update',
+      'player.archive',
+      'team.create',
+      'team.update',
+      'team.archive',
+      'audit.read',
+      'role.manage',
+    ],
+  ],
+] as const;
+
+async function seedAccessControl(): Promise<void> {
+  const permissionIds = new Map<string, string>();
+  for (const [code, description] of permissionDefinitions) {
+    const permission = await prisma.permission.upsert({
+      where: { code },
+      update: { description },
+      create: { code, description },
+    });
+    permissionIds.set(code, permission.id);
+  }
+
+  const roleIds = new Map<string, string>();
+  for (const [code, name] of roleDefinitions) {
+    const role = await prisma.role.upsert({
+      where: { code },
+      update: { name, isSystem: true },
+      create: { code, name, isSystem: true },
+    });
+    roleIds.set(code, role.id);
+  }
+
+  await prisma.rolePermission.deleteMany({
+    where: { roleId: { in: [...roleIds.values()] } },
+  });
+  await prisma.rolePermission.createMany({
+    data: roleDefinitions.flatMap(([code, , permissionCodes]) =>
+      permissionCodes.map((permissionCode) => ({
+        roleId: roleIds.get(code)!,
+        permissionId: permissionIds.get(permissionCode)!,
+      })),
+    ),
+  });
+}
+
 async function main(): Promise<void> {
+  await seedAccessControl();
+
   const game = await prisma.game.upsert({
     where: { slug: 'cs2' },
     update: { name: 'Counter-Strike 2' },
@@ -126,7 +225,7 @@ async function main(): Promise<void> {
   }
 
   console.log(
-    `Seeded ${players.length} players, ${teams.length} teams, ${tournaments.length} tournaments, ${matches.length} matches and ${achievements.length} achievements.`,
+    `Seeded ${roleDefinitions.length} roles, ${permissionDefinitions.length} permissions, ${players.length} players, ${teams.length} teams, ${tournaments.length} tournaments, ${matches.length} matches and ${achievements.length} achievements.`,
   );
 }
 

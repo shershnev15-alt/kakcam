@@ -1,21 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import type { OnApplicationShutdown } from '@nestjs/common';
-import { Pool } from 'pg';
+import { Inject, Injectable } from '@nestjs/common';
+import { PrismaService } from './prisma.service';
 
 @Injectable()
-export class DatabaseService implements OnApplicationShutdown {
-  private readonly pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    max: 5,
-    connectionTimeoutMillis: 2_000,
-  });
+export class DatabaseService {
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async ping(): Promise<boolean> {
-    const result = await this.pool.query<{ ok: number }>('SELECT 1 AS ok');
-    return result.rows[0]?.ok === 1;
-  }
-
-  async onApplicationShutdown(): Promise<void> {
-    await this.pool.end();
+    const result = await this.prisma.$queryRaw<Array<{ ok: number }>>`SELECT 1 AS ok`;
+    return result[0]?.ok === 1;
   }
 }
