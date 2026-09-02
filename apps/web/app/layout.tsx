@@ -1,3 +1,4 @@
+import { product } from '@arena/config';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Footer } from '@/components/footer';
@@ -5,14 +6,14 @@ import { Header } from '@/components/header';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://cyberid.example'),
+  metadataBase: new URL(product.publicUrl),
   title: {
-    default: 'cyberID — киберспорт в цифрах',
-    template: '%s · cyberID',
+    default: `${product.name} — киберспорт в цифрах`,
+    template: `%s · ${product.name}`,
   },
   description: 'Статистика, достижения и вся история выступлений игроков и команд России и СНГ.',
   openGraph: {
-    title: 'cyberID',
+    title: product.name,
     description: 'Рейтинги, матчи и вся киберспортивная карьера — в одном ID.',
     locale: 'ru_RU',
     type: 'website',

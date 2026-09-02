@@ -19,7 +19,8 @@ export function Header() {
           className="shrink-0 text-[24px] font-black tracking-[-.08em]"
           aria-label="cyberID — главная"
         >
-          <span>cyber</span><span className="text-[var(--brand)]">ID</span>
+          <span>cyber</span>
+          <span className="text-[var(--brand)]">ID</span>
         </Link>
         <nav className="hidden items-center gap-1 xl:flex" aria-label="Основная навигация">
           {navigation.map(([label, href]) => (

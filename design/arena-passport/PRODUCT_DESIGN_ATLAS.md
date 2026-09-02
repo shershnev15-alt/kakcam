@@ -17,23 +17,23 @@
 
 ## Атлас публичных страниц
 
-| Семейство | Маршрут | Макет | Главная задача |
-| --- | --- | --- | --- |
-| Главная | `/` | `21-home-neva-system.png` | Сводка live-событий, рейтингов, матчей и турниров |
-| Игроки | `/players` | `22-players-directory-neva-system.png` | Найти и сравнить игрока по PPR, роли, форме и confidence |
-| Профиль игрока | `/players/frostbyte` | `23-player-profile-infographic-neva.png` | Понять силу, динамику, выборку и причины PPR |
-| Достижения | `/players/frostbyte/achievements` | `24-player-achievements-neva.png` | Увидеть прогресс, редкость и доказательства достижения |
-| Карьера | `/players/frostbyte/career` | `25-player-career-neva.png` | Проследить команды, роли, периоды и подтверждённые переходы |
-| Команды | `/teams` | `26-teams-directory-neva.png` | Сравнить команды по TPR, форме и стабильности состава |
-| Профиль команды | `/teams/northern-lights` | `27-team-profile-neva.png` | Понять сыгранность, результаты, силу соперников и вклад состава |
-| Рейтинги | `/rankings/players`, `/rankings/teams` | `28-rankings-center-neva.png` | Читать место вместе с изменением, выборкой и confidence |
-| Матчи | `/matches` | `29-matches-center-neva.png` | Быстро просканировать live, ближайшие и завершённые серии |
-| Матч | `/matches/[id]` | `30-match-detail-neva.png` | Разобрать карты, раунды, экономику и вклад игроков |
-| Турниры | `/tournaments` | `31-tournaments-hub-neva.png` | Понять календарь, пересечения событий, tier и призовые |
-| Турнир | `/tournaments/[slug]` | `32-tournament-detail-neva.png` | Проследить сетку, таблицу, матчи, участников и лидеров |
-| Трансферы | `/transfers` | `33-transfers-ledger-neva.png` | Проверить движение игроков, статус и источники перехода |
-| Поиск | `/search` | `34-global-search-neva.png` | Найти игрока, команду, матч или турнир в одном интерфейсе |
-| Карта системы | — | `35-metrics-map-neva.png` | Связать источники, метрики, рейтинги и экраны |
+| Семейство       | Маршрут                                | Макет                                    | Главная задача                                                  |
+| --------------- | -------------------------------------- | ---------------------------------------- | --------------------------------------------------------------- |
+| Главная         | `/`                                    | `21-home-neva-system.png`                | Сводка live-событий, рейтингов, матчей и турниров               |
+| Игроки          | `/players`                             | `22-players-directory-neva-system.png`   | Найти и сравнить игрока по PPR, роли, форме и confidence        |
+| Профиль игрока  | `/players/frostbyte`                   | `23-player-profile-infographic-neva.png` | Понять силу, динамику, выборку и причины PPR                    |
+| Достижения      | `/players/frostbyte/achievements`      | `24-player-achievements-neva.png`        | Увидеть прогресс, редкость и доказательства достижения          |
+| Карьера         | `/players/frostbyte/career`            | `25-player-career-neva.png`              | Проследить команды, роли, периоды и подтверждённые переходы     |
+| Команды         | `/teams`                               | `26-teams-directory-neva.png`            | Сравнить команды по TPR, форме и стабильности состава           |
+| Профиль команды | `/teams/northern-lights`               | `27-team-profile-neva.png`               | Понять сыгранность, результаты, силу соперников и вклад состава |
+| Рейтинги        | `/rankings/players`, `/rankings/teams` | `28-rankings-center-neva.png`            | Читать место вместе с изменением, выборкой и confidence         |
+| Матчи           | `/matches`                             | `29-matches-center-neva.png`             | Быстро просканировать live, ближайшие и завершённые серии       |
+| Матч            | `/matches/[id]`                        | `30-match-detail-neva.png`               | Разобрать карты, раунды, экономику и вклад игроков              |
+| Турниры         | `/tournaments`                         | `31-tournaments-hub-neva.png`            | Понять календарь, пересечения событий, tier и призовые          |
+| Турнир          | `/tournaments/[slug]`                  | `32-tournament-detail-neva.png`          | Проследить сетку, таблицу, матчи, участников и лидеров          |
+| Трансферы       | `/transfers`                           | `33-transfers-ledger-neva.png`           | Проверить движение игроков, статус и источники перехода         |
+| Поиск           | `/search`                              | `34-global-search-neva.png`              | Найти игрока, команду, матч или турнир в одном интерфейсе       |
+| Карта системы   | —                                      | `35-metrics-map-neva.png`                | Связать источники, метрики, рейтинги и экраны                   |
 
 Страницы аккаунта, входа и модерации не входят в этот атлас: запрос относится к публичному продукту.
 

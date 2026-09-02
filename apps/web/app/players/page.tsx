@@ -30,29 +30,41 @@ export default async function PlayersPage({ searchParams }: Props) {
         <div>
           <p className="eyebrow">cyberID directory · CS2</p>
           <h1 className="display-title mt-5 text-[72px] md:text-[104px]">Игроки</h1>
-          <p className="muted mt-5 max-w-2xl leading-7">PPR, роли, форма и confidence в одном проверяемом реестре.</p>
+          <p className="muted mt-5 max-w-2xl leading-7">
+            PPR, роли, форма и confidence в одном проверяемом реестре.
+          </p>
         </div>
         <div className="surface p-5">
-          <div className="flex items-end justify-between"><div><p className="text-[10px] uppercase tracking-[.12em] text-[var(--text-3)]">Средняя динамика PPR</p><strong className="data-number mt-2 block text-3xl text-[var(--brand)]">+6.1%</strong></div><span className="text-xs text-[var(--text-3)]">30 дней</span></div>
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-[.12em] text-[var(--text-3)]">
+                Средняя динамика PPR
+              </p>
+              <strong className="data-number mt-2 block text-3xl text-[var(--brand)]">+6.1%</strong>
+            </div>
+            <span className="text-xs text-[var(--text-3)]">30 дней</span>
+          </div>
           <Sparkline values={result.data[0]?.form ?? [0, 0]} className="mt-3 h-16 w-full" />
         </div>
       </header>
       <div className="mt-8">
-        <DirectoryForm action="/players" values={params} />
+        <DirectoryForm action="/players" kind="players" values={params} />
         <div className="mb-4 flex items-center justify-between text-sm text-[var(--text-3)]">
           <span>Найдено: {result.meta.total}</span>
           <span>Страница {result.meta.page}</span>
         </div>
         {result.data.length ? (
           <>
-          <div className="mb-5 grid gap-2 lg:grid-cols-3">
-            {result.data.slice(0, 3).map((player) => <PlayerCard key={`top-${player.id}`} player={player} />)}
-          </div>
-          <div className="grid gap-2 lg:grid-cols-2">
-            {result.data.slice(3).map((player) => (
-              <PlayerCard key={player.id} player={player} />
-            ))}
-          </div>
+            <div className="mb-5 grid gap-2 lg:grid-cols-3">
+              {result.data.slice(0, 3).map((player) => (
+                <PlayerCard key={`top-${player.id}`} player={player} />
+              ))}
+            </div>
+            <div className="grid gap-2 lg:grid-cols-2">
+              {result.data.slice(3).map((player) => (
+                <PlayerCard key={player.id} player={player} />
+              ))}
+            </div>
           </>
         ) : (
           <div className="surface py-16 text-center">

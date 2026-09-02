@@ -1,8 +1,9 @@
+import { product } from '@arena/config';
 import { players, teams, tournaments } from '@arena/demo-data';
 import type { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = 'https://cyberid.example';
+  const base = product.publicUrl;
   return [
     { url: base, changeFrequency: 'daily', priority: 1 },
     { url: `${base}/players`, changeFrequency: 'daily', priority: 0.9 },
@@ -12,6 +13,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/transfers`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${base}/rankings/players`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/rankings/teams`, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${base}/about`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${base}/methodology`, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${base}/sources`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${base}/privacy`, changeFrequency: 'monthly', priority: 0.5 },
     ...players.map((player) => ({
       url: `${base}/players/${player.slug}`,
       changeFrequency: 'daily' as const,

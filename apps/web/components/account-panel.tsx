@@ -105,7 +105,7 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
   if (error === 'AUTH_REQUIRED' || !user) {
     return (
       <section className="surface mx-auto max-w-xl p-8 text-center">
-        <p className="eyebrow">Arena ID</p>
+        <p className="eyebrow">CYBER ID</p>
         <h1 className="mt-3 text-3xl font-black">Требуется вход</h1>
         <p className="muted mt-3">Ваша сессия не найдена или завершена.</p>
         <Link
@@ -127,7 +127,7 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
           <div>
             <p className="eyebrow">Личный кабинет</p>
             <h1 className="mt-3 text-3xl font-black tracking-[-.04em]">
-              {user.displayName ?? 'Участник Arena'}
+              {user.displayName ?? 'Участник CYBER ID'}
             </h1>
             <p className="muted mt-2">{user.email}</p>
           </div>

@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@arena/achievements-engine": "workspace:*",
+    "@arena/config": "workspace:*",
     "@arena/demo-data": "workspace:*",
     "@arena/rating-engine": "workspace:*",
     "@arena/types": "workspace:*",

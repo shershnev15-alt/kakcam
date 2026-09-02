@@ -1,0 +1,17 @@
+{
+  "name": "@arena/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/product.ts",
+  "types": "src/product.ts",
+  "exports": {
+    ".": "./src/product.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test"
+  }
+}

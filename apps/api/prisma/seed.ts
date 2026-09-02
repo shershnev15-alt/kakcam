@@ -1,3 +1,4 @@
+import { product } from '@arena/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
 import { achievements, matches, players, teams, tournaments } from '@arena/demo-data';
@@ -234,10 +235,10 @@ async function main(): Promise<void> {
 
   const dataSource = await prisma.dataSource.upsert({
     where: { code: 'arena-demo' },
-    update: { name: 'Arena Passport deterministic demo', type: 'INTERNAL', trustLevel: 3 },
+    update: { name: product.demoSourceName, type: 'INTERNAL', trustLevel: 3 },
     create: {
       code: 'arena-demo',
-      name: 'Arena Passport deterministic demo',
+      name: product.demoSourceName,
       type: 'INTERNAL',
       trustLevel: 3,
     },
@@ -276,15 +277,26 @@ async function main(): Promise<void> {
   }
 
   const countries = new Map((await prisma.country.findMany()).map((item) => [item.code, item.id]));
+  const citiesByCountry: Record<string, string[]> = {
+    RU: ['Москва', 'Санкт-Петербург', 'Казань', 'Екатеринбург'],
+    KZ: ['Алматы', 'Астана'],
+    BY: ['Минск'],
+    AM: ['Ереван'],
+    UZ: ['Ташкент'],
+    KG: ['Бишкек'],
+  };
   const teamIds = new Map<string, string>();
-  for (const team of teams) {
+  for (const [teamIndex, team] of teams.entries()) {
+    const teamCities = citiesByCountry[team.countryCode] ?? ['Не указан'];
+    const city = teamCities[teamIndex % teamCities.length]!;
     const record = await prisma.team.upsert({
       where: { slug: team.slug },
-      update: { name: team.name, shortName: team.shortName },
+      update: { name: team.name, shortName: team.shortName, city },
       create: {
         slug: team.slug,
         name: team.name,
         shortName: team.shortName,
+        city,
         ...(countries.get(team.countryCode) ? { countryId: countries.get(team.countryCode)! } : {}),
         foundedAt: new Date(`${team.foundedYear}-01-01T00:00:00.000Z`),
         aggregateVerificationLevel: team.verificationLevel,
@@ -294,10 +306,12 @@ async function main(): Promise<void> {
   }
 
   const playerIds = new Map<string, string>();
-  for (const player of players) {
+  for (const [playerIndex, player] of players.entries()) {
+    const playerCities = citiesByCountry[player.countryCode] ?? ['Не указан'];
     const profile = {
       realName: player.realName ?? null,
       birthDate: new Date(Date.UTC(2026 - (player.age ?? 20), 0, 1)),
+      regionName: playerCities[playerIndex % playerCities.length]!,
     };
     const record = await prisma.player.upsert({
       where: { slug: player.slug },

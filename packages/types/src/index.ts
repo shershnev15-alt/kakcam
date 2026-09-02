@@ -23,6 +23,7 @@ export interface PlayerSummary {
   realName?: string;
   countryCode: string;
   countryName: string;
+  city?: string;
   age?: number;
   teamId?: string;
   teamName?: string;
@@ -31,6 +32,8 @@ export interface PlayerSummary {
   verificationLevel: VerificationLevel;
   rating: RatingSnapshot;
   form: number[];
+  matchCount?: number;
+  winRate?: number;
 }
 
 export interface TeamSummary {
@@ -40,6 +43,7 @@ export interface TeamSummary {
   shortName: string;
   countryCode: string;
   countryName: string;
+  city?: string;
   foundedYear: number;
   verificationLevel: VerificationLevel;
   rating: RatingSnapshot;

@@ -1,3 +1,4 @@
+import { product } from '@arena/config';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -65,7 +66,7 @@ export default async function PlayerPage({ params }: PageProps) {
     alternateName: player.nickname,
     nationality: player.countryName,
     affiliation: { '@type': 'SportsTeam', name: player.teamName },
-    url: `https://cyberid.example/players/${player.slug}`,
+    url: `${product.publicUrl}/players/${player.slug}`,
   };
 
   return (
@@ -77,25 +78,53 @@ export default async function PlayerPage({ params }: PageProps) {
       <section className="signal-stage border-b border-[var(--border)]">
         <div className="container py-5 md:py-7">
           <nav className="mb-8 flex gap-7 border-b border-[var(--border)] text-xs font-bold uppercase tracking-[.08em] text-[var(--text-3)]">
-            <Link className="border-b-2 border-[var(--brand)] pb-4 text-[var(--text-1)]" href={`/players/${player.slug}`}>Обзор</Link>
-            <Link className="pb-4 hover:text-white" href="/matches">Матчи</Link>
-            <Link className="pb-4 hover:text-white" href={`/players/${player.slug}/career`}>Карьера</Link>
-            <Link className="pb-4 hover:text-white" href={`/players/${player.slug}/achievements`}>Достижения</Link>
+            <Link
+              className="border-b-2 border-[var(--brand)] pb-4 text-[var(--text-1)]"
+              href={`/players/${player.slug}`}
+            >
+              Обзор
+            </Link>
+            <Link className="pb-4 hover:text-white" href="/matches">
+              Матчи
+            </Link>
+            <Link className="pb-4 hover:text-white" href={`/players/${player.slug}/career`}>
+              Карьера
+            </Link>
+            <Link className="pb-4 hover:text-white" href={`/players/${player.slug}/achievements`}>
+              Достижения
+            </Link>
           </nav>
           <div className="grid min-h-[410px] items-center gap-8 xl:grid-cols-[1fr_260px]">
             <div>
               <div className="flex flex-wrap items-center gap-4">
                 <Monogram label={player.nickname} size="lg" />
                 <div>
-                  <p className="text-2xl font-semibold">{player.realName ?? 'Настоящее имя не опубликовано'}</p>
-                  <p className="mt-1 text-sm text-[var(--text-2)]">{player.countryCode} · {player.age ?? '—'} года</p>
+                  <p className="text-2xl font-semibold">
+                    {player.realName ?? 'Настоящее имя не опубликовано'}
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--text-2)]">
+                    {player.countryCode} · {player.city ?? 'Город не указан'} · {player.age ?? '—'}{' '}
+                    года
+                  </p>
                 </div>
                 <VerificationBadge level={player.verificationLevel} />
               </div>
-              <h1 className="display-title mt-7 text-[64px] sm:text-[92px] lg:text-[122px]">{player.nickname}</h1>
+              <h1 className="display-title mt-7 text-[64px] sm:text-[92px] lg:text-[122px]">
+                {player.nickname}
+              </h1>
               <div className="mt-7 flex flex-wrap gap-3">
-                {player.roles.map((role) => <span className="border border-[var(--border)] bg-[rgba(18,18,18,.7)] px-4 py-3 text-sm font-semibold" key={role}>{role}</span>)}
-                <Link className="inline-flex items-center gap-3 border border-[var(--border)] bg-[rgba(18,18,18,.7)] px-4 py-2 text-sm font-semibold" href={`/teams/${team.slug}`}>
+                {player.roles.map((role) => (
+                  <span
+                    className="border border-[var(--border)] bg-[rgba(18,18,18,.7)] px-4 py-3 text-sm font-semibold"
+                    key={role}
+                  >
+                    {role}
+                  </span>
+                ))}
+                <Link
+                  className="inline-flex items-center gap-3 border border-[var(--border)] bg-[rgba(18,18,18,.7)] px-4 py-2 text-sm font-semibold"
+                  href={`/teams/${team.slug}`}
+                >
                   <Monogram label={team.shortName} size="sm" /> {team.name}
                 </Link>
               </div>
@@ -103,11 +132,17 @@ export default async function PlayerPage({ params }: PageProps) {
             <aside className="border border-[var(--border)] bg-[rgba(15,15,15,.88)] p-5 backdrop-blur">
               <div className="border-b border-[var(--border)] pb-5 text-center">
                 <p className="eyebrow">Рейтинг PPR</p>
-                <p className="data-number mt-2 text-7xl font-black text-[var(--brand)]">{player.rating.score}</p>
+                <p className="data-number mt-2 text-7xl font-black text-[var(--brand)]">
+                  {player.rating.score}
+                </p>
               </div>
               <div className="border-b border-[var(--border)] py-5 text-center">
-                <p className="text-[10px] uppercase tracking-[.14em] text-[var(--text-3)]">Рейтинг СНГ</p>
-                <p className="data-number mt-2 text-5xl font-black text-[var(--brand)]">#{player.rating.rank}</p>
+                <p className="text-[10px] uppercase tracking-[.14em] text-[var(--text-3)]">
+                  Рейтинг СНГ
+                </p>
+                <p className="data-number mt-2 text-5xl font-black text-[var(--brand)]">
+                  #{player.rating.rank}
+                </p>
               </div>
               <div className="flex items-center justify-center gap-4 pt-5">
                 <RatingRing score={player.rating.score} confidence={player.rating.confidence} />

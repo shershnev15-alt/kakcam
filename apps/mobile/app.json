@@ -1,31 +1,31 @@
 {
   "expo": {
-    "name": "Arena Passport",
-    "slug": "arena-passport",
+    "name": "CYBER ID",
+    "slug": "cyber-id",
     "version": "0.1.0",
     "orientation": "portrait",
-    "scheme": "arenapassport",
+    "scheme": "cyberid",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.arenapassport.mobile",
-      "associatedDomains": ["applinks:arena-passport.example"]
+      "bundleIdentifier": "app.cyberid.mobile",
+      "associatedDomains": ["applinks:cyber-id.example"]
     },
     "android": {
-      "package": "app.arenapassport.mobile",
+      "package": "app.cyberid.mobile",
       "adaptiveIcon": { "backgroundColor": "#090c12" },
       "intentFilters": [
         {
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "https", "host": "arena-passport.example", "pathPrefix": "/players" },
-            { "scheme": "https", "host": "arena-passport.example", "pathPrefix": "/teams" },
-            { "scheme": "https", "host": "arena-passport.example", "pathPrefix": "/matches" },
+            { "scheme": "https", "host": "cyber-id.example", "pathPrefix": "/players" },
+            { "scheme": "https", "host": "cyber-id.example", "pathPrefix": "/teams" },
+            { "scheme": "https", "host": "cyber-id.example", "pathPrefix": "/matches" },
             {
               "scheme": "https",
-              "host": "arena-passport.example",
+              "host": "cyber-id.example",
               "pathPrefix": "/tournaments"
             }
           ],

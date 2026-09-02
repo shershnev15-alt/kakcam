@@ -1,4 +1,4 @@
-# Arena Passport
+# CYBER ID
 
 Цифровой паспорт игрока и команды по Counter-Strike 2: статистика, достижения и история выступлений России и стран СНГ в одном проверяемом профиле. Архитектура допускает добавление других дисциплин позже, но текущий продукт и импорт данных работают только с CS2.
 
@@ -16,10 +16,13 @@
 - `http://localhost:3000/account?claim=frostbyte` — Claim Profile; `/moderation` — защищённая очередь проверки;
 - `http://localhost:3000/rankings/players` и `/rankings/teams` — рейтинги;
 - `http://localhost:3000/register`, `/login`, `/account` — регистрация, вход и кабинет;
+- `http://localhost:3000/about`, `/methodology`, `/sources`, `/privacy` — о проекте, формулы, provenance и приватность;
 - `http://localhost:3001` — отдельная административная консоль;
 - `http://localhost:4000/health`, `/ready`, `/api/v1` — API status.
 
 Все игроки и команды prototype вымышлены.
+
+Временное название, публичный URL и код демоисточника вынесены в `packages/config/src/product.ts`.
 
 ## Запуск
 
@@ -46,9 +49,15 @@ pnpm --filter @arena/mobile dev
 
 Два демонстрационных CS2-провайдера доступны в рабочем пространстве Imports админки: данные сначала попадают в staging и preview, а затем применяются отдельной подтверждаемой командой. Exact replay переиспользует предыдущий импорт, а конфликт с существующим матчем создаёт assertion вместо перезаписи факта.
 
+## Steam и FACEIT
+
+Отдельные адаптеры находятся в `apps/api/src/game-accounts`. По умолчанию оба работают в явном `DEMO`-режиме: не вызывают внешние API и не выдают владение аккаунтом за подтверждённое. Текущий статус доступен по `GET /api/v1/integrations/status`.
+
+Для live lookup скопируйте `.env.example` в `.env` и задайте `STEAM_WEB_API_KEY` и/или `FACEIT_API_KEY`. Base URL можно переопределить через `STEAM_API_BASE_URL` и `FACEIT_API_BASE_URL`. Даже при наличии ключа lookup только читает публичный профиль; для верификации владения нужен отдельный OAuth/challenge-flow.
+
 ## Проверки
 
-Node локально не требуется; CI выполняет `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`. Архитектура и roadmap: [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md). Текущий статус: [docs/PROGRESS.md](docs/PROGRESS.md).
+Node локально не требуется для Docker-запуска; CI выполняет `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`. Вручную весь gate запускается теми же четырьмя командами. Архитектура и roadmap: [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md). Текущий статус: [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Структура
 

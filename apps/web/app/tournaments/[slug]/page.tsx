@@ -39,9 +39,7 @@ export default async function TournamentPage({ params }: Props) {
           <span className="rounded bg-[var(--surface-3)] px-2 py-1">{tournament.mode}</span>
           <span className="text-[var(--success)]">{tournament.status}</span>
         </div>
-        <h1 className="display-title mt-8 text-[56px] md:text-[88px]">
-          {tournament.name}
-        </h1>
+        <h1 className="display-title mt-8 text-[56px] md:text-[88px]">{tournament.name}</h1>
         <p className="mt-4 text-[var(--text-2)]">
           {tournament.tier} · {tournament.participantCount} команд · $
           {tournament.prizePool.toLocaleString('en-US')}

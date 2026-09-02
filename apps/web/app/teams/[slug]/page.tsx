@@ -61,7 +61,8 @@ export default async function TeamPage({ params }: PageProps) {
                   <VerificationBadge level={team.verificationLevel} />
                 </div>
                 <p className="mt-3 text-[var(--text-2)]">
-                  {team.countryCode} {team.countryName} · Основана в {team.foundedYear}
+                  {team.countryCode} {team.countryName} · {team.city ?? 'Город не указан'} ·
+                  Основана в {team.foundedYear}
                 </p>
                 <p className="mt-3 text-sm text-[var(--text-3)]">
                   Основной состав · Counter-Strike 2

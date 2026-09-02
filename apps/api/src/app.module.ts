@@ -21,6 +21,8 @@ import { RatingsController } from './ratings/ratings.controller';
 import { RatingsService } from './ratings/ratings.service';
 import { VerificationController } from './verification/verification.controller';
 import { VerificationService } from './verification/verification.service';
+import { GameAccountsController } from './game-accounts/game-accounts.controller';
+import { GameAccountsService } from './game-accounts/game-accounts.service';
 
 @Module({
   controllers: [
@@ -35,6 +37,7 @@ import { VerificationService } from './verification/verification.service';
     TeamsController,
     VerificationController,
     ImportsController,
+    GameAccountsController,
   ],
   providers: [
     AdminService,
@@ -51,6 +54,7 @@ import { VerificationService } from './verification/verification.service';
     CareerService,
     VerificationService,
     ImportsService,
+    GameAccountsService,
   ],
 })
 export class AppModule {}

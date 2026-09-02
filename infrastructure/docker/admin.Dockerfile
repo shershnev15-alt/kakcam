@@ -5,11 +5,13 @@ WORKDIR /workspace
 FROM base AS dependencies
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY apps/admin/package.json apps/admin/package.json
+COPY packages/config/package.json packages/config/package.json
 RUN pnpm install --filter @arena/admin... --no-frozen-lockfile
 
 FROM dependencies AS development
 COPY tsconfig.base.json ./
 COPY apps/admin apps/admin
+COPY packages/config packages/config
 EXPOSE 3001
 CMD ["pnpm", "--filter", "@arena/admin", "dev"]
 

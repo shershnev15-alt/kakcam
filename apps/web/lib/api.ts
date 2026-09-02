@@ -179,7 +179,10 @@ function publicPlayerProfile(player: PlayerProfile): PlayerProfile {
 
 export async function getPlayers(params: Record<string, string | number | undefined> = {}) {
   const result = await api<PageResult<PlayerSummary>>(`/players${queryString(params)}`);
-  return { ...result, data: result.data.map(publicPlayerFacts).sort((a, b) => a.rating.rank - b.rating.rank) };
+  return {
+    ...result,
+    data: result.data.map(publicPlayerFacts).sort((a, b) => a.rating.rank - b.rating.rank),
+  };
 }
 
 export async function getTeams(params: Record<string, string | number | undefined> = {}) {
@@ -199,7 +202,10 @@ export async function getTeam(slug: string) {
 
 export async function getPlayerRankings(params: Record<string, string | number | undefined> = {}) {
   const result = await api<PageResult<PlayerSummary>>(`/rankings/players${queryString(params)}`);
-  return { ...result, data: result.data.map(publicPlayerFacts).sort((a, b) => a.rating.rank - b.rating.rank) };
+  return {
+    ...result,
+    data: result.data.map(publicPlayerFacts).sort((a, b) => a.rating.rank - b.rating.rank),
+  };
 }
 
 export async function getTeamRankings(params: Record<string, string | number | undefined> = {}) {

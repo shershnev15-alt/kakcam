@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@arena/config": "workspace:*",
     "@arena/demo-data": "workspace:*",
     "@arena/types": "workspace:*",
     "@tailwindcss/postcss": "4.1.13",

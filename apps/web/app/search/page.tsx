@@ -26,10 +26,7 @@ export default async function SearchPage({ searchParams }: Props) {
           name="q"
           placeholder="Игрок или команда"
         />
-        <button
-          className="bg-[var(--accent)] px-5 text-sm font-black text-[#0b1016]"
-          type="submit"
-        >
+        <button className="bg-[var(--accent)] px-5 text-sm font-black text-[#0b1016]" type="submit">
           Найти
         </button>
       </form>

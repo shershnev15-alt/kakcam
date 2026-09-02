@@ -2,6 +2,7 @@
 .github
 .codex
 .agents
+.pnpm-store
 **/node_modules
 **/.next
 **/dist
@@ -10,3 +11,12 @@
 .env
 .env.*
 !.env.example
+node_modules
+apps/admin/.next
+apps/api/dist
+apps/mobile/dist
+apps/web/.next
+apps/admin/node_modules
+apps/api/node_modules
+apps/mobile/node_modules
+apps/web/node_modules

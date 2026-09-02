@@ -15,8 +15,7 @@ export async function requestPushPermissionAfterRationale(
 export function notificationDeepLink(payload: unknown): string | null {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
   const url = (payload as Record<string, unknown>).url;
-  return typeof url === 'string' &&
-    (url.startsWith('arenapassport://') || url.startsWith('https://'))
+  return typeof url === 'string' && (url.startsWith('cyberid://') || url.startsWith('https://'))
     ? url
     : null;
 }
@@ -35,7 +34,7 @@ export async function scheduleMatchReminder(input: {
     content: {
       title: 'Матч скоро начнётся',
       body: input.title,
-      data: { url: `arenapassport://matches/${input.matchId}` },
+      data: { url: `cyberid://matches/${input.matchId}` },
     },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminderAt },
   });

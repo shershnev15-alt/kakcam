@@ -61,7 +61,9 @@ export function SectionHeading({
     <div className="mb-5 flex items-end justify-between gap-4">
       <div>
         {eyebrow ? <p className="eyebrow mb-2">{eyebrow}</p> : null}
-        <h2 className="font-[var(--display)] text-2xl font-black uppercase tracking-[-.045em] md:text-[30px]">{title}</h2>
+        <h2 className="font-[var(--display)] text-2xl font-black uppercase tracking-[-.045em] md:text-[30px]">
+          {title}
+        </h2>
       </div>
       {action ? (
         <Link
@@ -201,7 +203,8 @@ export function PlayerCard({
           ) : null}
         </div>
         <p className="mt-1 truncate text-xs text-[var(--text-3)]">
-          {player.countryCode} · {player.roles[0]} · {player.teamShortName}
+          {player.countryCode}
+          {player.city ? `, ${player.city}` : ''} · {player.roles[0]} · {player.teamShortName}
         </p>
       </div>
       <div className="text-right">
@@ -225,7 +228,8 @@ export function TeamCard({ team, compact = false }: { team: TeamSummary; compact
       <div className="min-w-0 flex-1">
         <strong className="block truncate text-sm">{team.name}</strong>
         <p className="mt-1 text-xs text-[var(--text-3)]">
-          {team.countryCode} ·{' '}
+          {team.countryCode}
+          {team.city ? `, ${team.city}` : ''} ·{' '}
           {team.form
             .map((item, index) => (
               <span

@@ -536,7 +536,7 @@ export function AdminConsole({ resource }: { resource?: string }) {
         <a className="brand" href="/">
           <span>AP</span>
           <div>
-            ARENA PASSPORT<small>OPERATIONS</small>
+            CYBER ID<small>OPERATIONS</small>
           </div>
         </a>
         <nav aria-label="Модули администратора">
@@ -806,7 +806,7 @@ function LoginPanel({ onLogin }: { onLogin: (user: User) => void }) {
     <div className="login-page">
       <div className="login-mark">AP</div>
       <form onSubmit={(event) => void submit(event)}>
-        <p>ARENA PASSPORT / OPERATIONS</p>
+        <p>CYBER ID / OPERATIONS</p>
         <h1>Вход для оператора</h1>
         <span>Консоль показывает только модули, разрешенные вашей ролью.</span>
         <label>

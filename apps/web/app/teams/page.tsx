@@ -19,6 +19,8 @@ export default async function TeamsPage({ searchParams }: Props) {
   const params = {
     q: value(raw.q),
     country: value(raw.country),
+    city: value(raw.city),
+    discipline: value(raw.discipline) ?? 'cs2',
     sort: value(raw.sort) ?? 'rating',
     page: value(raw.page) ?? '1',
   };
@@ -27,11 +29,35 @@ export default async function TeamsPage({ searchParams }: Props) {
   return (
     <div className="container py-9 md:py-12">
       <header className="grid gap-6 border-b border-[var(--border)] pb-8 lg:grid-cols-[1fr_420px] lg:items-end">
-        <div><p className="eyebrow">cyberID directory · CS2</p><h1 className="display-title mt-5 text-[72px] md:text-[104px]">Команды</h1><p className="muted mt-5 max-w-2xl leading-7">TPR, форма и стабильность состава в одном рейтинговом контуре.</p></div>
-        <div className="surface p-5"><div className="flex items-end justify-between"><div><p className="text-[10px] uppercase tracking-[.12em] text-[var(--text-3)]">Динамика TPR региона</p><strong className="data-number mt-2 block text-3xl text-[var(--brand)]">+4.8%</strong></div><span className="text-xs text-[var(--text-3)]">30 дней</span></div><Sparkline values={result.data[0]?.form.map((item, index) => (item === 'W' ? 70 + index * 5 : 48 + index * 3)) ?? [0, 0]} className="mt-3 h-16 w-full" /></div>
+        <div>
+          <p className="eyebrow">cyberID directory · CS2</p>
+          <h1 className="display-title mt-5 text-[72px] md:text-[104px]">Команды</h1>
+          <p className="muted mt-5 max-w-2xl leading-7">
+            TPR, форма и стабильность состава в одном рейтинговом контуре.
+          </p>
+        </div>
+        <div className="surface p-5">
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-[.12em] text-[var(--text-3)]">
+                Динамика TPR региона
+              </p>
+              <strong className="data-number mt-2 block text-3xl text-[var(--brand)]">+4.8%</strong>
+            </div>
+            <span className="text-xs text-[var(--text-3)]">30 дней</span>
+          </div>
+          <Sparkline
+            values={
+              result.data[0]?.form.map((item, index) =>
+                item === 'W' ? 70 + index * 5 : 48 + index * 3,
+              ) ?? [0, 0]
+            }
+            className="mt-3 h-16 w-full"
+          />
+        </div>
       </header>
       <div className="mt-8">
-        <DirectoryForm action="/teams" values={params} />
+        <DirectoryForm action="/teams" kind="teams" values={params} />
         <div className="mb-4 flex items-center justify-between text-sm text-[var(--text-3)]">
           <span>Найдено: {result.meta.total}</span>
           <span>Страница {result.meta.page}</span>

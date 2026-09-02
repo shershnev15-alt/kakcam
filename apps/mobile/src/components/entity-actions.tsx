@@ -26,7 +26,7 @@ export function EntityActions({
   async function share() {
     const route = kind === 'player' ? 'players' : 'teams';
     const url = canonicalEntityUrl(canonicalWebUrl, route, slug);
-    await Share.share({ title: label, message: `${label} — Arena Passport\n${url}`, url });
+    await Share.share({ title: label, message: `${label} — CYBER ID\n${url}`, url });
   }
   return (
     <View style={styles.row}>
@@ -97,7 +97,7 @@ export function ShareAction({
 }) {
   async function share() {
     const url = canonicalEntityUrl(canonicalWebUrl, route, id);
-    await Share.share({ title: label, message: `${label} — Arena Passport\n${url}`, url });
+    await Share.share({ title: label, message: `${label} — CYBER ID\n${url}`, url });
   }
   return (
     <Pressable accessibilityRole="button" style={styles.reminder} onPress={() => void share()}>

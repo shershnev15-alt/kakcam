@@ -1,3 +1,3 @@
 # @arena/config
 
-Общие TypeScript, lint, formatting и environment contracts. Базовый strict TypeScript config уже расположен в корне; package будет выделен после подключения mobile с другим module target.
+Общие контракты конфигурации монорепозитория. Временное имя продукта, URL и демо-метки задаются в `src/product.ts`, чтобы web, API, admin и mobile не расходились по бренду.

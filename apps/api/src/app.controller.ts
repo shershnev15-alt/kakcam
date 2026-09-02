@@ -1,3 +1,4 @@
+import { product } from '@arena/config';
 import { Controller, Get, Inject, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { demoCounts } from './demo';
 import { DatabaseService } from './database.service';
@@ -33,7 +34,7 @@ export class AppController {
   @Get('api/v1')
   index(): Record<string, unknown> {
     return {
-      name: 'Arena Passport API',
+      name: `${product.name} API`,
       version: 'v1',
       mode: 'database-backed',
       counts: demoCounts,

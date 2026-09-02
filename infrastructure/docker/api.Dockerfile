@@ -5,6 +5,7 @@ WORKDIR /workspace
 FROM base AS dependencies
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY apps/api/package.json apps/api/package.json
+COPY packages/config/package.json packages/config/package.json
 COPY packages/types/package.json packages/types/package.json
 COPY packages/demo-data/package.json packages/demo-data/package.json
 COPY packages/rating-engine/package.json packages/rating-engine/package.json
@@ -14,6 +15,7 @@ RUN pnpm install --filter @arena/api... --no-frozen-lockfile
 FROM dependencies AS development
 COPY tsconfig.base.json ./
 COPY apps/api apps/api
+COPY packages/config packages/config
 COPY packages/types packages/types
 COPY packages/demo-data packages/demo-data
 COPY packages/rating-engine packages/rating-engine

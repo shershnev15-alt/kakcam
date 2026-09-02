@@ -318,6 +318,7 @@ model Team {
   slug                       String                  @unique
   name                       String
   shortName                  String
+  city                       String?
   countryId                  String?                 @db.Uuid
   organizationId             String?                 @db.Uuid
   foundedAt                  DateTime?               @db.Date

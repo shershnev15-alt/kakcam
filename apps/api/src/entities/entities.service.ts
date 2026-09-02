@@ -13,7 +13,12 @@ import type { DirectoryQuery } from './directory.validation';
 const playerInclude = {
   country: { select: { code: true, name: true } },
   currentTeam: { select: { id: true, slug: true, name: true, shortName: true } },
-  profile: { select: { realName: true, birthDate: true } },
+  profile: { select: { realName: true, birthDate: true, regionName: true } },
+  aggregateStatistics: {
+    orderBy: { periodEnd: 'desc' as const },
+    take: 1,
+    select: { sampleMatches: true, wins: true },
+  },
   ratings: {
     orderBy: { publishedAt: 'desc' as const },
     take: 1,
@@ -94,6 +99,28 @@ export class EntitiesService {
 
   async listPlayers(query: DirectoryQuery) {
     const where = this.playerWhere(query);
+    if (query.sort === 'matches' || query.sort === 'winRate') {
+      const records = await this.prisma.player.findMany({ where, include: playerInclude });
+      records.sort((left, right) => {
+        const leftStats = left.aggregateStatistics[0];
+        const rightStats = right.aggregateStatistics[0];
+        const leftValue =
+          query.sort === 'matches'
+            ? (leftStats?.sampleMatches ?? 0)
+            : (leftStats?.wins ?? 0) / Math.max(1, leftStats?.sampleMatches ?? 0);
+        const rightValue =
+          query.sort === 'matches'
+            ? (rightStats?.sampleMatches ?? 0)
+            : (rightStats?.wins ?? 0) / Math.max(1, rightStats?.sampleMatches ?? 0);
+        return rightValue - leftValue || left.nickname.localeCompare(right.nickname, 'ru');
+      });
+      const offset = (query.page - 1) * query.pageSize;
+      return this.page(
+        records.slice(offset, offset + query.pageSize).map((record) => this.playerDto(record)),
+        records.length,
+        query,
+      );
+    }
     if (query.sort === 'rating') {
       const run = await this.prisma.ratingRun.findFirst({
         where: { engine: 'PPR', status: 'PUBLISHED' },
@@ -530,6 +557,7 @@ export class EntitiesService {
       country: player.country,
       countryCode: player.country?.code ?? 'XX',
       countryName: player.country?.name ?? 'Не указана',
+      city: player.profile?.regionName ?? null,
       currentTeam: player.currentTeam,
       teamId: player.currentTeam?.id ?? null,
       teamName: player.currentTeam?.name ?? 'Без команды',
@@ -544,6 +572,13 @@ export class EntitiesService {
         tier: typeof explanation.tier === 'string' ? explanation.tier : 'Unrated',
       },
       form: numberList(explanation.form),
+      matchCount: player.aggregateStatistics[0]?.sampleMatches ?? 0,
+      winRate: Number(
+        (
+          (player.aggregateStatistics[0]?.wins ?? 0) /
+          Math.max(1, player.aggregateStatistics[0]?.sampleMatches ?? 0)
+        ).toFixed(3),
+      ),
       ratingPublishedAt: ratingRecord?.publishedAt ?? null,
       createdAt: player.createdAt,
       updatedAt: player.updatedAt,
@@ -563,6 +598,7 @@ export class EntitiesService {
       country: team.country,
       countryCode: team.country?.code ?? 'XX',
       countryName: team.country?.name ?? 'Не указана',
+      city: team.city,
       foundedYear: team.foundedAt?.getUTCFullYear() ?? null,
       rating: {
         score: ratingRecord?.score ?? 0,
@@ -703,7 +739,17 @@ export class EntitiesService {
           }
         : {}),
       ...(query.country ? { country: { is: { code: query.country } } } : {}),
+      ...(query.city
+        ? { profile: { is: { regionName: { contains: query.city, mode: 'insensitive' } } } }
+        : {}),
       ...(query.team ? { currentTeam: { is: { slug: query.team } } } : {}),
+      ...(query.role
+        ? {
+            ratings: {
+              some: { explanation: { path: ['roles'], array_contains: query.role } },
+            },
+          }
+        : {}),
     };
   }
 
@@ -720,6 +766,7 @@ export class EntitiesService {
           }
         : {}),
       ...(query.country ? { country: { is: { code: query.country } } } : {}),
+      ...(query.city ? { city: { contains: query.city, mode: 'insensitive' } } : {}),
     };
   }
 

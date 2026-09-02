@@ -20,7 +20,7 @@ export default function EntryScreen() {
         <Text style={styles.markText}>A</Text>
       </View>
       <ActivityIndicator color={colors.accent} />
-      <Text style={styles.text}>Готовим ваш Arena Passport</Text>
+      <Text style={styles.text}>Готовим ваш CYBER ID</Text>
     </View>
   );
 }

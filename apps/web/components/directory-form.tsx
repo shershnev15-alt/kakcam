@@ -1,19 +1,22 @@
 export function DirectoryForm({
   action,
+  kind,
   values,
 }: {
   action: string;
+  kind: 'players' | 'teams';
   values: {
     q?: string | undefined;
     country?: string | undefined;
+    city?: string | undefined;
+    role?: string | undefined;
+    team?: string | undefined;
+    discipline?: string | undefined;
     sort?: string | undefined;
   };
 }) {
   return (
-    <form
-      className="surface mb-6 grid gap-3 p-4 md:grid-cols-[1fr_180px_180px_auto]"
-      action={action}
-    >
+    <form className="surface mb-6 grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4" action={action}>
       <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-3)]">
         Поиск
         <input
@@ -23,6 +26,53 @@ export function DirectoryForm({
           placeholder="Никнейм или название"
         />
       </label>
+      <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-3)]">
+        Город
+        <input
+          className="focus-ring h-11 border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--text-1)]"
+          defaultValue={values.city}
+          name="city"
+          placeholder="Москва, Алматы…"
+        />
+      </label>
+      <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-3)]">
+        Дисциплина
+        <select
+          className="focus-ring h-11 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--text-1)]"
+          defaultValue={values.discipline ?? 'cs2'}
+          name="discipline"
+        >
+          <option value="cs2">Counter-Strike 2</option>
+        </select>
+      </label>
+      {kind === 'players' ? (
+        <>
+          <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-3)]">
+            Роль
+            <select
+              className="focus-ring h-11 border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--text-1)]"
+              defaultValue={values.role ?? ''}
+              name="role"
+            >
+              <option value="">Все роли</option>
+              {['AWP', 'Rifler', 'Entry', 'IGL', 'Lurker', 'Support'].map((role) => (
+                <option key={role} value={role}>
+                  {role}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-3)]">
+            Команда
+            <input
+              className="focus-ring h-11 border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--text-1)]"
+              defaultValue={values.team}
+              name="team"
+              placeholder="team-slug"
+            />
+          </label>
+        </>
+      ) : null}
       <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-3)]">
         Страна
         <select
@@ -47,12 +97,18 @@ export function DirectoryForm({
           name="sort"
         >
           <option value="rating">По рейтингу</option>
+          {kind === 'players' ? (
+            <>
+              <option value="matches">По количеству матчей</option>
+              <option value="winRate">По проценту побед</option>
+            </>
+          ) : null}
           <option value="name">По имени</option>
           <option value="verified">По проверке</option>
         </select>
       </label>
       <button
-        className="focus-ring h-11 self-end bg-[var(--accent)] px-5 text-sm font-black text-[#0b1016]"
+        className="focus-ring h-11 self-end bg-[var(--accent)] px-5 text-sm font-black text-[#0b1016] xl:col-start-4"
         type="submit"
       >
         Применить

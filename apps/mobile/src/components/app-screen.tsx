@@ -51,7 +51,7 @@ export function AppScreen({
               <Text style={styles.markText}>A</Text>
             </View>
           )}
-          <Text style={styles.headerText}>ARENA PASSPORT</Text>
+          <Text style={styles.headerText}>CYBER ID</Text>
           <View style={styles.headerActions}>
             <Pressable
               accessibilityLabel="Поиск"

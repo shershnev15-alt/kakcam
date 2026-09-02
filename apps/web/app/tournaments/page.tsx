@@ -39,7 +39,9 @@ export default async function TournamentsPage({ searchParams }: Props) {
                 {tournament.status}
               </span>
             </div>
-            <h2 className="font-[var(--display)] mt-10 text-3xl font-black uppercase tracking-[-.045em]">{tournament.name}</h2>
+            <h2 className="font-[var(--display)] mt-10 text-3xl font-black uppercase tracking-[-.045em]">
+              {tournament.name}
+            </h2>
             <p className="mt-2 text-sm text-[var(--text-2)]">{tournament.tier} · CS2</p>
             <p className="mt-4 text-xs text-[var(--text-3)]">
               {tournament.participantCount} команд · {tournament.matchCount} матчей

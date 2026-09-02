@@ -45,6 +45,10 @@
 - canonical share actions, app/universal links и notification deep-link routing для players/teams/matches/tournaments;
 - изолированные зависимости Docker-сервисов без конкурентной записи в host `node_modules`.
 - активная дисциплина продукта и onboarding ограничены Counter-Strike 2; другие игры остаются отключённой точкой расширения;
+- временный бренд `CYBER ID`, canonical URL и демо-метки вынесены в общий `@arena/config` для web/API/admin/mobile;
+- каталоги фильтруют по городу, а игроков — также по роли и команде; сортировка по матчам и win rate работает по PostgreSQL-агрегатам;
+- добавлены непустые `/about`, `/methodology`, `/sources`, `/privacy`, закрывающие все footer/methodology-ссылки;
+- Steam/FACEIT account adapter layer с явным `DEMO`/`LIVE` статусом; lookup никогда не выдаётся за подтверждение владения;
 - два независимых CS2 mock provider adapter с различными payload formats и единым versioned canonical contract;
 - raw/canonical staging records, strict validation, identity resolution и preview до изменения публичных данных;
 - stable SHA-256 exact replay, atomic apply claim, serializable conflict check, external entity links и транзакционные `CREATE`/`ASSERT`/`SKIP` outcomes;
@@ -55,12 +59,12 @@
 ## Tests
 
 - Prisma schema validation, migration deploy и idempotent seed: passed;
-- API strict typecheck, 38 unit tests и production build: passed;
+- API strict typecheck, 42 unit tests и production build: passed;
 - Admin strict typecheck, 4 component/command tests и production build: passed;
 - Mobile strict typecheck, 9 format/engagement/deep-link tests и Expo static export: passed;
 - Web strict typecheck, 3 component tests и production build: passed;
 - rating engine: 6 deterministic PPR/TPR tests; achievement engine: 6 tests;
-- полный monorepo test suite: 66 tests passed;
+- полный monorepo test suite: 70 tests passed;
 - auth/RBAC e2e: register 201, me 200, unauthorized mutation 403, foreign Origin 403, logout 201, revoked session 401;
 - Statistician e2e: Player/Team create 201 и update 200; временные QA-записи очищены;
 - Moderator e2e: Player/Team soft-archive 200, archived public read 404; временные QA-записи очищены;
@@ -79,6 +83,7 @@
 - Stage 12 e2e: Alpha stage/replay/apply, Bravo result/maps/statistics apply/replay, conflict `ASSERT` без overwrite и assertion queue `CANDIDATE`;
 - Stage 12 HTTP smoke: health 200, anonymous provider access 401, публичный imported match 200 с двумя картами и series stats;
 - Web smoke: transfers, achievements, career, account claim и moderation routes return 200;
+- браузерный smoke бренда, статических страниц, сложного Player filter и паспортов на 1280 px/390 px: без overflow и console errors;
 - HTTP smoke: public web 200, admin 200, current API health 200; Docker postgres/redis/API healthy and web 200.
 
 ## Known limitations
