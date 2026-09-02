@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -100,11 +99,10 @@ export function ModerationPanel() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="eyebrow">{item.claim.method}</p>
-                <h2 className="mt-2 text-xl font-bold">
-                  <Link href={`/players/${item.claim.player.slug}`}>
-                    {item.claim.player.nickname}
-                  </Link>
-                </h2>
+                <h2 className="mt-2 text-xl font-bold">{item.claim.player.nickname}</h2>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[.1em] text-[var(--warning)]">
+                  Публичный профиль закрыт до полного допуска
+                </p>
                 <p className="mt-1 text-xs text-[var(--text-3)]">
                   {item.claim.claimant.displayName ?? item.claim.claimant.email}
                 </p>

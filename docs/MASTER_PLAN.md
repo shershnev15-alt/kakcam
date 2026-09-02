@@ -134,6 +134,8 @@ Achievement engine обрабатывает версионируемые пра�
 
 Уровни 0–5: Unverified, Account Connected, Identity Verified, Organizer Verified, Official Verified, Platform Verified. Уровень применяется к утверждению/полю, а агрегированный badge профиля — только удобное представление. Конфликтующие источники не перезаписывают друг друга: они создают assertions и moderation case.
 
+Публичный Player/PPR работает по deny-by-default policy. Требуются одновременно самостоятельный approved claim, решение местной федерации, обязательное approved-фото и подтверждённые CS2-привязки Steam и FACEIT. Ни verification badge, ни роль администратора по отдельности не открывают профиль; отзыв любого сигнала закрывает все public projections.
+
 ## 12. Frontend
 
 Dark-first premium sports analytics, SSR/ISR для публичных страниц, server-first data fetching. Ключевой экран — Player Digital Passport. Все страницы проектируются под desktop/tablet/mobile, с skeleton, empty, error, partial и unverified states. SEO включает metadata, canonical, OpenGraph, JSON-LD, sitemap и robots.

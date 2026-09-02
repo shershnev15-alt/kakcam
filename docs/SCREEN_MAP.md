@@ -24,7 +24,7 @@
 
 ## Account Web
 
-Реализованы `/login`, `/register`, `/account` и Claim Profile внутри `/account?claim=[slug]`; `/moderation` — защищённая очередь первичной проверки. `/me/favorites`, `/me/notifications`, `/settings`, `/settings/security` входят в следующие этапы. Guest может читать весь публичный контент; auth prompt появляется только для персональных действий.
+Реализованы `/login`, `/register`, `/account` и Claim Profile внутри `/account?claim=[slug]`; `/moderation` — защищённая очередь первичной проверки. `/me/favorites`, `/me/notifications`, `/settings`, `/settings/security` входят в следующие этапы. Guest читает команды, соревнования и только полностью допущенных игроков; закрытые Player/PPR не обнаруживаются через поиск, составы, статистику или sitemap.
 
 ## Admin
 

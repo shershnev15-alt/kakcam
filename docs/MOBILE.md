@@ -1,6 +1,6 @@
 # Mobile application
 
-Этапы 9–11 реализованы как Expo SDK 57 / React Native workspace в `apps/mobile`. Приложение использует тот же REST API; публичный контент, избранное и напоминания доступны guest без регистрации.
+Этапы 9–11 реализованы как Expo SDK 57 / React Native workspace в `apps/mobile`. Приложение использует тот же REST API; guest видит только player-контент, прошедший verified-only server policy. Избранное и напоминания доступны без регистрации.
 
 Реализованы:
 

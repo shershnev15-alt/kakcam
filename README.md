@@ -1,19 +1,19 @@
 # CYBER ID
 
-Цифровой паспорт игрока и команды по Counter-Strike 2: статистика, достижения и история выступлений России и стран СНГ в одном проверяемом профиле. Архитектура допускает добавление других дисциплин позже, но текущий продукт и импорт данных работают только с CS2.
+Цифровой паспорт игрока и команды по Counter-Strike 2: статистика, достижения и история выступлений России и стран СНГ в одном проверяемом профиле. Профиль и PPR игрока по умолчанию закрыты; общий доступ появляется только после self-claim, подтверждения местной федерации, обязательного фото и проверенных привязок Steam + FACEIT. Архитектура допускает добавление других дисциплин позже, но текущий продукт и импорт данных работают только с CS2.
 
 ## Что уже можно посмотреть
 
 - `http://localhost:3000` — главная;
 - `http://localhost:3000/players` и `/teams` — каталоги с поиском, фильтрами и пагинацией;
 - `http://localhost:3000/search?q=north` — глобальный поиск по реестру;
-- `http://localhost:3000/players/frostbyte` — главный Player Digital Passport;
+- `/players/:slug` — Player Digital Passport после полного допуска; demo seed намеренно не публикует вымышленных игроков;
 - `http://localhost:3000/teams/northern-lights` — профиль команды;
 - `http://localhost:3000/matches` — match center, карты и статистика игроков;
 - `http://localhost:3000/tournaments` — календарь, участники и итоговые места;
 - `http://localhost:3000/transfers` — подтверждённая лента переходов;
-- `http://localhost:3000/players/frostbyte/achievements` и `/career` — награды и карьерная timeline;
-- `http://localhost:3000/account?claim=frostbyte` — Claim Profile; `/moderation` — защищённая очередь проверки;
+- `/players/:slug/achievements` и `/career` — награды и карьерная timeline только допущенного игрока;
+- `http://localhost:3000/account` — самостоятельный Claim Profile; `/moderation` — защищённая очередь проверки;
 - `http://localhost:3000/rankings/players` и `/rankings/teams` — рейтинги;
 - `http://localhost:3000/register`, `/login`, `/account` — регистрация, вход и кабинет;
 - `http://localhost:3000/about`, `/methodology`, `/sources`, `/privacy` — о проекте, формулы, provenance и приватность;

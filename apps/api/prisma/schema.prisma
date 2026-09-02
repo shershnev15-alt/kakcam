@@ -56,6 +56,11 @@ enum VerificationStatus {
   REVOKED
 }
 
+enum PlayerPublicationStatus {
+  PUBLISHED
+  REVOKED
+}
+
 enum DataImportStatus {
   QUEUED
   FETCHING
@@ -130,6 +135,7 @@ model User {
   reviewedClaims        ProfileClaim[]         @relation("ClaimReviewer")
   submittedEvidence     VerificationEvidence[] @relation("EvidenceSubmitter")
   reviewedVerifications Verification[]         @relation("VerificationReviewer")
+  publicationReviews    PlayerPublication[]    @relation("PublicationReviewer")
   moderationCases       ModerationCase[]       @relation("ModerationAssignee")
 }
 
@@ -206,6 +212,7 @@ model UserRole {
   grantedBy   User?     @relation("UserRoleGrantor", fields: [grantedById], references: [id], onDelete: SetNull)
   createdAt   DateTime  @default(now())
 
+  @@unique([userId, roleId, scopeType, scopeId])
   @@index([userId, validUntil])
   @@index([roleId])
   @@index([scopeType, scopeId])
@@ -245,14 +252,16 @@ model GameRole {
 }
 
 model Organization {
-  id          String   @id @default(uuid()) @db.Uuid
-  slug        String   @unique
-  name        String
-  countryCode String?
-  website     String?
-  teams       Team[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String              @id @default(uuid()) @db.Uuid
+  slug               String              @unique
+  name               String
+  countryCode        String?
+  website            String?
+  isFederation       Boolean             @default(false)
+  teams              Team[]
+  playerPublications PlayerPublication[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 model Player {
@@ -278,6 +287,7 @@ model Player {
   transfers                  Transfer[]
   claims                     ProfileClaim[]
   followers                  UserFollow[]
+  publication                PlayerPublication?
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
 
@@ -837,6 +847,7 @@ model Verification {
   decidedAt   DateTime?
   reviewer    User?                  @relation("VerificationReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
   evidence    VerificationEvidence[]
+  publication PlayerPublication?
 
   @@index([subjectType, subjectId, status])
 }
@@ -857,6 +868,7 @@ model ProfileClaim {
   reviewer        User?                  @relation("ClaimReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
   evidence        VerificationEvidence[]
   moderationCase  ModerationCase?
+  publication     PlayerPublication?
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
 
@@ -865,21 +877,48 @@ model ProfileClaim {
 }
 
 model VerificationEvidence {
-  id             String        @id @default(uuid()) @db.Uuid
-  claimId        String?       @db.Uuid
-  verificationId String?       @db.Uuid
-  submittedById  String?       @db.Uuid
-  kind           String
-  reference      String
-  checksum       String        @db.VarChar(64)
-  visibility     String        @default("RESTRICTED")
-  claim          ProfileClaim? @relation(fields: [claimId], references: [id], onDelete: Cascade)
-  verification   Verification? @relation(fields: [verificationId], references: [id], onDelete: Cascade)
-  submittedBy    User?         @relation("EvidenceSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
-  createdAt      DateTime      @default(now())
+  id               String             @id @default(uuid()) @db.Uuid
+  claimId          String?            @db.Uuid
+  verificationId   String?            @db.Uuid
+  submittedById    String?            @db.Uuid
+  kind             String
+  reference        String
+  checksum         String             @db.VarChar(64)
+  visibility       String             @default("RESTRICTED")
+  claim            ProfileClaim?      @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  verification     Verification?      @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  submittedBy      User?              @relation("EvidenceSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+  publicationPhoto PlayerPublication?
+  createdAt        DateTime           @default(now())
 
   @@unique([claimId, checksum])
   @@index([verificationId])
+}
+
+model PlayerPublication {
+  id              String                  @id @default(uuid()) @db.Uuid
+  playerId        String                  @unique @db.Uuid
+  selfClaimId     String                  @unique @db.Uuid
+  federationId    String                  @db.Uuid
+  photoEvidenceId String                  @unique @db.Uuid
+  verificationId  String                  @unique @db.Uuid
+  reviewerId      String                  @db.Uuid
+  status          PlayerPublicationStatus
+  publicPhotoUrl  String
+  reason          String
+  publishedAt     DateTime?
+  revokedAt       DateTime?
+  player          Player                  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  selfClaim       ProfileClaim            @relation(fields: [selfClaimId], references: [id], onDelete: Restrict)
+  federation      Organization            @relation(fields: [federationId], references: [id], onDelete: Restrict)
+  photoEvidence   VerificationEvidence    @relation(fields: [photoEvidenceId], references: [id], onDelete: Restrict)
+  verification    Verification            @relation(fields: [verificationId], references: [id], onDelete: Restrict)
+  reviewer        User                    @relation("PublicationReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([federationId, status])
 }
 
 model ModerationCase {

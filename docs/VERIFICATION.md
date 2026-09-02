@@ -1,21 +1,41 @@
-# Verification and Provenance
+# Verification and public admission
 
-Статус: Claim Profile и moderation workflow реализованы end-to-end. Evidence остаётся restricted, решение создаёт Verification, обновляет aggregate badge/роль и фиксируется в AuditLog.
+Статус: самостоятельный Claim Profile, модерация и отдельное решение местной федерации реализованы. По умолчанию любой игрок и его PPR закрыты. Публичная выдача включается только после одновременного выполнения всех обязательных условий.
+
+## Пять обязательных условий
+
+1. Игрок самостоятельно создал claim, а модератор подтвердил владение профилем.
+2. Организация отмечена как местная федерация, а решение принял её действующий проверяющий.
+3. К claim приложено обязательное restricted-фото; наружу отдаётся только отдельная одобренная производная копия из `/media/players/*`.
+4. Аккаунт Steam для CS2 привязан и имеет `verifiedAt` от провайдера.
+5. Аккаунт FACEIT для CS2 привязан и имеет `verifiedAt` от провайдера.
+
+Условия соединены через AND. Отсутствие или отзыв любого сигнала немедленно исключает игрока из каталога, поиска, PPR, sitemap, составов команд, ленты переходов и персональной статистики матчей. Detail API отвечает одинаковым `404` для неизвестного и закрытого профиля, поэтому публичный интерфейс не подтверждает наличие скрытой записи.
+
+## Два независимых решения
+
+Первичная модерация claim проверяет, что пользователь действительно владеет профилем, и создаёт Verification level 2. Это ещё не даёт публичного доступа.
+
+Публикацию или отзыв выполняет только роль `FEDERATION_REVIEWER`, назначенная с `scopeType=Organization` и `scopeId` конкретной федерации. Общая выдача этой роли запрещена. Даже пользователь с административными правами не может опубликовать игрока без активного назначения в выбранной федерации. Решение создаёт отдельные `Verification` level 4 и `PlayerPublication`, требует основание и фиксируется в `AuditLog`.
+
+## Фото и приватность
+
+Исходная ссылка/идентификатор фото хранится как `VerificationEvidence` с `visibility=RESTRICTED` и никогда не входит в публичный DTO или аудит. Публичный URL принимается только для обработанного локального media-ресурса с растровым расширением. Production media pipeline должен проверять MIME и размер, удалять EXIF/геолокацию, сканировать файл, создавать безопасную производную копию и применять retention/удаление после отзыва согласия.
+
+## Steam и FACEIT
+
+Публикационная policy учитывает только записи `PlayerGameAccount` для игры `cs2`, провайдеров `STEAM` и `FACEIT` и с непустым `verifiedAt`. Ручного обхода этого условия в endpoint публикации нет. Реальные OpenID/OAuth callbacks и provider credentials подключаются отдельной интеграцией; до неё профиль не может получить общий доступ через честный пользовательский поток.
 
 ## Уровни
 
 0 Unverified; 1 Account Connected; 2 Identity Verified; 3 Organizer Verified; 4 Official Verified; 5 Platform Verified.
 
-Уровень относится прежде всего к утверждению о конкретном поле. Badge профиля — агрегированное представление, которое не делает все поля одинаково достоверными.
+Уровень относится прежде всего к утверждению о конкретном поле. Badge профиля — агрегированное представление, которое не делает все поля одинаково достоверными и само по себе не открывает профиль.
 
 ## Effective value
 
-Источник создает `FieldAssertion(entity, field, value, source, observedAt, author, level)`. Resolver выбирает effective assertion по политике поля: trust tier, свежесть, полнота и ручное решение. Конфликт не уничтожает прежнее значение и создает moderation case.
+Источник создаёт `FieldAssertion(entity, field, value, source, observedAt, author, level)`. Resolver выбирает effective assertion по политике поля: trust tier, свежесть, полнота и ручное решение. Конфликт не уничтожает прежнее значение и создаёт moderation case.
 
-## Критичные изменения
+## Состояния claim
 
-Nickname identity, real name, date of birth, game account, roster dates, match result, tournament placement, rating input и achievement evidence требуют source stamp и audit. Администратор указывает reason; high-impact action требует повышенного permission/step-up auth.
-
-## Claim profile
-
-`submitted → evidence_requested → review → approved/rejected`. Методы: connected game account, social challenge code, organizer/team confirmation, manual platform review. Доказательства не становятся публичными. В local prototype reference хранится в restricted DB field; production требует encrypted object storage и retention policy.
+`submitted → evidence_requested → review → approved/rejected`. Методы: connected game account, social challenge code, organizer/team confirmation. Доказательства не становятся публичными. В local prototype reference хранится в restricted DB field; production требует encrypted object storage и retention policy.

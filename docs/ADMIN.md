@@ -6,7 +6,7 @@
 
 Dashboard показывает объёмы реестра, очереди claims/assertions/imports/reports и активность аудита. Доступны Players, Teams, Matches, Tournaments, Organizations, Verification, Assertions, Imports, Reports, Users, Achievements, Ratings и неизменяемый Audit.
 
-Операционные команды включают создание и архивирование Player/Team, создание и финализацию Match, управление Tournament/Organization, решения по claims/assertions/reports, CS2 provider staging/apply и retry импортов, роли и статус пользователей, каталог/replay достижений и пересчёт рейтингов.
+Операционные команды включают создание и архивирование Player/Team, создание и финализацию Match, управление Tournament/Organization, решения по claims/assertions/reports, CS2 provider staging/apply и retry импортов, роли и статус пользователей, каталог/replay достижений и пересчёт рейтингов. Organization можно пометить местной федерацией, назначить ей scoped-проверяющего и после пяти проверок опубликовать либо закрыть профиль игрока.
 
 В Imports доступны два независимых demo feed: Alpha для upcoming match и Bravo для завершённого матча с картами и статистикой. Оператор сначала запускает stage и проверяет raw/canonical preview, counters и identity resolution, затем отдельно применяет только импорт в статусе `REVIEW`. Конфликтующий provider fact направляется в Assertions; существующий матч не перезаписывается.
 
@@ -18,6 +18,8 @@ Dashboard показывает объёмы реестра, очереди claim
 - destructive/decision операции требуют понятное основание;
 - provider import защищён уникальным checksum: exact replay переиспользует прежний результат; legacy queue сохраняет `409 Conflict` для дубля;
 - администратор не может заблокировать себя или снять с себя `SUPER_ADMIN`;
+- `FEDERATION_REVIEWER` нельзя выдать как глобальную роль: назначение всегда ограничено конкретной федерацией, а обычный admin не обходит эту проверку;
+- публикация требует approved self-claim, restricted photo, verified Steam и verified FACEIT; missing signal возвращает `409` без частичной публикации;
 - каждая успешная команда формирует AuditLog с actor, reason, target и request id.
 
 ## Локальный доступ

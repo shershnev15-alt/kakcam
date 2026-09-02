@@ -30,6 +30,7 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
   const [claims, setClaims] = useState<Claim[]>([]);
   const [playerSlug, setPlayerSlug] = useState(initialPlayerSlug);
   const [method, setMethod] = useState('SOCIAL_CHALLENGE');
+  const [evidenceKind, setEvidenceKind] = useState('REFERENCE');
   const [evidenceReference, setEvidenceReference] = useState('');
   const [statement, setStatement] = useState('');
   const [claimMessage, setClaimMessage] = useState<string | null>(null);
@@ -81,7 +82,7 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
           playerSlug,
           method,
           statement: statement || undefined,
-          evidence: { kind: 'REFERENCE', reference: evidenceReference },
+          evidence: { kind: evidenceKind, reference: evidenceReference },
         }),
       });
       const result = (await response.json()) as { data?: Claim; message?: string };
@@ -168,8 +169,28 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
         <p className="eyebrow">Claim Profile</p>
         <h2 className="mt-2 text-2xl font-black">Подтвердить профиль игрока</h2>
         <p className="muted mt-2 text-sm">
-          Доказательства видит только модератор. В публичный профиль попадает лишь итоговый уровень
-          проверки.
+          Заявка подтверждает, что профиль принадлежит вам. До этого момента профиль, статистика и
+          рейтинг закрыты для общего доступа.
+        </p>
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          {[
+            'Самостоятельно подтвердить профиль',
+            'Получить подтверждение местной федерации',
+            'Предоставить обязательное фото',
+            'Привязать и подтвердить Steam',
+            'Привязать и подтвердить FACEIT',
+          ].map((requirement, index) => (
+            <div className="surface-soft flex items-center gap-3 p-3 text-sm" key={requirement}>
+              <span className="data-number text-xs font-black text-[var(--accent)]">
+                {index + 1}/5
+              </span>
+              <span>{requirement}</span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-xs leading-5 text-[var(--text-3)]">
+          Исходные доказательства и фото доступны только проверяющим. На сайт выводится отдельная
+          одобренная версия фотографии и статус двух игровых аккаунтов.
         </p>
         <form className="mt-6 grid gap-4" onSubmit={submitClaim}>
           <label className="grid gap-2 text-sm font-semibold">
@@ -195,11 +216,22 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
             </select>
           </label>
           <label className="grid gap-2 text-sm font-semibold">
-            Ссылка или идентификатор доказательства
+            Тип доказательства
+            <select
+              className="focus-ring h-11 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3"
+              onChange={(event) => setEvidenceKind(event.target.value)}
+              value={evidenceKind}
+            >
+              <option value="REFERENCE">Ссылка или идентификатор</option>
+              <option value="PROFILE_PHOTO">Обязательное фото профиля</option>
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-semibold">
+            Защищённая ссылка или идентификатор доказательства
             <input
               className="focus-ring h-11 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3"
               onChange={(event) => setEvidenceReference(event.target.value)}
-              placeholder="https://… или game-account:123"
+              placeholder="https://… или secure-upload:123"
               required
               value={evidenceReference}
             />

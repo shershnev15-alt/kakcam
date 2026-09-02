@@ -8,6 +8,7 @@ import { absoluteUrl, serializeJsonLd, twitterCard } from '@/lib/seo';
 import {
   Monogram,
   PlayerCard,
+  PlayerPhoto,
   RatingRing,
   SectionHeading,
   Sparkline,
@@ -96,10 +97,10 @@ export default async function PlayerPage({ params }: PageProps) {
             </Link>
           </nav>
           <div className="grid min-h-[410px] items-center gap-8 xl:grid-cols-[1fr_260px]">
-            <div>
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-4">
-                <Monogram label={player.nickname} size="lg" />
-                <div>
+                <PlayerPhoto src={player.avatarUrl} label={player.nickname} size="xl" />
+                <div className="min-w-0">
                   <p className="text-2xl font-semibold">
                     {player.realName ?? 'Настоящее имя не опубликовано'}
                   </p>
@@ -107,10 +108,12 @@ export default async function PlayerPage({ params }: PageProps) {
                     {player.countryCode} · {player.city ?? 'Город не указан'} · {player.age ?? '—'}{' '}
                     года
                   </p>
+                  <div className="mt-3">
+                    <VerificationBadge level={player.verificationLevel} />
+                  </div>
                 </div>
-                <VerificationBadge level={player.verificationLevel} />
               </div>
-              <h1 className="display-title mt-7 text-[64px] sm:text-[92px] lg:text-[122px]">
+              <h1 className="display-title mt-7 max-w-full text-[clamp(3.4rem,8vw,7.6rem)] [overflow-wrap:anywhere]">
                 {player.nickname}
               </h1>
               <div className="mt-7 flex flex-wrap gap-3">
@@ -128,7 +131,24 @@ export default async function PlayerPage({ params }: PageProps) {
                 >
                   <Monogram label={team.shortName} size="sm" /> {team.name}
                 </Link>
+                {player.verifiedAccounts.map((account) => (
+                  <span
+                    key={account.provider}
+                    className="border border-[var(--success)]/40 bg-[var(--success)]/10 px-4 py-3 text-xs font-bold text-[var(--success)]"
+                  >
+                    ✓ {account.provider}
+                    {account.handle ? ` · ${account.handle}` : ''}
+                  </span>
+                ))}
               </div>
+              {player.federationVerification ? (
+                <p className="mt-4 text-xs text-[var(--text-3)]">
+                  Допуск к публикации подтверждён:{' '}
+                  <span className="font-semibold text-[var(--text-2)]">
+                    {player.federationVerification.federation.name}
+                  </span>
+                </p>
+              ) : null}
             </div>
             <aside className="border border-[var(--border)] bg-[rgba(15,15,15,.88)] p-5 backdrop-blur">
               <div className="border-b border-[var(--border)] pb-5 text-center">

@@ -11,8 +11,14 @@ import { PrismaService } from '../prisma.service';
 import type {
   ClaimDecisionInput,
   ClaimEvidenceInput,
+  PublicationDecisionInput,
   SubmitClaimInput,
 } from './verification.validation';
+import {
+  missingPublicEligibilitySignals,
+  publicPhotoEvidenceKinds,
+  publicPlayerEligibilityWhere,
+} from './publication.policy';
 
 const ACTIVE_CLAIM_STATUSES = ['SUBMITTED', 'EVIDENCE_REQUESTED', 'IN_REVIEW'];
 
@@ -26,8 +32,29 @@ export class VerificationService {
 
   async playerVerification(slug: string) {
     const player = await this.prisma.player.findFirst({
-      where: { slug, status: 'ACTIVE' },
-      select: { id: true, slug: true, nickname: true, aggregateVerificationLevel: true },
+      where: { AND: [{ slug }, publicPlayerEligibilityWhere] },
+      select: {
+        id: true,
+        slug: true,
+        nickname: true,
+        aggregateVerificationLevel: true,
+        publication: {
+          select: {
+            publicPhotoUrl: true,
+            publishedAt: true,
+            federation: { select: { id: true, slug: true, name: true, countryCode: true } },
+          },
+        },
+        accounts: {
+          where: {
+            provider: { in: ['STEAM', 'FACEIT'] },
+            verifiedAt: { not: null },
+            game: { is: { slug: 'cs2' } },
+          },
+          select: { provider: true, handle: true, verifiedAt: true },
+          orderBy: { provider: 'asc' },
+        },
+      },
     });
     if (!player) throw new NotFoundException('Player not found');
     const [verifications, effectiveAssertions, approvedClaims] = await Promise.all([
@@ -56,7 +83,183 @@ export class VerificationService {
       approvedClaim: approvedClaims > 0,
       effectiveAssertions,
       verifications,
+      publication: player.publication,
+      verifiedAccounts: player.accounts,
     };
+  }
+
+  async decidePublication(
+    slug: string,
+    input: PublicationDecisionInput,
+    reviewerId: string,
+    request: HttpRequest,
+  ) {
+    const player = await this.prisma.player.findFirst({
+      where: { slug, status: 'ACTIVE' },
+      include: {
+        publication: { include: { verification: true, federation: true } },
+        accounts: {
+          where: {
+            provider: { in: ['STEAM', 'FACEIT'] },
+            verifiedAt: { not: null },
+            game: { is: { slug: 'cs2' } },
+          },
+          select: { provider: true, verifiedAt: true },
+        },
+      },
+    });
+    if (!player) throw new NotFoundException('Player not found');
+
+    if (input.decision === 'REVOKE') {
+      if (!player.publication || player.publication.status !== 'PUBLISHED') {
+        throw new ConflictException('Профиль уже закрыт для общего доступа');
+      }
+      await this.assertFederationReviewer(reviewerId, player.publication.federationId);
+      const now = new Date();
+      const publication = await this.prisma.$transaction(async (tx) => {
+        await tx.verification.update({
+          where: { id: player.publication!.verificationId },
+          data: { status: 'REVOKED', reason: input.reason, decidedAt: now },
+        });
+        const revoked = await tx.playerPublication.update({
+          where: { playerId: player.id },
+          data: { status: 'REVOKED', revokedAt: now, reviewerId, reason: input.reason },
+          include: { federation: true },
+        });
+        await tx.auditLog.create({
+          data: {
+            actorId: reviewerId,
+            action: 'player.publication.revoke',
+            targetType: 'Player',
+            targetId: player.id,
+            reason: input.reason,
+            diff: { before: { status: 'PUBLISHED' }, after: { status: 'REVOKED' } },
+            requestId: this.requestId(request) ?? null,
+          },
+        });
+        return revoked;
+      });
+      return this.publicationDto(publication, player.accounts);
+    }
+
+    await this.assertFederationReviewer(reviewerId, input.federationId);
+
+    if (player.publication?.status === 'PUBLISHED') {
+      if (
+        player.publication.selfClaimId === input.selfClaimId &&
+        player.publication.federationId === input.federationId &&
+        player.publication.photoEvidenceId === input.photoEvidenceId &&
+        player.publication.publicPhotoUrl === input.publicPhotoUrl
+      ) {
+        return this.publicationDto(player.publication, player.accounts);
+      }
+      throw new ConflictException('Сначала отзовите действующую публикацию');
+    }
+
+    const [claim, federation, photoEvidence] = await Promise.all([
+      this.prisma.profileClaim.findUnique({ where: { id: input.selfClaimId } }),
+      this.prisma.organization.findUnique({ where: { id: input.federationId } }),
+      this.prisma.verificationEvidence.findUnique({ where: { id: input.photoEvidenceId } }),
+    ]);
+    const providers = new Set(player.accounts.map((account) => account.provider));
+    const signals = {
+      approvedSelfClaim:
+        claim?.playerId === player.id && claim.userId.length > 0 && claim.status === 'APPROVED',
+      federationApproval: federation?.isFederation === true,
+      approvedPhoto: Boolean(
+        photoEvidence &&
+          claim &&
+          photoEvidence.claimId === claim.id &&
+          photoEvidence.visibility === 'RESTRICTED' &&
+          publicPhotoEvidenceKinds.includes(
+            photoEvidence.kind as (typeof publicPhotoEvidenceKinds)[number],
+          ),
+      ),
+      verifiedSteam: providers.has('STEAM'),
+      verifiedFaceit: providers.has('FACEIT'),
+    };
+    const missing = missingPublicEligibilitySignals(signals);
+    if (missing.length) {
+      throw new ConflictException({
+        message: 'Игрок не выполнил обязательные условия публикации',
+        missing,
+      });
+    }
+
+    const now = new Date();
+    const publication = await this.prisma.$transaction(async (tx) => {
+      const verification = await tx.verification.create({
+        data: {
+          subjectType: 'Player',
+          subjectId: player.id,
+          level: 4,
+          method: `FEDERATION:${federation!.slug}`,
+          status: 'APPROVED',
+          reviewerId,
+          reason: input.reason,
+          decidedAt: now,
+        },
+      });
+      const published = await tx.playerPublication.upsert({
+        where: { playerId: player.id },
+        create: {
+          playerId: player.id,
+          selfClaimId: input.selfClaimId,
+          federationId: input.federationId,
+          photoEvidenceId: input.photoEvidenceId,
+          verificationId: verification.id,
+          reviewerId,
+          status: 'PUBLISHED',
+          publicPhotoUrl: input.publicPhotoUrl,
+          reason: input.reason,
+          publishedAt: now,
+        },
+        update: {
+          selfClaimId: input.selfClaimId,
+          federationId: input.federationId,
+          photoEvidenceId: input.photoEvidenceId,
+          verificationId: verification.id,
+          reviewerId,
+          status: 'PUBLISHED',
+          publicPhotoUrl: input.publicPhotoUrl,
+          reason: input.reason,
+          publishedAt: now,
+          revokedAt: null,
+        },
+        include: { federation: true },
+      });
+      await tx.playerProfile.upsert({
+        where: { playerId: player.id },
+        create: { playerId: player.id, avatarUrl: input.publicPhotoUrl },
+        update: { avatarUrl: input.publicPhotoUrl },
+      });
+      await tx.player.update({
+        where: { id: player.id },
+        data: { aggregateVerificationLevel: Math.max(player.aggregateVerificationLevel, 4) },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorId: reviewerId,
+          action: 'player.publication.publish',
+          targetType: 'Player',
+          targetId: player.id,
+          reason: input.reason,
+          diff: {
+            after: {
+              status: 'PUBLISHED',
+              selfClaimId: input.selfClaimId,
+              federationId: input.federationId,
+              photoEvidenceChecksum: photoEvidence!.checksum,
+              verifiedSteam: true,
+              verifiedFaceit: true,
+            },
+          },
+          requestId: this.requestId(request) ?? null,
+        },
+      });
+      return published;
+    });
+    return this.publicationDto(publication, player.accounts);
   }
 
   async submitClaim(input: SubmitClaimInput, userId: string, request: HttpRequest) {
@@ -375,6 +578,48 @@ export class VerificationService {
       'Официально подтверждено',
       'Проверено платформой',
     ][Math.max(0, Math.min(5, level))]!;
+  }
+
+  private publicationDto(
+    publication: {
+      id: string;
+      status: string;
+      publicPhotoUrl: string;
+      publishedAt: Date | null;
+      revokedAt: Date | null;
+      federation?: { id: string; slug: string; name: string };
+    },
+    accounts: Array<{ provider: string; verifiedAt: Date | null }>,
+  ) {
+    const providers = new Set(
+      accounts.filter((item) => item.verifiedAt).map((item) => item.provider),
+    );
+    return {
+      id: publication.id,
+      status: publication.status,
+      publicPhotoUrl: publication.publicPhotoUrl,
+      federation: publication.federation ?? null,
+      verifiedSteam: providers.has('STEAM'),
+      verifiedFaceit: providers.has('FACEIT'),
+      publishedAt: publication.publishedAt,
+      revokedAt: publication.revokedAt,
+    };
+  }
+
+  private async assertFederationReviewer(reviewerId: string, federationId: string): Promise<void> {
+    const assignment = await this.prisma.userRole.findFirst({
+      where: {
+        userId: reviewerId,
+        role: { code: 'FEDERATION_REVIEWER' },
+        scopeType: 'Organization',
+        scopeId: federationId,
+        OR: [{ validUntil: null }, { validUntil: { gt: new Date() } }],
+      },
+      select: { id: true },
+    });
+    if (!assignment) {
+      throw new ForbiddenException('Нужна активная роль верификатора выбранной федерации');
+    }
   }
 
   private requestId(request: HttpRequest): string | undefined {

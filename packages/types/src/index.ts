@@ -30,6 +30,15 @@ export interface PlayerSummary {
   teamName?: string;
   teamShortName?: string;
   roles: string[];
+  verifiedAccounts?: Array<{
+    provider: 'STEAM' | 'FACEIT';
+    handle?: string | null;
+    verifiedAt: string;
+  }>;
+  federationVerification?: {
+    federation: { id: string; slug: string; name: string };
+    publishedAt: string;
+  } | null;
   verificationLevel: VerificationLevel;
   rating: RatingSnapshot;
   form: number[];

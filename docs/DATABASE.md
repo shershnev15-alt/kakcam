@@ -45,7 +45,8 @@
 | Team              | slug, name, shortName, countryId, organizationId, foundedAt, status            |
 | TeamRoster        | teamId, gameId, name, validFrom/To, status                                     |
 | TeamMember        | rosterId, playerId, function, joinedAt, leftAt, shirtNumber                    |
-| Organization      | slug, legal/display name, countryId, website, socials                          |
+| Organization      | slug, legal/display name, countryId, website, isFederation                     |
+| PlayerPublication | player, approved claim, federation, photo evidence, verification, status       |
 | CareerHistory     | playerId, teamId, gameId, role, startedAt, endedAt, source                     |
 | Transfer          | playerId, from/to team, date, status, source, evidence, verification, checksum |
 
@@ -93,20 +94,21 @@ Lineup snapshot неизменяемо фиксирует состав на мо
 
 ### Trust and operations
 
-| Сущность             | Назначение                                                              |
-| -------------------- | ----------------------------------------------------------------------- |
-| DataSource           | type, owner, trust policy, rate limits, active status                   |
-| DataImport           | provider, external key, raw location, checksum, state, counters, errors |
-| DataImportRecord     | raw/canonical payload, checksum, validation status, applied entity      |
-| ExternalEntityLink   | source/entity type/external ID → canonical UUID, confidence             |
-| FieldAssertion       | entity/field/value, source, observedAt, author, verification, status    |
-| Verification         | subject/assertion, level, method, status, validity, reviewer            |
-| VerificationEvidence | verificationId, evidence type, storage key/hash, visibility             |
-| ProfileClaim         | claimant, player, method, state, reviewer, decision reason              |
-| ModerationCase       | claim queue state, priority, assignee, resolution                       |
-| Report               | reporter, target, category, status, resolution                          |
-| AuditLog             | actor, action, target, before/after diff, reason, request metadata      |
-| AdminAction          | workflow wrapper for high-impact operations                             |
+| Сущность             | Назначение                                                                |
+| -------------------- | ------------------------------------------------------------------------- |
+| DataSource           | type, owner, trust policy, rate limits, active status                     |
+| DataImport           | provider, external key, raw location, checksum, state, counters, errors   |
+| DataImportRecord     | raw/canonical payload, checksum, validation status, applied entity        |
+| ExternalEntityLink   | source/entity type/external ID → canonical UUID, confidence               |
+| FieldAssertion       | entity/field/value, source, observedAt, author, verification, status      |
+| Verification         | subject/assertion, level, method, status, validity, reviewer              |
+| VerificationEvidence | verificationId, evidence type, storage key/hash, visibility               |
+| ProfileClaim         | claimant, player, method, state, reviewer, decision reason                |
+| PlayerPublication    | public admission, federation, approved photo, reviewer, published/revoked |
+| ModerationCase       | claim queue state, priority, assignee, resolution                         |
+| Report               | reporter, target, category, status, resolution                            |
+| AuditLog             | actor, action, target, before/after diff, reason, request metadata        |
+| AdminAction          | workflow wrapper for high-impact operations                               |
 
 `AuditLog` не содержит secret/token/raw ID document. Evidence хранится отдельно, encrypted, с retention policy.
 
@@ -139,7 +141,7 @@ News/Article поддерживают draft/review/published, author, localized 
 - stage 12 seed: два allow-listed mock-источника для CS2; миграции добавляют staging records/external links и series projection для granular CS2 statistics;
 - production никогда не запускает demo seed автоматически.
 
-Миграция `20260902073211_auth_rbac` добавляет auth/RBAC. Миграция `20260902090915_competition_and_rating_runs` добавляет карты и immutable results, tournament participants/placements, period/tournament statistics и FK rating snapshots → RatingRun. Миграция `20260902101500_achievements_career_verification` добавляет achievement events, provenance карьерных периодов/переходов, ProfileClaim, restricted evidence и moderation cases с безопасным backfill существующих grants. Миграции `20260902170000_cs2_provider_imports` и `20260902171500_cs2_series_stat_projection` добавляют безопасный provider staging/linking и недеструктивную series-проекцию. Seed идемпотентно создаёт 12 системных ролей, 24 permissions и все текущие read projections. Пароль хранится как Argon2id PHC string, session token — только как SHA-256 hash; сырые токены и пароли не попадают в AuditLog.
+Миграция `20260902073211_auth_rbac` добавляет auth/RBAC. Миграция `20260902090915_competition_and_rating_runs` добавляет карты и immutable results, tournament participants/placements, period/tournament statistics и FK rating snapshots → RatingRun. Миграция `20260902101500_achievements_career_verification` добавляет achievement events, provenance карьерных периодов/переходов, ProfileClaim, restricted evidence и moderation cases с безопасным backfill существующих grants. Миграции `20260902170000_cs2_provider_imports` и `20260902171500_cs2_series_stat_projection` добавляют безопасный provider staging/linking и недеструктивную series-проекцию. Миграция `20260902224500_verified_public_players` добавляет признак федерации, scoped reviewer uniqueness и явный PlayerPublication; backfill намеренно оставляет существующих игроков закрытыми. Seed идемпотентно создаёт 13 системных ролей, 25 permissions и все текущие read projections. Пароль хранится как Argon2id PHC string, session token — только как SHA-256 hash; сырые токены и пароли не попадают в AuditLog.
 
 ## Backup и retention
 

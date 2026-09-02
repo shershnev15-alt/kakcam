@@ -24,6 +24,7 @@ import {
   parseAssertion,
   parseAssertionDecision,
   parseEntityType,
+  parseFederationReviewer,
   parseImport,
   parseOrganization,
   parseResolution,
@@ -187,6 +188,26 @@ export class AdminController {
   ) {
     return {
       data: await this.admin.assignRoles(id, parseRoleAssignment(body), request.auth!.id, request),
+    };
+  }
+
+  @Post('federations/:federationId/reviewer')
+  @RequirePermissions('role.manage')
+  @UseGuards(CsrfGuard, SessionGuard, PermissionsGuard)
+  async federationReviewer(
+    @Param('federationId') federationId: string,
+    @Body() body: unknown,
+    @Req() request: AuthenticatedRequest & HttpRequest,
+  ) {
+    const input = parseFederationReviewer(body);
+    return {
+      data: await this.admin.setFederationReviewer(
+        federationId,
+        input.userId,
+        input,
+        request.auth!.id,
+        request,
+      ),
     };
   }
 

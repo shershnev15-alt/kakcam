@@ -9,6 +9,7 @@ import { createHash } from 'node:crypto';
 import type { Prisma, RatingEngine } from '../../generated/prisma/client';
 import type { HttpRequest } from '../http.types';
 import { PrismaService } from '../prisma.service';
+import { publicPlayerEligibilityWhere } from '../verification/publication.policy';
 
 const PPR_VERSION = 'ppr-v1.0.0';
 const TPR_VERSION = 'tpr-v1.0.0';
@@ -82,7 +83,9 @@ export class RatingsService {
   }
 
   async playerHistory(slug: string) {
-    const player = await this.prisma.player.findFirst({ where: { slug, status: 'ACTIVE' } });
+    const player = await this.prisma.player.findFirst({
+      where: { AND: [{ slug }, publicPlayerEligibilityWhere] },
+    });
     if (!player) throw new NotFoundException('Player not found');
     const records = await this.prisma.playerRating.findMany({
       where: { playerId: player.id, run: { status: 'PUBLISHED' } },
