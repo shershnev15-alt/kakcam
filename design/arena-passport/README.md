@@ -73,6 +73,10 @@ Fifth exploration, grounded in the current FACEIT profile pattern and designed f
 - `14-matchroom-ledger.png`
 - `15-season-deck.png`
 
+Refined hybrid requested by the user, combining the dramatic reference with the photo-independent FACEIT-grounded concepts:
+
+- `16-arena-competitive-hybrid.png`
+
 Comparable-site screenshots and notes are stored in `research/`.
 
 Current FACEIT reference captured on 2026-09-02:
