@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - packages/*
+
+overrides:
+  lru.min: 1.1.4
+
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@tailwindcss/oxide': true
+  esbuild: true
+  prisma: true

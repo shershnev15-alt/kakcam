@@ -1,0 +1,31 @@
+{
+  "name": "@arena/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0 --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@arena/demo-data": "workspace:*",
+    "@arena/types": "workspace:*",
+    "@tailwindcss/postcss": "4.1.13",
+    "next": "16.3.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "tailwindcss": "4.1.13"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.0",
+    "@types/node": "24.3.0",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "jsdom": "26.1.0",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4"
+  }
+}
