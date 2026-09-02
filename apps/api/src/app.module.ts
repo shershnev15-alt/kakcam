@@ -5,12 +5,19 @@ import { AuthRateLimitGuard, CsrfGuard, PermissionsGuard, SessionGuard } from '.
 import { AuthService } from './auth/auth.service';
 import { DatabaseService } from './database.service';
 import { EntitiesService } from './entities/entities.service';
+import { DirectoryController } from './entities/directory.controller';
 import { PlayersController } from './entities/players.controller';
 import { TeamsController } from './entities/teams.controller';
 import { PrismaService } from './prisma.service';
 
 @Module({
-  controllers: [AppController, AuthController, PlayersController, TeamsController],
+  controllers: [
+    AppController,
+    AuthController,
+    DirectoryController,
+    PlayersController,
+    TeamsController,
+  ],
   providers: [
     PrismaService,
     DatabaseService,

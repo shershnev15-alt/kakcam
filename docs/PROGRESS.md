@@ -1,6 +1,6 @@
 # Progress
 
-Дата обновления: 2 сентября 2026. Этапы: **0 завершён**, **1 foundation завершён**, **2 auth/RBAC завершён**.
+Дата обновления: 2 сентября 2026. Этапы: **0 завершён**, **1 foundation завершён**, **2 auth/RBAC завершён**, **3 public directory завершён**.
 
 ## Completed
 
@@ -13,25 +13,31 @@
 - Identity/Session/Role/Permission/RolePermission/UserRole migration;
 - 12 системных ролей, 8 permissions, policy guards, Origin/CSRF guard и auth rate limit;
 - PostgreSQL-backed Player/Team reads и защищённые create/update/soft-archive commands;
-- транзакционный AuditLog для регистрации, входа, выхода и Player/Team mutations.
+- транзакционный AuditLog для регистрации, входа, выхода и Player/Team mutations;
+- idempotent PostgreSQL seed текущих PPR/TPR: 2 RatingRun, 40 PlayerRating и 8 TeamRating;
+- DB-backed каталоги `/players` и `/teams` с page pagination, поиском, фильтрами и сортировкой;
+- DB-backed паспорта игрока/команды с рейтингом, составом и похожими игроками;
+- DB-backed `/rankings/players`, `/rankings/teams` и глобальный `/search`;
+- динамические metadata/canonical, sitemap directories, noindex search, loading/error/empty/404 states.
 
 ## Tests
 
 - Prisma schema validation, migration deploy и idempotent seed: passed;
-- API strict typecheck, 11 unit tests и production build: passed;
-- Web strict typecheck, 3 component tests и production build: passed, 58 static/SSG pages;
-- полный monorepo test suite: 21 test passed;
+- API strict typecheck, 14 unit tests и production build: passed;
+- Web strict typecheck, 3 component tests и production build: passed;
+- полный monorepo test suite: 24 tests passed;
 - auth/RBAC e2e: register 201, me 200, unauthorized mutation 403, foreign Origin 403, logout 201, revoked session 401;
 - Statistician e2e: Player/Team create 201 и update 200; временные QA-записи очищены;
 - Moderator e2e: Player/Team soft-archive 200, archived public read 404; временные QA-записи очищены;
-- database-backed `/api/v1/players/frostbyte`: 200;
-- visual QA `/login`, `/register`, `/account` на desktop и 390 px: no horizontal overflow, console clean;
+- Stage 3 API smoke: pagination/filter/search/rankings, Player/Team detail, invalid query 400 и missing slug 404;
+- Web smoke: DB-backed directories, search, rankings and both passports return 200; missing Player/Team return real HTTP 404;
+- visual QA каталогов, поиска, паспортов, рейтинга, empty и 404 на desktop 1440 px и mobile 390 px: no horizontal overflow, console clean;
 - Docker: postgres/redis/api healthy, web HTTP 200.
 
 ## Known limitations
 
-- Web-паспорта и рейтинги пока читают shared demo package; переключение на API входит в Этап 3;
-- matches/tournaments API остаются demo projection до Этапа 4;
+- матчи, турниры, performance snapshots и achievements в паспортах остаются deterministic demo projection до Этапа 4;
+- поиск Stage 3 использует индексируемый PostgreSQL `contains`; weighted FTS/`pg_trgm` projection остаётся следующим расширением;
 - auth rate limit хранится в памяти процесса; Redis-backed distributed limiter нужен до горизонтального масштабирования;
 - email verification/recovery, Steam/Google OAuth и управление ролями через Admin UI ещё не реализованы;
 - scoped ownership policies, profile claim и verification workflow относятся к следующим этапам;
@@ -39,4 +45,4 @@
 
 ## Next step
 
-Этап 3: перевести Player/Team passports, directories и rankings на DB-backed API, добавить поиск, pagination/filters, SEO-состояния и public error/empty/loading flows.
+Этап 4: перенести матчи, турниры, статистику выступлений и достижения в каноническую DB-модель/API, затем заменить оставшиеся demo sections в паспортах.

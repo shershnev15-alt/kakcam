@@ -142,9 +142,24 @@ async function main(): Promise<void> {
 
   const playerIds = new Map<string, string>();
   for (const player of players) {
+    const profile = {
+      realName: player.realName ?? null,
+      birthDate: new Date(Date.UTC(2026 - (player.age ?? 20), 0, 1)),
+    };
     const record = await prisma.player.upsert({
       where: { slug: player.slug },
-      update: { nickname: player.nickname },
+      update: {
+        nickname: player.nickname,
+        normalizedNickname: player.nickname.toLocaleLowerCase('ru-RU'),
+        ...(countries.get(player.countryCode)
+          ? { countryId: countries.get(player.countryCode)! }
+          : {}),
+        ...(player.teamId && teamIds.get(player.teamId)
+          ? { currentTeamId: teamIds.get(player.teamId)! }
+          : {}),
+        aggregateVerificationLevel: player.verificationLevel,
+        profile: { upsert: { create: profile, update: profile } },
+      },
       create: {
         slug: player.slug,
         nickname: player.nickname,
@@ -156,10 +171,128 @@ async function main(): Promise<void> {
           ? { currentTeamId: teamIds.get(player.teamId)! }
           : {}),
         aggregateVerificationLevel: player.verificationLevel,
-        ...(player.realName ? { profile: { create: { realName: player.realName } } } : {}),
+        profile: { create: profile },
       },
     });
     playerIds.set(player.id, record.id);
+  }
+
+  const ratingPublishedAt = new Date('2026-09-02T05:00:00.000Z');
+  const playerRatingRun = await prisma.ratingRun.upsert({
+    where: {
+      engine_formulaVersion_inputCutoff: {
+        engine: 'PPR',
+        formulaVersion: 'demo-v1',
+        inputCutoff: ratingPublishedAt,
+      },
+    },
+    update: { status: 'PUBLISHED', config: { periodDays: 90 } },
+    create: {
+      engine: 'PPR',
+      formulaVersion: 'demo-v1',
+      inputCutoff: ratingPublishedAt,
+      checksum: 'demo-ppr-2026-09-02',
+      status: 'PUBLISHED',
+      config: { periodDays: 90 },
+    },
+  });
+  const teamRatingRun = await prisma.ratingRun.upsert({
+    where: {
+      engine_formulaVersion_inputCutoff: {
+        engine: 'TPR',
+        formulaVersion: 'demo-v1',
+        inputCutoff: ratingPublishedAt,
+      },
+    },
+    update: { status: 'PUBLISHED', config: { periodDays: 90 } },
+    create: {
+      engine: 'TPR',
+      formulaVersion: 'demo-v1',
+      inputCutoff: ratingPublishedAt,
+      checksum: 'demo-tpr-2026-09-02',
+      status: 'PUBLISHED',
+      config: { periodDays: 90 },
+    },
+  });
+
+  for (const player of players) {
+    await prisma.playerRating.upsert({
+      where: {
+        playerId_gameId_runId: {
+          playerId: playerIds.get(player.id)!,
+          gameId: game.id,
+          runId: playerRatingRun.id,
+        },
+      },
+      update: {
+        score: player.rating.score,
+        confidence: player.rating.confidence,
+        rank: player.rating.rank,
+        explanation: {
+          delta7d: player.rating.delta7d,
+          delta30d: player.rating.delta30d,
+          tier: player.rating.tier,
+          roles: player.roles,
+          form: player.form,
+        },
+        publishedAt: ratingPublishedAt,
+      },
+      create: {
+        playerId: playerIds.get(player.id)!,
+        gameId: game.id,
+        runId: playerRatingRun.id,
+        score: player.rating.score,
+        confidence: player.rating.confidence,
+        rank: player.rating.rank,
+        explanation: {
+          delta7d: player.rating.delta7d,
+          delta30d: player.rating.delta30d,
+          tier: player.rating.tier,
+          roles: player.roles,
+          form: player.form,
+        },
+        publishedAt: ratingPublishedAt,
+      },
+    });
+  }
+
+  for (const team of teams) {
+    await prisma.teamRating.upsert({
+      where: {
+        teamId_gameId_runId: {
+          teamId: teamIds.get(team.id)!,
+          gameId: game.id,
+          runId: teamRatingRun.id,
+        },
+      },
+      update: {
+        score: team.rating.score,
+        confidence: team.rating.confidence,
+        rank: team.rating.rank,
+        explanation: {
+          delta7d: team.rating.delta7d,
+          delta30d: team.rating.delta30d,
+          tier: team.rating.tier,
+          form: team.form,
+        },
+        publishedAt: ratingPublishedAt,
+      },
+      create: {
+        teamId: teamIds.get(team.id)!,
+        gameId: game.id,
+        runId: teamRatingRun.id,
+        score: team.rating.score,
+        confidence: team.rating.confidence,
+        rank: team.rating.rank,
+        explanation: {
+          delta7d: team.rating.delta7d,
+          delta30d: team.rating.delta30d,
+          tier: team.rating.tier,
+          form: team.form,
+        },
+        publishedAt: ratingPublishedAt,
+      },
+    });
   }
 
   const tournamentIds = new Map<string, string>();
@@ -225,7 +358,7 @@ async function main(): Promise<void> {
   }
 
   console.log(
-    `Seeded ${roleDefinitions.length} roles, ${permissionDefinitions.length} permissions, ${players.length} players, ${teams.length} teams, ${tournaments.length} tournaments, ${matches.length} matches and ${achievements.length} achievements.`,
+    `Seeded ${roleDefinitions.length} roles, ${permissionDefinitions.length} permissions, ${players.length} players with PPR, ${teams.length} teams with TPR, ${tournaments.length} tournaments, ${matches.length} matches and ${achievements.length} achievements.`,
   );
 }
 

@@ -37,15 +37,19 @@ export function RankingsShell({
         </div>
       </section>
       <div className="container py-8 md:py-10">
-        <div className="mb-5 flex flex-wrap gap-2">
-          {['CS2', 'СНГ', 'Все роли', '90 дней', 'LAN + Online'].map((filter, index) => (
-            <button
-              key={filter}
-              className={`h-10 rounded-lg border px-3 text-xs font-semibold ${index === 0 ? 'border-[var(--brand)] bg-[rgba(95,139,255,.1)] text-[#AFC4FF]' : 'border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-2)]'}`}
-            >
-              {filter}⌄
-            </button>
-          ))}
+        <div className="mb-5 flex flex-wrap gap-2 text-xs font-semibold">
+          <span className="rounded-lg border border-[var(--brand)] bg-[rgba(95,139,255,.1)] px-3 py-2.5 text-[#AFC4FF]">
+            CS2
+          </span>
+          <span className="rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2.5 text-[var(--text-2)]">
+            СНГ
+          </span>
+          <span className="rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2.5 text-[var(--text-2)]">
+            90 дней
+          </span>
+          <span className="rounded-lg border border-[rgba(67,209,125,.35)] bg-[rgba(67,209,125,.08)] px-3 py-2.5 text-[var(--success)]">
+            Источник: PostgreSQL
+          </span>
         </div>
         {children}
         <div className="mt-5 flex flex-col gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] p-4 text-xs text-[var(--text-3)] sm:flex-row sm:items-center">

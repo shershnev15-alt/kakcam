@@ -128,9 +128,10 @@ News/Article поддерживают draft/review/published, author, localized 
 - production migration запускается отдельной job до rolling deploy;
 - seed идемпотентен по stable keys;
 - demo seed: 40 fictional players, 8 teams, 3 tournaments, 30 matches, 20 achievements;
+- stage 3 seed: даты рождения профилей, 2 опубликованных `RatingRun`, 40 текущих PPR и 8 TPR с rank/confidence/explanation;
 - production никогда не запускает demo seed автоматически.
 
-Миграция `20260902073211_auth_rbac` добавляет `Identity`, `Session`, `Role`, `Permission`, `RolePermission`, `UserRole` и enum провайдеров. Seed идемпотентно создаёт 12 системных ролей и 8 permissions. Пароль хранится как Argon2id PHC string, session token — только как SHA-256 hash; сырые токены и пароли не попадают в AuditLog.
+Миграция `20260902073211_auth_rbac` добавляет `Identity`, `Session`, `Role`, `Permission`, `RolePermission`, `UserRole` и enum провайдеров. Seed идемпотентно создаёт 12 системных ролей, 8 permissions и текущие PPR/TPR projections. Пароль хранится как Argon2id PHC string, session token — только как SHA-256 hash; сырые токены и пароли не попадают в AuditLog.
 
 ## Backup и retention
 

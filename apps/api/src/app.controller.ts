@@ -37,7 +37,7 @@ export class AppController {
       version: 'v1',
       mode: 'database-backed',
       counts: demoCounts,
-      resources: ['auth', 'players', 'teams', 'matches', 'tournaments', 'rankings'],
+      resources: ['auth', 'players', 'teams', 'rankings', 'search', 'matches', 'tournaments'],
     };
   }
 

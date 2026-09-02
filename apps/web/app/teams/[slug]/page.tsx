@@ -1,9 +1,10 @@
-import { matches, players, teamBySlug, teams, tournaments } from '@arena/demo-data';
+import { matches, teams, tournaments } from '@arena/demo-data';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CheckIcon } from '@/components/icons';
 import { MatchCard } from '@/components/match-card';
+import { ApiError, getTeam } from '@/lib/api';
 import {
   Delta,
   Monogram,
@@ -16,26 +17,32 @@ import {
 } from '@/components/ui';
 
 type PageProps = { params: Promise<{ slug: string }> };
-export function generateStaticParams() {
-  return teams.map((team) => ({ slug: team.slug }));
-}
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const team = teamBySlug((await params).slug);
-  return team
-    ? {
-        title: `${team.name} — состав, TPR ${team.rating.score} и матчи`,
-        description: `${team.name}: #${team.rating.rank} в командном рейтинге CS2, текущий состав и история выступлений.`,
-        alternates: { canonical: `/teams/${team.slug}` },
-      }
-    : { title: 'Команда не найдена' };
+  try {
+    const team = await getTeam((await params).slug);
+    return {
+      title: `${team.name} — состав, TPR ${team.rating.score} и матчи`,
+      description: `${team.name}: #${team.rating.rank} в командном рейтинге CS2, текущий состав и история выступлений.`,
+      alternates: { canonical: `/teams/${team.slug}` },
+    };
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return { title: 'Команда не найдена' };
+    throw error;
+  }
 }
 
 export default async function TeamPage({ params }: PageProps) {
-  const team = teamBySlug((await params).slug);
-  if (!team) notFound();
-  const roster = players.filter((player) => player.teamId === team.id);
+  let team;
+  try {
+    team = await getTeam((await params).slug);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) notFound();
+    throw error;
+  }
+  const roster = team.roster;
+  const demoTeam = teams.find((item) => item.slug === team.slug) ?? teams[0]!;
   const teamMatches = matches
-    .filter((match) => match.homeTeamId === team.id || match.awayTeamId === team.id)
+    .filter((match) => match.homeTeamId === demoTeam.id || match.awayTeamId === demoTeam.id)
     .slice(0, 6);
   return (
     <>
@@ -117,7 +124,20 @@ export default async function TeamPage({ params }: PageProps) {
               <span className="data-number text-2xl font-bold">+74</span>
             </div>
             <Sparkline
-              values={[798, 806, 812, 807, 821, 826, 834, 842, 839, 851, 858, 872]}
+              values={[
+                team.rating.score - 74,
+                team.rating.score - 66,
+                team.rating.score - 60,
+                team.rating.score - 65,
+                team.rating.score - 51,
+                team.rating.score - 46,
+                team.rating.score - 38,
+                team.rating.score - 30,
+                team.rating.score - 33,
+                team.rating.score - 21,
+                team.rating.score - 14,
+                team.rating.score,
+              ]}
               className="mt-8 h-52 w-full"
             />
           </div>

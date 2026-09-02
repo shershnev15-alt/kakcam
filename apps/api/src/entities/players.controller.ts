@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import { RequirePermissions } from '../auth/auth.decorators';
 import { CsrfGuard, PermissionsGuard, SessionGuard } from '../auth/auth.guards';
 import type { AuthenticatedRequest } from '../auth/auth.types';
 import { EntitiesService } from './entities.service';
+import { parseDirectoryQuery } from './directory.validation';
 import { parseCreatePlayer, parseUpdatePlayer } from './entities.validation';
 
 @Controller('api/v1/players')
@@ -22,9 +24,8 @@ export class PlayersController {
   constructor(@Inject(EntitiesService) private readonly entities: EntitiesService) {}
 
   @Get()
-  async list() {
-    const data = await this.entities.listPlayers();
-    return { data, meta: { total: data.length, source: 'postgresql' } };
+  async list(@Query() query: Record<string, string | undefined>) {
+    return this.entities.listPlayers(parseDirectoryQuery(query, { allowTeam: true }));
   }
 
   @Get(':slug')

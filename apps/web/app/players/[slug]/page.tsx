@@ -1,9 +1,10 @@
-import { achievements, matches, playerBySlug, players, teamById, teams } from '@arena/demo-data';
+import { achievements, matches, teams } from '@arena/demo-data';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowIcon, CheckIcon } from '@/components/icons';
 import { MatchCard } from '@/components/match-card';
+import { ApiError, getPlayer } from '@/lib/api';
 import {
   Delta,
   Monogram,
@@ -17,13 +18,14 @@ import {
 
 type PageProps = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return players.map((player) => ({ slug: player.slug }));
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const player = playerBySlug((await params).slug);
-  if (!player) return { title: 'Игрок не найден' };
+  let player;
+  try {
+    player = await getPlayer((await params).slug);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return { title: 'Игрок не найден' };
+    throw error;
+  }
   const title = `${player.nickname} — профиль, PPR ${player.rating.score} и статистика`;
   const description = `${player.nickname}, ${player.teamName}: #${player.rating.rank} в рейтинге CS2, PPR ${player.rating.score}, достижения и история карьеры.`;
   return {
@@ -35,11 +37,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function PlayerPage({ params }: PageProps) {
-  const player = playerBySlug((await params).slug);
-  if (!player) notFound();
-  const team = teamById(player.teamId ?? teams[0]!.id);
+  let player;
+  try {
+    player = await getPlayer((await params).slug);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) notFound();
+    throw error;
+  }
+  const team = player.currentTeam ?? {
+    id: 'free-agent',
+    slug: 'free-agent',
+    name: 'Без команды',
+    shortName: 'FA',
+  };
+  const demoTeam = teams.find((item) => item.slug === team.slug) ?? teams[0]!;
   const playerMatches = matches
-    .filter((match) => match.homeTeamId === team.id || match.awayTeamId === team.id)
+    .filter((match) => match.homeTeamId === demoTeam.id || match.awayTeamId === demoTeam.id)
     .slice(0, 3);
   const unlocked = achievements.filter((item) => item.progress >= item.target).slice(0, 5);
   const jsonLd = {
@@ -82,7 +95,7 @@ export default async function PlayerPage({ params }: PageProps) {
                   {player.realName ?? 'Настоящее имя не опубликовано'}{' '}
                   <span className="mx-2 text-[var(--border)]">•</span> {player.countryCode}{' '}
                   {player.countryName} <span className="mx-2 text-[var(--border)]">•</span>{' '}
-                  {player.age} года
+                  {player.age ?? '—'} года
                 </p>
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   <Link
@@ -109,7 +122,7 @@ export default async function PlayerPage({ params }: PageProps) {
                 <p className="eyebrow">Рейтинг СНГ</p>
                 <p className="data-number mt-2 text-3xl font-black">#{player.rating.rank}</p>
                 <div className="mt-2">
-                  <Delta value={4} period="30 дней" />
+                  <Delta value={player.rating.delta30d} period="30 дней" />
                 </div>
                 <p className="mt-4 text-xs text-[var(--text-3)]">{player.rating.tier} · 31 карта</p>
               </div>
@@ -144,7 +157,7 @@ export default async function PlayerPage({ params }: PageProps) {
               </div>
             </div>
             <Sparkline
-              values={[746, 758, 751, 773, 780, 792, 801, 796, 815, 824, 819, 842]}
+              values={player.form.length ? player.form : [player.rating.score, player.rating.score]}
               className="mt-7 h-52 w-full"
             />
             <div className="mt-3 flex justify-between text-[10px] text-[var(--text-3)]">
@@ -308,7 +321,7 @@ export default async function PlayerPage({ params }: PageProps) {
         <section>
           <SectionHeading eyebrow="Похожие профили" title="Игроки той же роли" />
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            {players.slice(1, 5).map((item) => (
+            {player.similar.map((item) => (
               <PlayerCard key={item.id} player={item} />
             ))}
           </div>

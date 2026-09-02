@@ -5,6 +5,8 @@
 ## Что уже можно посмотреть
 
 - `http://localhost:3000` — главная;
+- `http://localhost:3000/players` и `/teams` — каталоги с поиском, фильтрами и пагинацией;
+- `http://localhost:3000/search?q=north` — глобальный поиск по реестру;
 - `http://localhost:3000/players/frostbyte` — главный Player Digital Passport;
 - `http://localhost:3000/teams/northern-lights` — профиль команды;
 - `http://localhost:3000/rankings/players` и `/rankings/teams` — рейтинги;

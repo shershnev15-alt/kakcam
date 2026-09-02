@@ -5,6 +5,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const base = 'https://arena-passport.example';
   return [
     { url: base, changeFrequency: 'daily', priority: 1 },
+    { url: `${base}/players`, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${base}/teams`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/rankings/players`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/rankings/teams`, changeFrequency: 'daily', priority: 0.9 },
     ...players.map((player) => ({
