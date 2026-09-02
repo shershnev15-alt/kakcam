@@ -77,6 +77,12 @@ Refined hybrid requested by the user, combining the dramatic reference with the 
 
 - `16-arena-competitive-hybrid.png`
 
+Sixth exploration after the first hybrid was rejected, varying the balance between cinematic identity and FACEIT-like data density:
+
+- `17-typographic-arena.png`
+- `18-split-competition.png`
+- `19-competitive-profile-deck.png`
+
 Comparable-site screenshots and notes are stored in `research/`.
 
 Current FACEIT reference captured on 2026-09-02:
