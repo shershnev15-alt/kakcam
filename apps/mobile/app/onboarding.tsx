@@ -15,9 +15,9 @@ const steps = [
   },
   {
     eyebrow: 'YOUR GAME',
-    title: 'Выберите дисциплины',
-    copy: 'Это настроит главную и поиск. Выбор можно изменить позже.',
-    options: ['Counter-Strike 2', 'Dota 2', 'Valorant'],
+    title: 'Counter-Strike 2',
+    copy: 'Сейчас Arena работает с CS2. Другие дисциплины появятся позже.',
+    options: ['Counter-Strike 2'],
   },
   {
     eyebrow: 'TEAMS',

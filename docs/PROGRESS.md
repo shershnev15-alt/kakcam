@@ -1,6 +1,6 @@
 # Progress
 
-Дата обновления: 2 сентября 2026. Этапы **0–11 завершены**: specification, foundation, auth/RBAC, public directory, competition flow, reproducible ratings, career/achievements, claim/verification, full admin, mobile foundation, mobile product screens и mobile engagement.
+Дата обновления: 2 сентября 2026. Этапы **0–12 завершены**: specification, foundation, auth/RBAC, public directory, competition flow, reproducible ratings, career/achievements, claim/verification, full admin, mobile foundation/product/engagement и CS2 external providers.
 
 ## Completed
 
@@ -44,16 +44,23 @@
 - local Expo notifications за 15 минут, foreground handler, push-token adapter и permission rationale;
 - canonical share actions, app/universal links и notification deep-link routing для players/teams/matches/tournaments;
 - изолированные зависимости Docker-сервисов без конкурентной записи в host `node_modules`.
+- активная дисциплина продукта и onboarding ограничены Counter-Strike 2; другие игры остаются отключённой точкой расширения;
+- два независимых CS2 mock provider adapter с различными payload formats и единым versioned canonical contract;
+- raw/canonical staging records, strict validation, identity resolution и preview до изменения публичных данных;
+- stable SHA-256 exact replay, atomic apply claim, serializable conflict check, external entity links и транзакционные `CREATE`/`ASSERT`/`SKIP` outcomes;
+- granular player-map statistics и series aggregate для публичного Match Center с provenance источника;
+- conflict safety: совпадающий матч создаёт `FieldAssertion` в moderation queue без перезаписи canonical fact;
+- административные Stage Alpha/Bravo и Apply REVIEW команды с RBAC, CSRF, reason и AuditLog.
 
 ## Tests
 
 - Prisma schema validation, migration deploy и idempotent seed: passed;
-- API strict typecheck, 32 unit tests и production build: passed;
-- Admin strict typecheck, 3 component/command tests и production build: passed;
+- API strict typecheck, 38 unit tests и production build: passed;
+- Admin strict typecheck, 4 component/command tests и production build: passed;
 - Mobile strict typecheck, 9 format/engagement/deep-link tests и Expo static export: passed;
 - Web strict typecheck, 3 component tests и production build: passed;
 - rating engine: 6 deterministic PPR/TPR tests; achievement engine: 6 tests;
-- полный monorepo test suite: 59 tests passed;
+- полный monorepo test suite: 66 tests passed;
 - auth/RBAC e2e: register 201, me 200, unauthorized mutation 403, foreign Origin 403, logout 201, revoked session 401;
 - Statistician e2e: Player/Team create 201 и update 200; временные QA-записи очищены;
 - Moderator e2e: Player/Team soft-archive 200, archived public read 404; временные QA-записи очищены;
@@ -68,15 +75,17 @@
 - Stage 8 e2e: admin login 200, anonymous access 401, organization create/update 200, stale `If-Match` 412, assertion resolve 201, duplicate import 409 и immutable audit; QA records cleaned;
 - Stage 9 verification: 13 Expo web routes exported, onboarding/tabs/deep-link routes compiled, mobile typecheck/tests passed;
 - Stage 10–11 verification: 20 Expo web routes exported, 9 mobile tests passed; live product routes, local engagement persistence, reminders, share и notification deep-link bridge compiled;
+- Stage 12 adapter tests: независимые Alpha/Bravo payloads нормализуются в один CS2 contract, cross-discipline payload отклоняется, checksum стабилен и series statistics детерминированы;
+- Stage 12 e2e: Alpha stage/replay/apply, Bravo result/maps/statistics apply/replay, conflict `ASSERT` без overwrite и assertion queue `CANDIDATE`;
+- Stage 12 HTTP smoke: health 200, anonymous provider access 401, публичный imported match 200 с двумя картами и series stats;
 - Web smoke: transfers, achievements, career, account claim и moderation routes return 200;
 - HTTP smoke: public web 200, admin 200, current API health 200; Docker postgres/redis/API healthy and web 200.
 
 ## Known limitations
 
 - поиск Stage 3 использует индексируемый PostgreSQL `contains`; weighted FTS/`pg_trgm` projection остаётся следующим расширением;
-- competition seed использует fictional internal source; внешние provider adapters/import replay относятся к Этапу 12;
+- provider adapters пока используют локальные fixtures; реальные API credentials, rate limits и SLA подключаются отдельной интеграционной поставкой;
 - clutch/perfect-map/MVP rules остаются LOCKED до granular provider events; движок уже поддерживает безопасный replay этих версий правил;
-- player map statistics агрегированы на серию; granular per-map provider imports будут добавлены с внешними адаптерами;
 - auth rate limit хранится в памяти процесса; Redis-backed distributed limiter нужен до горизонтального масштабирования;
 - email verification/recovery и Steam/Google OAuth ещё не реализованы;
 - evidence reference в local prototype хранится в restricted DB field; encrypted object storage, malware scanning и retention enforcement обязательны до production;
@@ -88,4 +97,4 @@
 
 ## Next step
 
-Этап 12: подключить два независимых внешних provider adapter, staging/normalization, idempotent replay и import safety.
+Этап 13: SEO, performance budgets, security hardening, analytics и observability gates.

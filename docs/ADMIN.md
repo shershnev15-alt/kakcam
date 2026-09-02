@@ -6,7 +6,9 @@
 
 Dashboard показывает объёмы реестра, очереди claims/assertions/imports/reports и активность аудита. Доступны Players, Teams, Matches, Tournaments, Organizations, Verification, Assertions, Imports, Reports, Users, Achievements, Ratings и неизменяемый Audit.
 
-Операционные команды включают создание и архивирование Player/Team, создание и финализацию Match, управление Tournament/Organization, решения по claims/assertions/reports, очередь и retry импортов, роли и статус пользователей, каталог/replay достижений и пересчёт рейтингов.
+Операционные команды включают создание и архивирование Player/Team, создание и финализацию Match, управление Tournament/Organization, решения по claims/assertions/reports, CS2 provider staging/apply и retry импортов, роли и статус пользователей, каталог/replay достижений и пересчёт рейтингов.
+
+В Imports доступны два независимых demo feed: Alpha для upcoming match и Bravo для завершённого матча с картами и статистикой. Оператор сначала запускает stage и проверяет raw/canonical preview, counters и identity resolution, затем отдельно применяет только импорт в статусе `REVIEW`. Конфликтующий provider fact направляется в Assertions; существующий матч не перезаписывается.
 
 ## Защитные правила
 
@@ -14,7 +16,7 @@ Dashboard показывает объёмы реестра, очереди claim
 - cookie-команды принимаются только с разрешённого Origin;
 - редактирование Tournament, Organization и Achievement требует актуальный `If-Match`;
 - destructive/decision операции требуют понятное основание;
-- импорт защищён уникальным checksum, повтор возвращает `409 Conflict`;
+- provider import защищён уникальным checksum: exact replay переиспользует прежний результат; legacy queue сохраняет `409 Conflict` для дубля;
 - администратор не может заблокировать себя или снять с себя `SUPER_ADMIN`;
 - каждая успешная команда формирует AuditLog с actor, reason, target и request id.
 

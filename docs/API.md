@@ -57,6 +57,10 @@ Base URL локально: `http://localhost:4000/api/v1`. Формат: JSON, U
 | POST   | `/api/v1/admin/assertions/:id/resolve`     | `assertion.manage`    | Resolve/supersede assertion + audit        |
 | POST   | `/api/v1/admin/imports`                    | `import.manage`       | Idempotent import queue                    |
 | POST   | `/api/v1/admin/imports/:id/retry`          | `import.manage`       | Retry только failed import                 |
+| GET    | `/api/v1/admin/imports/providers`          | `admin.read`          | Allow-listed CS2 providers и fixture keys  |
+| GET    | `/api/v1/admin/imports/:id`                | `admin.read`          | Staging records, preview и resolution      |
+| POST   | `/api/v1/admin/imports/provider`           | `import.manage`       | Fetch/normalize/validate CS2 payload       |
+| POST   | `/api/v1/admin/imports/:id/apply`          | `import.manage`       | Транзакционный apply REVIEW import         |
 | POST   | `/api/v1/admin/reports/:id/resolve`        | `report.manage`       | Закрытие жалобы с основанием               |
 | POST   | `/api/v1/admin/users/:id/roles`            | `role.manage`         | Полная замена набора ролей                 |
 | PATCH  | `/api/v1/admin/users/:id/status`           | `admin.user.manage`   | Suspend/restore пользователя               |
@@ -66,6 +70,8 @@ Base URL локально: `http://localhost:4000/api/v1`. Формат: JSON, U
 Session token передаётся в cookie `arena_session` (`HttpOnly`, `SameSite=Lax`, `Secure` в production) или как Bearer token. В БД хранится только SHA-256 hash. Изменяющие cookie-auth запросы проверяют `Origin`; пароль — 12–128 символов и Argon2id. Login возвращает одинаковую ошибку для неизвестного email и неверного пароля.
 
 Player/Team, competition, statistics, rating read-модели и публичные страницы читают PostgreSQL. RFC 9457 и OpenAPI generation остаются следующим расширением write API.
+
+Provider API на этапе 12 принимает только allow-listed `cs2-demo-alpha` и `cs2-demo-bravo`. Stage не меняет публичные match facts: он сохраняет raw/canonical payload, checksum, ошибки и identity resolution. Apply требует статус `REVIEW`; новый матч создаётся с картами, granular и series statistics, точный повтор возвращает `reused`, а совпадение с уже существующим матчем создаёт assertion без silent overwrite. Контракт и сценарии: [IMPORTS.md](./IMPORTS.md).
 
 Полная карта административных сценариев и защитных правил: [ADMIN.md](./ADMIN.md). Seed содержит 12 ролей и 24 атомарных permissions.
 

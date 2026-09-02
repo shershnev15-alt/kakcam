@@ -243,6 +243,29 @@ async function main(): Promise<void> {
     },
   });
 
+  await Promise.all([
+    prisma.dataSource.upsert({
+      where: { code: 'cs2-demo-alpha' },
+      update: { name: 'CS2 Demo Alpha feed', type: 'MOCK_PROVIDER', trustLevel: 2 },
+      create: {
+        code: 'cs2-demo-alpha',
+        name: 'CS2 Demo Alpha feed',
+        type: 'MOCK_PROVIDER',
+        trustLevel: 2,
+      },
+    }),
+    prisma.dataSource.upsert({
+      where: { code: 'cs2-demo-bravo' },
+      update: { name: 'CS2 Demo Bravo feed', type: 'MOCK_PROVIDER', trustLevel: 2 },
+      create: {
+        code: 'cs2-demo-bravo',
+        name: 'CS2 Demo Bravo feed',
+        type: 'MOCK_PROVIDER',
+        trustLevel: 2,
+      },
+    }),
+  ]);
+
   for (const code of ['RU', 'KZ', 'BY', 'AM', 'UZ', 'KG']) {
     const player = players.find((item) => item.countryCode === code);
     await prisma.country.upsert({

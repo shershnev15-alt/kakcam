@@ -265,18 +265,38 @@ export function commandsFor(resource: string, row: AdminRow | undefined): Comman
     case 'imports':
       return [
         {
-          id: 'queue-import',
-          label: 'Поставить в очередь',
+          id: 'stage-alpha',
+          label: 'Stage CS2 Alpha',
           method: 'POST',
-          endpoint: '/admin/imports',
+          endpoint: '/admin/imports/provider',
           payload: {
-            sourceCode: 'arena-demo',
-            externalKey: 'manual-2026-09-02',
-            checksum: 'manual-import-2026-09-02-v1',
-            rawLocation: 'restricted://imports/manual-2026-09-02.json',
-            reason: 'Плановая загрузка фактов',
+            sourceCode: 'cs2-demo-alpha',
+            externalKey: 'alpha-upcoming-001',
+            reason: 'Проверка upcoming CS2 feed Alpha',
           },
           reason: true,
+        },
+        {
+          id: 'stage-bravo',
+          label: 'Stage CS2 Bravo',
+          method: 'POST',
+          endpoint: '/admin/imports/provider',
+          payload: {
+            sourceCode: 'cs2-demo-bravo',
+            externalKey: 'bravo-result-001',
+            reason: 'Проверка result/statistics CS2 feed Bravo',
+          },
+          reason: true,
+        },
+        {
+          id: 'apply-import',
+          label: 'Применить REVIEW',
+          method: 'POST',
+          endpoint: `/admin/imports/${selected}/apply`,
+          payload: { reason: 'Preview и identity resolution проверены' },
+          selection: true,
+          reason: true,
+          danger: true,
         },
         {
           id: 'retry-import',

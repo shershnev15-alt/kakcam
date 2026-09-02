@@ -1,6 +1,6 @@
 # Master Plan — Arena Passport
 
-Статус документа: `v0.11 / Этапы 0–11 реализованы`
+Статус документа: `v0.12 / Этапы 0–12 реализованы`
 
 Рабочее название продукта: **Arena Passport**
 
@@ -76,7 +76,7 @@ scripts/            Developer and data scripts
 
 Модель разделена на identity/access, esports directory, competition, statistics, ratings, recognition, trust/provenance, content и engagement. Идентификаторы — UUID; публичные сущности имеют стабильный уникальный `slug`; даты хранятся в UTC; денежные суммы — decimal + currency.
 
-Игровые показатели с общей семантикой имеют типизированные колонки. Специфичные для дисциплины расширения хранятся в versioned JSONB и валидируются схемой игры. Подробности и индексы: [DATABASE.md](./DATABASE.md).
+Игровые показатели с общей семантикой имеют типизированные колонки. Специфичные для дисциплины расширения хранятся в versioned JSONB и валидируются схемой игры. Активная дисциплина продукта — только CS2; multi-game остаётся архитектурной точкой расширения, а не включённой функцией. Подробности и индексы: [DATABASE.md](./DATABASE.md).
 
 ## 5. Сущности
 
@@ -174,7 +174,7 @@ Threat modeling перед auth/admin/import; строгая validation; CSP и 
 | 9    | Mobile foundation                                              | Expo shell, onboarding, offline cache и deep links          |
 | 10   | Mobile product screens                                         | ✓ Профили, матчи, рейтинги и поиск используют live API      |
 | 11   | Mobile notifications and engagement                            | ✓ Favorites, reminders, share, inbox и deep links готовы    |
-| 12   | External providers                                             | Два независимых адаптера + replay/import safety             |
+| 12   | External providers                                             | ✓ Два CS2-адаптера + replay/import safety                   |
 | 13   | SEO, performance, security, analytics                          | Budgets, audit и observability gates                        |
 | 14   | Production deployment                                          | Runbooks, backup restore, SLO and launch checklist          |
 

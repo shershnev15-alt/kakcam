@@ -31,4 +31,4 @@ COPY --from=builder /workspace/apps/api/dist ./dist
 COPY --from=dependencies /workspace/node_modules ./node_modules
 COPY --from=dependencies /workspace/apps/api/node_modules ./node_modules
 EXPOSE 4000
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]

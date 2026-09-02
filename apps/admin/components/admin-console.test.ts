@@ -30,4 +30,15 @@ describe('admin command registry', () => {
   it('keeps immutable audit read-only', () => {
     expect(commandsFor('audit', undefined)).toEqual([]);
   });
+
+  it('exposes only the two approved CS2 provider staging commands', () => {
+    const providerCommands = commandsFor('imports', undefined).filter((item) =>
+      item.id.startsWith('stage-'),
+    );
+    expect(providerCommands).toHaveLength(2);
+    expect(providerCommands.map((item) => item.payload)).toEqual([
+      expect.objectContaining({ sourceCode: 'cs2-demo-alpha' }),
+      expect.objectContaining({ sourceCode: 'cs2-demo-bravo' }),
+    ]);
+  });
 });

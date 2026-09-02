@@ -15,6 +15,8 @@ import { DirectoryController } from './entities/directory.controller';
 import { PlayersController } from './entities/players.controller';
 import { TeamsController } from './entities/teams.controller';
 import { PrismaService } from './prisma.service';
+import { ImportsController } from './imports/imports.controller';
+import { ImportsService } from './imports/imports.service';
 import { RatingsController } from './ratings/ratings.controller';
 import { RatingsService } from './ratings/ratings.service';
 import { VerificationController } from './verification/verification.controller';
@@ -32,6 +34,7 @@ import { VerificationService } from './verification/verification.service';
     RatingsController,
     TeamsController,
     VerificationController,
+    ImportsController,
   ],
   providers: [
     AdminService,
@@ -47,6 +50,7 @@ import { VerificationService } from './verification/verification.service';
     RatingsService,
     CareerService,
     VerificationService,
+    ImportsService,
   ],
 })
 export class AppModule {}

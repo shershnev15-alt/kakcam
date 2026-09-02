@@ -375,7 +375,7 @@ export class AdminService {
         const [items, total] = await this.prisma.$transaction([
           this.prisma.dataImport.findMany({
             where,
-            include: { source: true },
+            include: { source: true, _count: { select: { records: true } } },
             orderBy: { createdAt: 'desc' },
             skip,
             take: pageSize,
@@ -394,6 +394,7 @@ export class AdminService {
               {
                 checksum: item.checksum,
                 rawLocation: item.rawLocation,
+                records: item._count.records,
                 counters: item.counters,
                 errors: item.errors,
               },

@@ -51,13 +51,14 @@ Ratings │ Achievements │ Imports │ Notifications
 
 ### Импорт
 
-1. Provider получает payload и сохраняет raw artifact + checksum.
-2. Mapper переводит данные в canonical staging records.
-3. Identity resolution ищет соответствия и дубли.
-4. Validator выставляет ошибки и confidence источника.
-5. Apply job создает FieldAssertions в транзакции.
-6. Resolver выбирает effective value по policy; конфликт идет в очередь модерации.
-7. События запускают пересчет зависимых статистик, рейтингов и достижений.
+1. Один из allow-listed CS2 adapters получает payload и вычисляет stable SHA-256 checksum.
+2. Mapper переводит отличающиеся provider payloads в canonical `cs2.v1` staging records.
+3. Identity resolution связывает external IDs с Game/Team/Player/Tournament и ищет точный дубль матча.
+4. Validator проверяет дисциплину, структуру, счёт, карты и granular player-map statistics; админ видит preview до apply.
+5. Apply транзакционно создаёт новый матч и статистику, пропускает exact replay либо создаёт `FieldAssertion` при конфликте с существующим матчем.
+6. External entity links сохраняют соответствия для следующих запусков; AuditLog фиксирует stage/apply и основание оператора.
+
+На этапе 12 включена только дисциплина `cs2`. Оба адаптера демонстрационные и не используют сетевой API; подключение коммерческого поставщика заменяет только `fetch`, сохраняя canonical contract и safety pipeline. Подробности: [IMPORTS.md](./IMPORTS.md).
 
 ### Изменение администратором
 
@@ -72,9 +73,9 @@ Command содержит actor, reason, correlation id и ожидаемую в�
 - `X-Request-Id`, `Idempotency-Key`, `If-Match` для соответствующих команд;
 - generated OpenAPI clients; transport DTO не являются ORM models.
 
-## Multi-game statistics
+## Game-specific statistics
 
-Общие поля (`kills`, `deaths`, `assists`, `win`, `duration`) индексируются как колонки. Расширения (`kast`, hero economy, vision score) хранятся в `metrics JSONB` с `schemaVersion`. Реестр `GameMetricDefinition` задает тип, единицу, направление «лучше», агрегацию и допустимый диапазон. Это сохраняет гибкость без превращения основной модели в EAV.
+Общие поля (`kills`, `deaths`, `assists`, `win`, `duration`) индексируются как колонки. Для текущего CS2-контура `rating`, ADR, KAST и headshot rate нормализуются на уровне карты и серии; provider provenance остаётся в versioned JSONB. Реестр `GameMetricDefinition` сохраняет точку расширения для будущих дисциплин без включения их в текущий продукт.
 
 ## Consistency
 
