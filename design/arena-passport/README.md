@@ -57,4 +57,14 @@ Third exploration after the user rejected both earlier sets:
 - `08-aurora-athlete-space.png`
 - `09-split-signal.png`
 
+User-selected visual foundation:
+
+- `reference-user-selected-hero.png`
+
+Fourth exploration, keeping the selected hero architecture while changing the visual system:
+
+- `10-broadcast-lime-refined.png`
+- `11-league-daylight.png`
+- `12-carbon-signal.png`
+
 Comparable-site screenshots and notes are stored in `research/`.
