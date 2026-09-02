@@ -19,8 +19,8 @@ export default async function TournamentsPage({ searchParams }: Props) {
   const result = await getTournaments({ status, page, pageSize: 12 });
   return (
     <div className="container min-h-[70vh] py-10 md:py-14">
-      <p className="eyebrow">Tournament calendar · PostgreSQL</p>
-      <h1 className="mt-3 text-4xl font-black tracking-[-.04em] md:text-6xl">Турниры</h1>
+      <p className="eyebrow">cyberID tournament calendar</p>
+      <h1 className="display-title mt-5 text-[72px] md:text-[104px]">Турниры</h1>
       <p className="muted mt-4 max-w-2xl leading-7">
         Календарь событий, состав участников, сетка матчей и подтвержденные результаты.
       </p>
@@ -29,17 +29,17 @@ export default async function TournamentsPage({ searchParams }: Props) {
           <Link
             key={tournament.id}
             href={`/tournaments/${tournament.slug}`}
-            className="surface p-5 transition hover:-translate-y-1 hover:border-[var(--text-3)]"
+            className="surface p-5 transition hover:border-[var(--brand)]"
           >
             <div className="flex items-center justify-between">
-              <span className="rounded-md bg-[var(--surface-3)] px-2 py-1 text-[10px] font-bold text-[var(--text-2)]">
+              <span className="border border-[var(--border)] bg-[var(--surface-3)] px-2 py-1 text-[10px] font-bold text-[var(--text-2)]">
                 {tournament.mode}
               </span>
               <span className="text-[10px] font-bold text-[var(--success)]">
                 {tournament.status}
               </span>
             </div>
-            <h2 className="mt-10 text-xl font-bold">{tournament.name}</h2>
+            <h2 className="font-[var(--display)] mt-10 text-3xl font-black uppercase tracking-[-.045em]">{tournament.name}</h2>
             <p className="mt-2 text-sm text-[var(--text-2)]">{tournament.tier} · CS2</p>
             <p className="mt-4 text-xs text-[var(--text-3)]">
               {tournament.participantCount} команд · {tournament.matchCount} матчей

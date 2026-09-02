@@ -17,7 +17,7 @@ export function DirectoryForm({
       <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-3)]">
         Поиск
         <input
-          className="focus-ring h-11 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--text-1)]"
+          className="focus-ring h-11 border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--text-1)]"
           defaultValue={values.q}
           name="q"
           placeholder="Никнейм или название"
@@ -26,7 +26,7 @@ export function DirectoryForm({
       <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-3)]">
         Страна
         <select
-          className="focus-ring h-11 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--text-1)]"
+          className="focus-ring h-11 border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--text-1)]"
           defaultValue={values.country ?? ''}
           name="country"
         >
@@ -42,7 +42,7 @@ export function DirectoryForm({
       <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-3)]">
         Сортировка
         <select
-          className="focus-ring h-11 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--text-1)]"
+          className="focus-ring h-11 border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--text-1)]"
           defaultValue={values.sort ?? 'rating'}
           name="sort"
         >
@@ -52,7 +52,7 @@ export function DirectoryForm({
         </select>
       </label>
       <button
-        className="focus-ring h-11 self-end rounded-lg bg-[var(--accent)] px-5 text-sm font-bold text-[#0b1016]"
+        className="focus-ring h-11 self-end bg-[var(--accent)] px-5 text-sm font-black text-[#0b1016]"
         type="submit"
       >
         Применить

@@ -38,8 +38,8 @@ export default async function PlayerAchievementsPage({ params }: PageProps) {
           >
             ← Паспорт игрока
           </Link>
-          <p className="eyebrow mt-5">Event-driven recognition</p>
-          <h1 className="mt-2 text-4xl font-black tracking-[-.04em]">
+          <p className="eyebrow mt-5">Проверяемые достижения</p>
+          <h1 className="display-title mt-4 text-[52px] md:text-[72px]">
             Достижения {result.player.nickname}
           </h1>
           <p className="muted mt-3 max-w-2xl">
@@ -66,7 +66,7 @@ export default async function PlayerAchievementsPage({ params }: PageProps) {
             >
               <div className="flex items-start justify-between gap-4">
                 <div
-                  className={`grid size-11 place-items-center rounded-xl ${grantedItem ? 'bg-[rgba(214,255,95,.12)] text-[var(--accent)]' : 'bg-[var(--surface-3)] text-[var(--text-3)]'}`}
+                  className={`grid size-11 place-items-center border ${grantedItem ? 'border-[rgba(69,255,166,.45)] bg-[rgba(69,255,166,.06)] text-[var(--accent)]' : 'border-[var(--border)] bg-[var(--surface-3)] text-[var(--text-3)]'}`}
                 >
                   <CheckIcon className="size-5" />
                 </div>

@@ -16,18 +16,18 @@ export default async function SearchPage({ searchParams }: Props) {
 
   return (
     <div className="container min-h-[70vh] py-10 md:py-14">
-      <p className="eyebrow">Global search</p>
-      <h1 className="mt-3 text-4xl font-black tracking-[-.04em] md:text-6xl">Поиск</h1>
+      <p className="eyebrow">cyberID global search</p>
+      <h1 className="display-title mt-5 text-[72px] md:text-[104px]">Поиск</h1>
       <form action="/search" className="surface mt-8 flex gap-2 p-3">
         <input
           autoFocus
-          className="focus-ring h-12 min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-4"
+          className="focus-ring h-12 min-w-0 flex-1 border border-[var(--border)] bg-[var(--surface-2)] px-4"
           defaultValue={query}
           name="q"
           placeholder="Игрок или команда"
         />
         <button
-          className="rounded-lg bg-[var(--accent)] px-5 text-sm font-bold text-[#0b1016]"
+          className="bg-[var(--accent)] px-5 text-sm font-black text-[#0b1016]"
           type="submit"
         >
           Найти

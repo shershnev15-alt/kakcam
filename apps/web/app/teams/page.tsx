@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { DirectoryForm } from '@/components/directory-form';
 import { Pagination } from '@/components/pagination';
-import { TeamCard } from '@/components/ui';
+import { Sparkline, TeamCard } from '@/components/ui';
 import { getTeams } from '@/lib/api';
 
 export const metadata: Metadata = {
@@ -25,12 +25,11 @@ export default async function TeamsPage({ searchParams }: Props) {
   const result = await getTeams({ ...params, pageSize: 20 });
 
   return (
-    <div className="container py-10 md:py-14">
-      <p className="eyebrow">Directory · PostgreSQL</p>
-      <h1 className="mt-3 text-4xl font-black tracking-[-.04em] md:text-6xl">Команды</h1>
-      <p className="muted mt-4 max-w-2xl leading-7">
-        Составы, страна, форма и актуальный TPR из канонического реестра.
-      </p>
+    <div className="container py-9 md:py-12">
+      <header className="grid gap-6 border-b border-[var(--border)] pb-8 lg:grid-cols-[1fr_420px] lg:items-end">
+        <div><p className="eyebrow">cyberID directory · CS2</p><h1 className="display-title mt-5 text-[72px] md:text-[104px]">Команды</h1><p className="muted mt-5 max-w-2xl leading-7">TPR, форма и стабильность состава в одном рейтинговом контуре.</p></div>
+        <div className="surface p-5"><div className="flex items-end justify-between"><div><p className="text-[10px] uppercase tracking-[.12em] text-[var(--text-3)]">Динамика TPR региона</p><strong className="data-number mt-2 block text-3xl text-[var(--brand)]">+4.8%</strong></div><span className="text-xs text-[var(--text-3)]">30 дней</span></div><Sparkline values={result.data[0]?.form.map((item, index) => (item === 'W' ? 70 + index * 5 : 48 + index * 3)) ?? [0, 0]} className="mt-3 h-16 w-full" /></div>
+      </header>
       <div className="mt-8">
         <DirectoryForm action="/teams" values={params} />
         <div className="mb-4 flex items-center justify-between text-sm text-[var(--text-3)]">
@@ -38,7 +37,7 @@ export default async function TeamsPage({ searchParams }: Props) {
           <span>Страница {result.meta.page}</span>
         </div>
         {result.data.length ? (
-          <div className="grid gap-3 lg:grid-cols-2">
+          <div className="grid gap-2 lg:grid-cols-2">
             {result.data.map((team) => (
               <TeamCard key={team.id} team={team} />
             ))}

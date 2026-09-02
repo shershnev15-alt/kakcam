@@ -9,7 +9,7 @@ export function MatchCard({ match }: { match: MatchSummary }) {
   return (
     <Link
       href={`/matches/${match.id}`}
-      className="surface block overflow-hidden transition hover:border-[var(--text-3)]"
+      className="surface block overflow-hidden transition hover:border-[var(--brand)]"
     >
       <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3 text-[11px]">
         <span className={live ? 'font-bold text-[var(--danger)]' : 'text-[var(--text-3)]'}>

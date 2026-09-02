@@ -5,15 +5,15 @@ import { Header } from '@/components/header';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://arena-passport.example'),
+  metadataBase: new URL('https://cyberid.example'),
   title: {
-    default: 'Arena Passport — цифровой паспорт киберспортсмена',
-    template: '%s · Arena Passport',
+    default: 'cyberID — киберспорт в цифрах',
+    template: '%s · cyberID',
   },
   description: 'Статистика, достижения и вся история выступлений игроков и команд России и СНГ.',
   openGraph: {
-    title: 'Arena Passport',
-    description: 'Вся киберспортивная карьера — в одном профиле.',
+    title: 'cyberID',
+    description: 'Рейтинги, матчи и вся киберспортивная карьера — в одном ID.',
     locale: 'ru_RU',
     type: 'website',
   },
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="ru">
+    <html lang="ru" data-scroll-behavior="smooth">
       <body>
         <a
           href="#content"

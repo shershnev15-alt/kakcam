@@ -25,7 +25,7 @@ export function ModerationPanel() {
   const [cases, setCases] = useState<ModerationCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
-  const [reason, setReason] = useState('Доказательства проверены модератором Arena Passport');
+  const [reason, setReason] = useState('Доказательства проверены модератором cyberID');
 
   useEffect(() => {
     const controller = new AbortController();

@@ -45,7 +45,7 @@ export default async function TeamPage({ params }: PageProps) {
   const recentWins = team.form.filter((result) => result === 'W').length;
   return (
     <>
-      <section className="grain border-b border-[var(--border)] bg-[linear-gradient(180deg,rgba(214,255,95,.025),transparent)]">
+      <section className="signal-stage border-b border-[var(--border)]">
         <div className="container py-8 md:py-12">
           <div className="mb-7 flex items-center gap-2 text-xs text-[var(--text-3)]">
             <Link href="/teams">Команды</Link>
@@ -57,7 +57,7 @@ export default async function TeamPage({ params }: PageProps) {
               <Monogram label={team.shortName} size="xl" />
               <div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-4xl font-black tracking-[-.04em] md:text-6xl">{team.name}</h1>
+                  <h1 className="display-title text-[56px] md:text-[88px]">{team.name}</h1>
                   <VerificationBadge level={team.verificationLevel} />
                 </div>
                 <p className="mt-3 text-[var(--text-2)]">
@@ -68,7 +68,7 @@ export default async function TeamPage({ params }: PageProps) {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-6 rounded-2xl border border-[var(--border)] bg-[rgba(16,21,30,.8)] p-5">
+            <div className="flex items-center gap-6 border border-[var(--border)] bg-[rgba(18,18,18,.86)] p-5">
               <RatingRing
                 score={team.rating.score}
                 confidence={team.rating.confidence}
@@ -88,7 +88,7 @@ export default async function TeamPage({ params }: PageProps) {
       </section>
       <div className="container space-y-16 py-10 md:py-14">
         <section>
-          <SectionHeading eyebrow="Состав" title="Current roster" />
+          <SectionHeading eyebrow="Состав" title="Текущий ростер" />
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             {roster.slice(0, 5).map((player) => (
               <PlayerCard key={player.id} player={player} />
