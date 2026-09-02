@@ -1,6 +1,6 @@
 # Progress
 
-Дата обновления: 2 сентября 2026. Этапы **0–12 завершены**: specification, foundation, auth/RBAC, public directory, competition flow, reproducible ratings, career/achievements, claim/verification, full admin, mobile foundation/product/engagement и CS2 external providers.
+Дата обновления: 2 сентября 2026. Этапы **0–13 завершены**: specification, foundation, auth/RBAC, public directory, competition flow, reproducible ratings, career/achievements, claim/verification, full admin, mobile foundation/product/engagement, CS2 external providers и production quality gates.
 
 ## Completed
 
@@ -51,6 +51,11 @@
 - granular player-map statistics и series aggregate для публичного Match Center с provenance источника;
 - conflict safety: совпадающий матч создаёт `FieldAssertion` в moderation queue без перезаписи canonical fact;
 - административные Stage Alpha/Bravo и Apply REVIEW команды с RBAC, CSRF, reason и AuditLog.
+- canonical/OpenGraph/Twitter metadata, JSON-LD и sitemap/robots policy для публичных CS2-сущностей;
+- динамические share cards 1200×630 для игрока и команды с avatar/logo fallback, PPR/TPR и местом в рейтинге;
+- Web/Admin CSP и security headers, Helmet API hardening, non-root production images и Dependabot policy;
+- privacy-safe allow-listed analytics, нормализованные structured request logs, correlation id и защищённый Prometheus endpoint;
+- CI gates для измеримых JS/CSS budgets и security baseline.
 
 ## Tests
 
@@ -60,7 +65,7 @@
 - Mobile strict typecheck, 9 format/engagement/deep-link tests и Expo static export: passed;
 - Web strict typecheck, 3 component tests и production build: passed;
 - rating engine: 6 deterministic PPR/TPR tests; achievement engine: 6 tests;
-- полный monorepo test suite: 66 tests passed;
+- полный monorepo test suite: 71 test passed;
 - auth/RBAC e2e: register 201, me 200, unauthorized mutation 403, foreign Origin 403, logout 201, revoked session 401;
 - Statistician e2e: Player/Team create 201 и update 200; временные QA-записи очищены;
 - Moderator e2e: Player/Team soft-archive 200, archived public read 404; временные QA-записи очищены;
@@ -80,6 +85,10 @@
 - Stage 12 HTTP smoke: health 200, anonymous provider access 401, публичный imported match 200 с двумя картами и series stats;
 - Web smoke: transfers, achievements, career, account claim и moderation routes return 200;
 - HTTP smoke: public web 200, admin 200, current API health 200; Docker postgres/redis/API healthy and web 200.
+- Stage 13 API observability: 5 unit tests; полный API suite 43 tests passed;
+- Stage 13 strict typecheck и production build: API, Web и Admin passed;
+- performance gate: Web 294354 B total gzip JS / 66289 B max JS / 34048 B max CSS; Admin 279419 B / 66288 B / 8214 B;
+- security gate: mandatory Web/Admin/API headers и tracked-file secret baseline passed.
 
 ## Known limitations
 
@@ -94,7 +103,8 @@
 - guest favorites/inbox пока локальные; merge с account engagement потребует `/me/*` endpoints;
 - native device/simulator smoke и signing выполняются перед store beta;
 - изображения представлены monograms; S3 media pipeline ещё не подключён.
+- observability counters и analytics limiter пока in-memory; production collector, Redis coordination, retention и alerts входят в Этап 14.
 
 ## Next step
 
-Этап 13: SEO, performance budgets, security hardening, analytics и observability gates.
+Этап 14: production deployment — runbooks, secrets, SBOM/signing, collector/alerts, backup restore, SLO и launch checklist.

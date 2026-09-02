@@ -9,6 +9,8 @@ Base URL локально: `http://localhost:4000/api/v1`. Формат: JSON, U
 | GET    | `/health`                                  | public                | Liveness процесса                          |
 | GET    | `/ready`                                   | public                | Readiness через Prisma/PostgreSQL          |
 | GET    | `/api/v1`                                  | public                | Версия, режим и доступные ресурсы          |
+| GET    | `/metrics`                                 | internal/token        | Prometheus HTTP и product metrics          |
+| POST   | `/api/v1/analytics/events`                 | public + rate limit   | Privacy-safe allow-listed product event    |
 | POST   | `/api/v1/auth/register`                    | public + rate limit   | Email-регистрация и создание сессии        |
 | POST   | `/api/v1/auth/login`                       | public + rate limit   | Вход и новая сессия                        |
 | GET    | `/api/v1/auth/me`                          | session               | Пользователь, роли и permissions           |
@@ -72,6 +74,8 @@ Session token передаётся в cookie `arena_session` (`HttpOnly`, `SameS
 Player/Team, competition, statistics, rating read-модели и публичные страницы читают PostgreSQL. RFC 9457 и OpenAPI generation остаются следующим расширением write API.
 
 Provider API на этапе 12 принимает только allow-listed `cs2-demo-alpha` и `cs2-demo-bravo`. Stage не меняет публичные match facts: он сохраняет raw/canonical payload, checksum, ошибки и identity resolution. Apply требует статус `REVIEW`; новый матч создаётся с картами, granular и series statistics, точный повтор возвращает `reused`, а совпадение с уже существующим матчем создаёт assertion без silent overwrite. Контракт и сценарии: [IMPORTS.md](./IMPORTS.md).
+
+Observability Этапа 13 нормализует UUID/slugs до низкокардинальных route labels, возвращает `X-Request-Id` и экспортирует Prometheus text format. В production `/metrics` закрыт Bearer token. Analytics не принимает произвольные attributes, URL, email или user id: только allow-listed `name` и `surface`. Полный контракт и gates: [OBSERVABILITY.md](./OBSERVABILITY.md).
 
 Полная карта административных сценариев и защитных правил: [ADMIN.md](./ADMIN.md). Seed содержит 12 ролей и 24 атомарных permissions.
 

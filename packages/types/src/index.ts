@@ -21,6 +21,7 @@ export interface PlayerSummary {
   slug: string;
   nickname: string;
   realName?: string;
+  avatarUrl?: string | null;
   countryCode: string;
   countryName: string;
   age?: number;
@@ -38,6 +39,7 @@ export interface TeamSummary {
   slug: string;
   name: string;
   shortName: string;
+  logoUrl?: string | null;
   countryCode: string;
   countryName: string;
   foundedYear: number;

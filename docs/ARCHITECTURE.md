@@ -95,11 +95,13 @@ Redis используется для leaderboard/profile projections, rate-limi
 
 ## Observability и SLO
 
-- structured JSON logs с request/user/correlation id без PII;
-- metrics: latency, error rate, queue lag, import rejection, cache hit, rating duration;
+- structured JSON HTTP logs с request/correlation id и нормализованным route без PII;
+- встроенные Prometheus latency/request/product-event metrics; queue/import/cache/rating collectors подключаются на Этапе 14;
 - traces через OpenTelemetry boundary;
 - health: liveness без dependencies, readiness с DB/Redis;
 - целевые стартовые SLO: public read 99.9%, admin 99.5%; p95 cached API <250 ms.
+
+Privacy-safe analytics принимает только фиксированный event name и low-cardinality surface. Произвольные properties, URL, account identifiers и PII отсутствуют в клиентском и серверном контракте. Детали и operational gates: [OBSERVABILITY.md](./OBSERVABILITY.md).
 
 ## Architecture Decision Records
 

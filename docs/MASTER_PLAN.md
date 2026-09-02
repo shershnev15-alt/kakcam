@@ -175,7 +175,7 @@ Threat modeling перед auth/admin/import; строгая validation; CSP и 
 | 10   | Mobile product screens                                         | ✓ Профили, матчи, рейтинги и поиск используют live API      |
 | 11   | Mobile notifications and engagement                            | ✓ Favorites, reminders, share, inbox и deep links готовы    |
 | 12   | External providers                                             | ✓ Два CS2-адаптера + replay/import safety                   |
-| 13   | SEO, performance, security, analytics                          | Budgets, audit и observability gates                        |
+| 13   | SEO, performance, security, analytics                          | ✓ Budgets, audit и observability gates                      |
 | 14   | Production deployment                                          | Runbooks, backup restore, SLO and launch checklist          |
 
 В конце каждого этапа выполняется цикл `PLAN → IMPLEMENT → RUN → TEST → FIX → VERIFY → DOCUMENT → COMMIT` и обновляется `docs/PROGRESS.md`.

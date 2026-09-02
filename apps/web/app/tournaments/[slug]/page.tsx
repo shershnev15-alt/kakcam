@@ -4,16 +4,21 @@ import { notFound } from 'next/navigation';
 import { MatchCard } from '@/components/match-card';
 import { Monogram, SectionHeading } from '@/components/ui';
 import { ApiError, getTournament } from '@/lib/api';
+import { absoluteUrl, serializeJsonLd, twitterCard } from '@/lib/seo';
 
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const tournament = await getTournament((await params).slug);
+    const title = `${tournament.name} — матчи, участники и результаты`;
+    const description = `${tournament.tier} турнир CS2: ${tournament.participantCount} команд, призовой фонд $${tournament.prizePool}.`;
     return {
-      title: `${tournament.name} — матчи, участники и результаты`,
-      description: `${tournament.tier} турнир CS2: ${tournament.participantCount} команд, призовой фонд $${tournament.prizePool}.`,
+      title,
+      description,
       alternates: { canonical: `/tournaments/${tournament.slug}` },
+      openGraph: { title, description, type: 'website', url: `/tournaments/${tournament.slug}` },
+      twitter: { ...twitterCard, title, description },
     };
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return { title: 'Турнир не найден' };
@@ -29,8 +34,32 @@ export default async function TournamentPage({ params }: Props) {
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
   }
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: tournament.name,
+    sport: 'Counter-Strike 2',
+    startDate: tournament.startsAt,
+    endDate: tournament.endsAt,
+    eventStatus:
+      tournament.status === 'FINISHED'
+        ? 'https://schema.org/EventCompleted'
+        : tournament.status === 'LIVE'
+          ? 'https://schema.org/EventInProgress'
+          : 'https://schema.org/EventScheduled',
+    url: absoluteUrl(`/tournaments/${tournament.slug}`),
+    competitor: tournament.participants.map((team) => ({
+      '@type': 'SportsTeam',
+      name: team.name,
+      url: absoluteUrl(`/teams/${team.slug}`),
+    })),
+  };
   return (
     <div className="container space-y-14 py-8 md:py-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       <div className="text-xs text-[var(--text-3)]">
         <Link href="/tournaments">Турниры</Link> / {tournament.name}
       </div>

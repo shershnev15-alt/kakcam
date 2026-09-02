@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { ArrowIcon, CheckIcon } from '@/components/icons';
 import { MatchCard } from '@/components/match-card';
 import { ApiError, getPlayer, getPlayerCareer, getPlayerVerification } from '@/lib/api';
+import { absoluteUrl, serializeJsonLd, twitterCard } from '@/lib/seo';
 import {
   Delta,
   Monogram,
@@ -31,7 +32,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title,
     description,
     alternates: { canonical: `/players/${player.slug}` },
-    openGraph: { title, description, type: 'profile' },
+    openGraph: { title, description, type: 'profile', url: `/players/${player.slug}` },
+    twitter: { ...twitterCard, title, description },
   };
 }
 
@@ -66,14 +68,14 @@ export default async function PlayerPage({ params }: PageProps) {
     alternateName: player.nickname,
     nationality: player.countryName,
     affiliation: { '@type': 'SportsTeam', name: player.teamName },
-    url: `https://arena-passport.example/players/${player.slug}`,
+    url: absoluteUrl(`/players/${player.slug}`),
   };
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <section className="grain border-b border-[var(--border)] bg-[linear-gradient(180deg,rgba(95,139,255,.055),transparent)]">
         <div className="container py-8 md:py-12">

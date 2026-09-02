@@ -1,22 +1,33 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { AnalyticsBeacon } from '@/components/analytics-beacon';
 import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
+import { siteUrl, twitterCard } from '@/lib/seo';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://arena-passport.example'),
+  metadataBase: new URL(siteUrl),
+  applicationName: 'Arena Passport',
   title: {
     default: 'Arena Passport — цифровой паспорт киберспортсмена',
     template: '%s · Arena Passport',
   },
   description: 'Статистика, достижения и вся история выступлений игроков и команд России и СНГ.',
+  alternates: { canonical: '/' },
   openGraph: {
     title: 'Arena Passport',
     description: 'Вся киберспортивная карьера — в одном профиле.',
     locale: 'ru_RU',
     type: 'website',
+    url: '/',
   },
+  twitter: {
+    ...twitterCard,
+    title: 'Arena Passport',
+    description: 'Вся киберспортивная карьера — в одном профиле.',
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -32,6 +43,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <Header />
         <main id="content">{children}</main>
         <Footer />
+        <AnalyticsBeacon />
       </body>
     </html>
   );

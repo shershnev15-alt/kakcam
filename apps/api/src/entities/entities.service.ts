@@ -13,7 +13,7 @@ import type { DirectoryQuery } from './directory.validation';
 const playerInclude = {
   country: { select: { code: true, name: true } },
   currentTeam: { select: { id: true, slug: true, name: true, shortName: true } },
-  profile: { select: { realName: true, birthDate: true } },
+  profile: { select: { realName: true, birthDate: true, avatarUrl: true } },
   ratings: {
     orderBy: { publishedAt: 'desc' as const },
     take: 1,
@@ -524,6 +524,7 @@ export class EntitiesService {
       slug: player.slug,
       nickname: player.nickname,
       realName: player.profile?.realName ?? null,
+      avatarUrl: player.profile?.avatarUrl ?? null,
       age,
       status: player.status,
       verificationLevel: player.aggregateVerificationLevel,
@@ -558,6 +559,7 @@ export class EntitiesService {
       slug: team.slug,
       name: team.name,
       shortName: team.shortName,
+      logoUrl: team.logoUrl,
       status: team.status,
       verificationLevel: team.aggregateVerificationLevel,
       country: team.country,

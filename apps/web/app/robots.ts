@@ -1,8 +1,14 @@
 import type { MetadataRoute } from 'next';
+import { siteUrl } from '@/lib/seo';
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: { userAgent: '*', allow: '/', disallow: ['/admin/', '/settings/'] },
-    sitemap: 'https://arena-passport.example/sitemap.xml',
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: ['/account', '/login', '/moderation', '/register', '/settings/'],
+    },
+    sitemap: `${siteUrl}/sitemap.xml`,
+    host: siteUrl,
   };
 }
