@@ -67,4 +67,14 @@ Fourth exploration, keeping the selected hero architecture while changing the vi
 - `11-league-daylight.png`
 - `12-carbon-signal.png`
 
+Fifth exploration, grounded in the current FACEIT profile pattern and designed for users without uploaded photos:
+
+- `13-rank-console.png`
+- `14-matchroom-ledger.png`
+- `15-season-deck.png`
+
 Comparable-site screenshots and notes are stored in `research/`.
+
+Current FACEIT reference captured on 2026-09-02:
+
+- `research/faceit-player-profile-2026-09-02.png`
