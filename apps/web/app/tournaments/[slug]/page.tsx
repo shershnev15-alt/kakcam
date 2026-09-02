@@ -34,12 +34,12 @@ export default async function TournamentPage({ params }: Props) {
       <div className="text-xs text-[var(--text-3)]">
         <Link href="/tournaments">Турниры</Link> / {tournament.name}
       </div>
-      <header className="surface p-6 md:p-10">
+      <header className="signal-stage surface p-6 md:p-10">
         <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
           <span className="rounded bg-[var(--surface-3)] px-2 py-1">{tournament.mode}</span>
           <span className="text-[var(--success)]">{tournament.status}</span>
         </div>
-        <h1 className="mt-5 text-4xl font-black tracking-[-.04em] md:text-6xl">
+        <h1 className="display-title mt-8 text-[56px] md:text-[88px]">
           {tournament.name}
         </h1>
         <p className="mt-4 text-[var(--text-2)]">

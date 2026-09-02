@@ -1,20 +1,23 @@
 @import 'tailwindcss';
 
 :root {
-  --canvas: #090c12;
-  --surface-1: #10151e;
-  --surface-2: #161d28;
-  --surface-3: #1d2633;
-  --text-1: #f4f7fb;
-  --text-2: #a9b4c3;
-  --text-3: #6f7c8e;
-  --border: #263142;
-  --brand: #5f8bff;
-  --accent: #d6ff5f;
-  --success: #43d17d;
+  --canvas: #121212;
+  --surface-1: #181818;
+  --surface-2: #1f1f1f;
+  --surface-3: #282828;
+  --text-1: #e1e1e1;
+  --text-2: #a5a5a5;
+  --text-3: #878787;
+  --border: #494949;
+  --border-soft: #303030;
+  --brand: #45ffa6;
+  --accent: #45ffa6;
+  --success: #45ffa6;
   --warning: #f3b64b;
-  --danger: #f16975;
-  --info: #55b7e8;
+  --danger: #ff5c72;
+  --info: #7d8cff;
+  --violet: #785cff;
+  --display: 'Arial Narrow', 'Roboto Condensed', 'Helvetica Neue', sans-serif;
 }
 
 * {
@@ -30,8 +33,7 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--text-1);
-  background:
-    radial-gradient(circle at 18% -8%, rgba(95, 139, 255, 0.11), transparent 34rem), var(--canvas);
+  background: var(--canvas);
   font-family:
     Inter,
     ui-sans-serif,
@@ -65,25 +67,25 @@ a {
 }
 
 .container {
-  width: min(100% - 32px, 1280px);
+  width: min(100% - 32px, 1380px);
   margin-inline: auto;
 }
 
 .surface {
   border: 1px solid var(--border);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface-1) 92%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--surface-1) 96%, transparent);
 }
 
 .surface-soft {
-  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 2px;
   background: var(--surface-2);
 }
 
 .eyebrow {
-  color: var(--accent);
-  font-size: 11px;
+  color: var(--brand);
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -93,6 +95,41 @@ a {
   font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
+}
+
+.display-title {
+  font-family: var(--display);
+  font-weight: 900;
+  font-stretch: condensed;
+  letter-spacing: -0.075em;
+  line-height: 0.86;
+  text-transform: uppercase;
+}
+
+.signal-stage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.signal-stage::before {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  content: '';
+  background-image: url('/cyberid-arena-signal.png');
+  background-position: center right;
+  background-size: cover;
+  opacity: 0.78;
+}
+
+.signal-stage::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: '';
+  background: rgba(18, 18, 18, 0.28);
+  pointer-events: none;
 }
 
 .muted {
@@ -116,19 +153,9 @@ input:focus-visible {
   isolation: isolate;
 }
 
-.grain::after {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  content: '';
-  opacity: 0.035;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
-}
-
 @media (min-width: 768px) {
   .container {
-    width: min(100% - 48px, 1280px);
+    width: min(100% - 48px, 1380px);
   }
 }
 

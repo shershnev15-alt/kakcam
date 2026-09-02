@@ -19,7 +19,7 @@ export function VerificationBadge({
     'Платформа',
   ];
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(67,209,125,.25)] bg-[rgba(67,209,125,.08)] px-2 py-1 text-[11px] font-semibold text-[var(--success)]">
+    <span className="inline-flex items-center gap-1.5 border border-[rgba(69,255,166,.28)] bg-[rgba(69,255,166,.06)] px-2 py-1 text-[11px] font-semibold text-[var(--success)]">
       <CheckIcon className="size-3.5" />
       {compact ? `V${level}` : labels[level]}
     </span>
@@ -41,7 +41,7 @@ export function Monogram({
   };
   return (
     <span
-      className={`grid shrink-0 place-items-center overflow-hidden rounded-xl border border-[rgba(95,139,255,.3)] bg-[linear-gradient(145deg,rgba(95,139,255,.2),rgba(214,255,95,.07))] font-black uppercase tracking-tight text-[var(--text-1)] ${sizes[size]}`}
+      className={`grid shrink-0 place-items-center overflow-hidden border border-[rgba(69,255,166,.5)] bg-[var(--surface-2)] font-black uppercase tracking-tight text-[var(--text-1)] shadow-[inset_0_0_24px_rgba(69,255,166,.04)] ${sizes[size]}`}
     >
       {label.slice(0, 2)}
     </span>
@@ -61,7 +61,7 @@ export function SectionHeading({
     <div className="mb-5 flex items-end justify-between gap-4">
       <div>
         {eyebrow ? <p className="eyebrow mb-2">{eyebrow}</p> : null}
-        <h2 className="text-2xl font-bold tracking-tight md:text-[28px]">{title}</h2>
+        <h2 className="font-[var(--display)] text-2xl font-black uppercase tracking-[-.045em] md:text-[30px]">{title}</h2>
       </div>
       {action ? (
         <Link
@@ -109,15 +109,15 @@ export function Sparkline({ values, className = '' }: { values: number[]; classN
     >
       <defs>
         <linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop stopColor="#5F8BFF" stopOpacity=".28" />
-          <stop offset="1" stopColor="#5F8BFF" stopOpacity="0" />
+          <stop stopColor="#45FFA6" stopOpacity=".24" />
+          <stop offset="1" stopColor="#45FFA6" stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={`M0,42 L${points} L100,42 Z`} fill="url(#chart-fill)" />
       <polyline
         points={points}
         fill="none"
-        stroke="#7EA2FF"
+        stroke="#45FFA6"
         strokeWidth="2"
         vectorEffect="non-scaling-stroke"
       />
@@ -187,7 +187,7 @@ export function PlayerCard({
   return (
     <Link
       href={`/players/${player.slug}`}
-      className={`group surface flex items-center gap-3 p-3 transition hover:-translate-y-0.5 hover:border-[var(--text-3)] ${compact ? '' : 'md:p-4'}`}
+      className={`group surface flex items-center gap-3 p-3 transition hover:border-[var(--brand)] ${compact ? '' : 'md:p-4'}`}
     >
       <span className="data-number w-7 text-center text-xs text-[var(--text-3)]">
         #{player.rating.rank}
@@ -216,7 +216,7 @@ export function TeamCard({ team, compact = false }: { team: TeamSummary; compact
   return (
     <Link
       href={`/teams/${team.slug}`}
-      className="group surface flex items-center gap-3 p-3 transition hover:-translate-y-0.5 hover:border-[var(--text-3)] md:p-4"
+      className="group surface flex items-center gap-3 p-3 transition hover:border-[var(--brand)] md:p-4"
     >
       <span className="data-number w-7 text-center text-xs text-[var(--text-3)]">
         #{team.rating.rank}

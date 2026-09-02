@@ -6,7 +6,7 @@ import { getMatches } from '@/lib/api';
 
 export const metadata: Metadata = {
   title: 'Матчи CS2 России и СНГ',
-  description: 'Расписание, live-матчи и подтвержденные результаты команд Arena Passport.',
+  description: 'Расписание, live-матчи и подтвержденные результаты команд cyberID.',
   alternates: { canonical: '/matches' },
 };
 
@@ -28,8 +28,8 @@ export default async function MatchesPage({ searchParams }: Props) {
 
   return (
     <div className="container min-h-[70vh] py-10 md:py-14">
-      <p className="eyebrow">Match center · PostgreSQL</p>
-      <h1 className="mt-3 text-4xl font-black tracking-[-.04em] md:text-6xl">Матчи</h1>
+      <p className="eyebrow">cyberID match center · live</p>
+      <h1 className="display-title mt-5 text-[72px] md:text-[104px]">Матчи</h1>
       <p className="muted mt-4 max-w-2xl leading-7">
         Расписание, live-серии и неизменяемые подтвержденные результаты с картами и статистикой.
       </p>
@@ -40,9 +40,9 @@ export default async function MatchesPage({ searchParams }: Props) {
             <Link
               key={label}
               href={tabStatus ? `/matches?status=${tabStatus}` : '/matches'}
-              className={`rounded-lg border px-4 py-2 text-sm font-semibold ${
+              className={`border px-4 py-2 text-sm font-semibold ${
                 active
-                  ? 'border-[var(--brand)] bg-[rgba(95,139,255,.12)] text-[#AFC4FF]'
+                  ? 'border-[var(--brand)] bg-[var(--brand)] text-[#101512]'
                   : 'border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-2)]'
               }`}
             >
@@ -56,7 +56,7 @@ export default async function MatchesPage({ searchParams }: Props) {
         <span>Страница {result.meta.page}</span>
       </div>
       {result.data.length ? (
-        <div className="grid gap-3 lg:grid-cols-3">
+        <div className="grid gap-2 lg:grid-cols-3">
           {result.data.map((match) => (
             <MatchCard key={match.id} match={match} />
           ))}

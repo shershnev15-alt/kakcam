@@ -17,7 +17,7 @@ export function PlayerRankingTable({ items }: { items: PlayerSummary[] }) {
         <Link
           href={`/players/${player.slug}`}
           key={player.id}
-          className={`grid grid-cols-[40px_1fr_auto] items-center gap-3 px-4 py-4 transition hover:bg-[var(--surface-2)] md:grid-cols-[56px_1.5fr_.8fr_.7fr_120px_90px] md:gap-4 md:px-5 ${index ? 'border-t border-[var(--border)]' : ''}`}
+          className={`grid grid-cols-[40px_1fr_auto] items-center gap-3 px-4 py-4 transition hover:bg-[rgba(69,255,166,.04)] md:grid-cols-[56px_1.5fr_.8fr_.7fr_120px_90px] md:gap-4 md:px-5 ${index ? 'border-t border-[var(--border)]' : ''} ${player.slug === 'frostbyte' ? 'bg-[rgba(69,255,166,.035)] shadow-[inset_3px_0_var(--brand)]' : ''}`}
         >
           <span className="data-number text-center text-sm text-[var(--text-3)]">
             {player.rating.rank}
@@ -68,7 +68,7 @@ export function TeamRankingTable({ items }: { items: TeamSummary[] }) {
         <Link
           href={`/teams/${team.slug}`}
           key={team.id}
-          className={`grid grid-cols-[40px_1fr_auto] items-center gap-3 px-4 py-4 transition hover:bg-[var(--surface-2)] md:grid-cols-[56px_1.5fr_.7fr_.7fr_120px_90px] md:gap-4 md:px-5 ${index ? 'border-t border-[var(--border)]' : ''}`}
+          className={`grid grid-cols-[40px_1fr_auto] items-center gap-3 px-4 py-4 transition hover:bg-[rgba(69,255,166,.04)] md:grid-cols-[56px_1.5fr_.7fr_.7fr_120px_90px] md:gap-4 md:px-5 ${index ? 'border-t border-[var(--border)]' : ''}`}
         >
           <span className="data-number text-center text-sm text-[var(--text-3)]">
             {team.rating.rank}

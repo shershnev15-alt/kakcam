@@ -60,7 +60,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         <p className="muted mt-2 text-sm leading-6">
           {isRegistration
             ? 'Сохраняйте избранное и участвуйте в развитии киберспортивного реестра.'
-            : 'Войдите, чтобы продолжить работу с Arena Passport.'}
+            : 'Войдите, чтобы продолжить работу с cyberID.'}
         </p>
 
         <form className="mt-7 grid gap-5" onSubmit={submit}>

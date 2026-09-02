@@ -2,7 +2,7 @@ import { players, teams, tournaments } from '@arena/demo-data';
 import type { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = 'https://arena-passport.example';
+  const base = 'https://cyberid.example';
   return [
     { url: base, changeFrequency: 'daily', priority: 1 },
     { url: `${base}/players`, changeFrequency: 'daily', priority: 0.9 },

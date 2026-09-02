@@ -2,9 +2,12 @@ import Link from 'next/link';
 
 export function Footer() {
   return (
-    <footer className="mt-20 border-t border-[var(--border)] bg-[var(--surface-1)]/60">
+    <footer className="mt-20 border-t border-[var(--border-soft)] bg-[#0e0e0e]">
       <div className="container flex flex-col gap-5 py-8 text-sm text-[var(--text-3)] md:flex-row md:items-center">
-        <p>© 2026 Arena Passport · Prototype v0.1</p>
+        <p>
+          <strong className="text-[var(--text-1)]">cyber<span className="text-[var(--brand)]">ID</span></strong>
+          {' '}· киберспорт в цифрах
+        </p>
         <nav className="flex flex-wrap gap-5 md:ml-auto" aria-label="Ссылки в подвале">
           <Link href="/about">О проекте</Link>
           <Link href="/methodology">Методология</Link>

@@ -14,8 +14,8 @@ export default async function TransfersPage() {
   const result = await getTransfers({ pageSize: 40 });
   return (
     <div className="container py-10 md:py-14">
-      <p className="eyebrow">Career ledger</p>
-      <h1 className="mt-2 text-4xl font-black tracking-[-.04em]">Трансферы</h1>
+      <p className="eyebrow">cyberID career ledger</p>
+      <h1 className="display-title mt-5 text-[72px] md:text-[104px]">Трансферы</h1>
       <p className="muted mt-3 max-w-2xl">
         Проверяемая лента переходов с источником, статусом и неизменяемым checksum.
       </p>
@@ -46,7 +46,7 @@ export default async function TransfersPage() {
                 {transfer.toTeam?.shortName ?? 'FA'}
               </span>
             </div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-bold text-[var(--success)]">
+            <span className="inline-flex items-center gap-2 border border-[var(--border)] px-3 py-1.5 text-xs font-bold text-[var(--success)]">
               <CheckIcon className="size-4" />L{transfer.verificationLevel}
             </span>
           </article>

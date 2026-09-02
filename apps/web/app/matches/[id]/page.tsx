@@ -39,15 +39,13 @@ export default async function MatchPage({ params }: Props) {
 
   return (
     <div className="container space-y-12 py-8 md:py-12">
-      <h1 className="sr-only">
-        {match.homeTeam.name} — {match.awayTeam.name}
-      </h1>
       <div className="flex items-center gap-2 text-xs text-[var(--text-3)]">
         <Link href="/matches">Матчи</Link>
         <span>/</span>
         <span>{match.tournament}</span>
       </div>
-      <section className="surface overflow-hidden">
+      <h1 className="display-title text-[56px] md:text-[84px]">Матч</h1>
+      <section className="signal-stage surface overflow-hidden">
         <div className="border-b border-[var(--border)] px-5 py-4 text-center text-xs text-[var(--text-3)]">
           <span>{match.tournament}</span> · <span>{match.stage}</span> ·{' '}
           <span>BO{match.bestOf}</span>
@@ -127,7 +125,7 @@ export default async function MatchPage({ params }: Props) {
                     <Link
                       href={`/players/${item.slug}`}
                       key={item.playerId}
-                      className="grid grid-cols-[1fr_repeat(4,auto)] gap-4 border-b border-[var(--border)] px-5 py-4 text-sm last:border-0"
+                      className={`grid grid-cols-[1fr_repeat(4,auto)] gap-4 border-b border-[var(--border)] px-5 py-4 text-sm last:border-0 ${item.slug === 'frostbyte' ? 'bg-[rgba(69,255,166,.05)] shadow-[inset_3px_0_var(--brand)]' : ''}`}
                     >
                       <strong>{item.nickname}</strong>
                       <span className="data-number">

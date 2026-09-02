@@ -5,7 +5,6 @@ import { ArrowIcon, CheckIcon } from '@/components/icons';
 import { MatchCard } from '@/components/match-card';
 import { ApiError, getPlayer, getPlayerCareer, getPlayerVerification } from '@/lib/api';
 import {
-  Delta,
   Monogram,
   PlayerCard,
   RatingRing,
@@ -66,7 +65,7 @@ export default async function PlayerPage({ params }: PageProps) {
     alternateName: player.nickname,
     nationality: player.countryName,
     affiliation: { '@type': 'SportsTeam', name: player.teamName },
-    url: `https://arena-passport.example/players/${player.slug}`,
+    url: `https://cyberid.example/players/${player.slug}`,
   };
 
   return (
@@ -75,71 +74,52 @@ export default async function PlayerPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <section className="grain border-b border-[var(--border)] bg-[linear-gradient(180deg,rgba(95,139,255,.055),transparent)]">
-        <div className="container py-8 md:py-12">
-          <div className="mb-7 flex items-center gap-2 text-xs text-[var(--text-3)]">
-            <Link href="/players">Игроки</Link>
-            <span>/</span>
-            <span>{player.nickname}</span>
-            <span className="ml-auto rounded bg-[var(--surface-2)] px-2 py-1 text-[10px] font-bold tracking-wider">
-              CS2
-            </span>
-          </div>
-          <div className="grid items-center gap-8 xl:grid-cols-[1fr_auto]">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-              <Monogram label={player.nickname} size="xl" />
-              <div>
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <h1 className="text-4xl font-black tracking-[-.04em] md:text-6xl">
-                    {player.nickname}
-                  </h1>
-                  <VerificationBadge level={player.verificationLevel} />
+      <section className="signal-stage border-b border-[var(--border)]">
+        <div className="container py-5 md:py-7">
+          <nav className="mb-8 flex gap-7 border-b border-[var(--border)] text-xs font-bold uppercase tracking-[.08em] text-[var(--text-3)]">
+            <Link className="border-b-2 border-[var(--brand)] pb-4 text-[var(--text-1)]" href={`/players/${player.slug}`}>Обзор</Link>
+            <Link className="pb-4 hover:text-white" href="/matches">Матчи</Link>
+            <Link className="pb-4 hover:text-white" href={`/players/${player.slug}/career`}>Карьера</Link>
+            <Link className="pb-4 hover:text-white" href={`/players/${player.slug}/achievements`}>Достижения</Link>
+          </nav>
+          <div className="grid min-h-[410px] items-center gap-8 xl:grid-cols-[1fr_260px]">
+            <div>
+              <div className="flex flex-wrap items-center gap-4">
+                <Monogram label={player.nickname} size="lg" />
+                <div>
+                  <p className="text-2xl font-semibold">{player.realName ?? 'Настоящее имя не опубликовано'}</p>
+                  <p className="mt-1 text-sm text-[var(--text-2)]">{player.countryCode} · {player.age ?? '—'} года</p>
                 </div>
-                <p className="text-base text-[var(--text-2)]">
-                  {player.realName ?? 'Настоящее имя не опубликовано'}{' '}
-                  <span className="mx-2 text-[var(--border)]">•</span> {player.countryCode}{' '}
-                  {player.countryName} <span className="mx-2 text-[var(--border)]">•</span>{' '}
-                  {player.age ?? '—'} года
-                </p>
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <Link
-                    href={`/teams/${team.slug}`}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold"
-                  >
-                    <Monogram label={team.shortName} size="sm" />
-                    {team.name}
-                  </Link>
-                  {player.roles.map((role) => (
-                    <span
-                      key={role}
-                      className="rounded-md bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-2)]"
-                    >
-                      {role}
-                    </span>
-                  ))}
-                </div>
+                <VerificationBadge level={player.verificationLevel} />
+              </div>
+              <h1 className="display-title mt-7 text-[64px] sm:text-[92px] lg:text-[122px]">{player.nickname}</h1>
+              <div className="mt-7 flex flex-wrap gap-3">
+                {player.roles.map((role) => <span className="border border-[var(--border)] bg-[rgba(18,18,18,.7)] px-4 py-3 text-sm font-semibold" key={role}>{role}</span>)}
+                <Link className="inline-flex items-center gap-3 border border-[var(--border)] bg-[rgba(18,18,18,.7)] px-4 py-2 text-sm font-semibold" href={`/teams/${team.slug}`}>
+                  <Monogram label={team.shortName} size="sm" /> {team.name}
+                </Link>
               </div>
             </div>
-            <div className="flex items-center gap-6 rounded-2xl border border-[var(--border)] bg-[rgba(16,21,30,.8)] p-5">
-              <RatingRing score={player.rating.score} confidence={player.rating.confidence} />
-              <div className="min-w-28">
-                <p className="eyebrow">Рейтинг СНГ</p>
-                <p className="data-number mt-2 text-3xl font-black">#{player.rating.rank}</p>
-                <div className="mt-2">
-                  <Delta value={player.rating.delta30d} period="30 дней" />
-                </div>
-                <p className="mt-4 text-xs text-[var(--text-3)]">
-                  {player.rating.tier} · {performance?.sampleMaps ?? 0} карт
-                </p>
+            <aside className="border border-[var(--border)] bg-[rgba(15,15,15,.88)] p-5 backdrop-blur">
+              <div className="border-b border-[var(--border)] pb-5 text-center">
+                <p className="eyebrow">Рейтинг PPR</p>
+                <p className="data-number mt-2 text-7xl font-black text-[var(--brand)]">{player.rating.score}</p>
               </div>
-            </div>
+              <div className="border-b border-[var(--border)] py-5 text-center">
+                <p className="text-[10px] uppercase tracking-[.14em] text-[var(--text-3)]">Рейтинг СНГ</p>
+                <p className="data-number mt-2 text-5xl font-black text-[var(--brand)]">#{player.rating.rank}</p>
+              </div>
+              <div className="flex items-center justify-center gap-4 pt-5">
+                <RatingRing score={player.rating.score} confidence={player.rating.confidence} />
+              </div>
+            </aside>
           </div>
         </div>
       </section>
 
       <div className="container space-y-16 py-10 md:py-14">
         <section>
-          <SectionHeading eyebrow="Последние 90 дней" title="Performance snapshot" />
+          <SectionHeading eyebrow="Последние 90 дней" title="Форма игрока" />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
             <StatCard label="K/D" value={(performance?.kd ?? 0).toFixed(2)} note="90 дней" />
             <StatCard label="ADR" value={(performance?.adr ?? 0).toFixed(1)} note="Среднее" />
@@ -301,7 +281,7 @@ export default async function PlayerPage({ params }: PageProps) {
               {player.achievements.slice(0, 4).map((item, index) => (
                 <div key={item.code} className="surface p-4">
                   <div
-                    className={`grid size-10 place-items-center rounded-lg ${index === 3 ? 'bg-[rgba(243,182,75,.12)] text-[var(--warning)]' : 'bg-[rgba(95,139,255,.12)] text-[#8BAAFF]'}`}
+                    className={`grid size-10 place-items-center border ${index === 3 ? 'border-[rgba(243,182,75,.35)] text-[var(--warning)]' : 'border-[rgba(120,92,255,.5)] text-[#9f8cff]'}`}
                   >
                     <CheckIcon className="size-5" />
                   </div>

@@ -39,8 +39,8 @@ export default async function PlayerCareerPage({ params }: PageProps) {
       >
         ← Паспорт игрока
       </Link>
-      <p className="eyebrow mt-5">Verified timeline</p>
-      <h1 className="mt-2 text-4xl font-black tracking-[-.04em]">
+      <p className="eyebrow mt-5">Проверяемая хронология</p>
+      <h1 className="display-title mt-4 text-[52px] md:text-[72px]">
         Карьера {career.player.nickname}
       </h1>
       <p className="muted mt-3 max-w-2xl">
