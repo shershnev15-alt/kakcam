@@ -1,15 +1,20 @@
-# Mobile foundation
+# Mobile application
 
-Этап 9 реализован как Expo SDK 57 / React Native workspace в `apps/mobile`. Приложение использует тот же REST API и общие transport types; контент доступен guest без регистрации.
+Этапы 9–11 реализованы как Expo SDK 57 / React Native workspace в `apps/mobile`. Приложение использует тот же REST API; публичный контент, избранное и напоминания доступны guest без регистрации.
 
 Реализованы:
 
 - Expo Router и bottom tabs: Home, Matches, Rankings, Discover, Profile;
 - onboarding: welcome → favorite games → teams → players → notification rationale → home, каждый шаг можно пропустить;
-- TanStack Query с `offlineFirst`, связанный с NetInfo;
+- live Home, Matches, PPR/TPR Rankings, Discover и grouped Search;
+- Player, Team, Match и Tournament detail screens с loading/error/empty/refresh states;
+- TanStack Query с `offlineFirst`, связанный с NetInfo, и явная offline-индикация;
 - SecureStore adapter для мобильных токенов;
-- canonical deep links `arena-passport://` и web links для player/team/match/tournament;
-- notification adapter, который запрашивает системное разрешение только после явного rationale;
+- AsyncStorage engagement state: избранные игроки/команды, match reminders, preferences и inbox;
+- локальные match reminders за 15 минут, foreground handler и Expo push-token adapter;
+- системное notification permission запрашивается только после явного rationale;
+- share actions с canonical web URL для player/team/match/tournament;
+- deep links `arenapassport://` и universal links для player/team/match/tournament, включая переход из notification payload;
 - Android intent filters, iOS associated-domain configuration и статический web export.
 
-Этап 10 подключит live API к продуктовым экранам профилей, матчей, рейтингов и поиска. Push-регистрация, favorites, reminders и share cards относятся к Этапу 11. Полная карта: `SCREEN_MAP.md`.
+До подключения auth engagement хранится на устройстве. После входа этот же provider должен синхронизироваться с `/me/favorites` и `/me/notifications`. Регистрация push token на backend включается после выдачи EAS project ID и production API origin. Native device/simulator smoke и signing остаются store-release gate. Полная карта: `SCREEN_MAP.md`.

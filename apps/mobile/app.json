@@ -20,7 +20,14 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "https", "host": "arena-passport.example", "pathPrefix": "/players" }
+            { "scheme": "https", "host": "arena-passport.example", "pathPrefix": "/players" },
+            { "scheme": "https", "host": "arena-passport.example", "pathPrefix": "/teams" },
+            { "scheme": "https", "host": "arena-passport.example", "pathPrefix": "/matches" },
+            {
+              "scheme": "https",
+              "host": "arena-passport.example",
+              "pathPrefix": "/tournaments"
+            }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }

@@ -34,7 +34,7 @@
 
 Bottom tabs: Home, Matches, Rankings, Discover, Profile. Global search открывается из header и доступен из deep link.
 
-Этап 9 реализует shell, onboarding, tabs, offline/query foundation и deep-link routing. Продуктовые данные экранов подключаются на Этапе 10, уведомления и engagement — на Этапе 11.
+Этапы 9–11 реализованы: shell, onboarding, tabs, offline/query foundation, live product data, guest engagement, notification inbox/reminders и deep-link routing.
 
 | Screen                       | Основная задача                             |
 | ---------------------------- | ------------------------------------------- |
@@ -51,7 +51,7 @@ Bottom tabs: Home, Matches, Rankings, Discover, Profile. Global search откр�
 | Match                        | Live score, maps, stats, reminders          |
 | Tournament                   | Schedule, bracket/standings, leaders        |
 | Notifications                | Grouped inbox, deep links                   |
-| User Profile                 | Favorites, claims, preferences, security    |
+| User Profile                 | Guest favorites, reminders и preferences    |
 
 ## State coverage
 

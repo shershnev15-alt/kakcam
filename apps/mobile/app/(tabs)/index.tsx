@@ -1,93 +1,144 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { FoundationScreen } from '../../src/components/foundation-screen';
-import { colors, radius, spacing } from '../../src/theme/tokens';
+import { useNetInfo } from '@react-native-community/netinfo';
+import type { Href } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { queryPath } from '../../src/api/client';
+import { useApiQuery } from '../../src/api/hooks';
+import type {
+  ApiPage,
+  MatchSummary,
+  PlayerSummary,
+  TeamSummary,
+  TournamentSummary,
+} from '../../src/api/types';
+import { AppScreen, SectionHeader } from '../../src/components/app-screen';
+import { MatchCard, PlayerRow, TeamRow, TournamentCard } from '../../src/components/cards';
+import { ErrorState, LoadingState, OfflineNotice } from '../../src/components/query-state';
+import { useEngagement } from '../../src/engagement/provider';
+import { colors } from '../../src/theme/tokens';
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const network = useNetInfo();
+  const { state } = useEngagement();
+  const matches = useApiQuery<ApiPage<MatchSummary>>(
+    ['home', 'matches'],
+    queryPath('/matches', { status: 'UPCOMING', pageSize: 3 }),
+  );
+  const players = useApiQuery<ApiPage<PlayerSummary>>(
+    ['home', 'players'],
+    queryPath('/rankings/players', { pageSize: 5 }),
+  );
+  const teams = useApiQuery<ApiPage<TeamSummary>>(
+    ['home', 'teams'],
+    queryPath('/rankings/teams', { pageSize: 3 }),
+  );
+  const tournaments = useApiQuery<ApiPage<TournamentSummary>>(
+    ['home', 'tournaments'],
+    queryPath('/tournaments', { pageSize: 3 }),
+  );
+  const queries = [matches, players, teams, tournaments];
+  const loading = queries.some((query) => query.isLoading);
+  const error = queries.every((query) => query.isError && !query.data);
+  const refreshing = queries.some((query) => query.isFetching) && !loading;
+  function refresh() {
+    void Promise.all(queries.map((query) => query.refetch()));
+  }
   return (
-    <FoundationScreen
-      eyebrow="TODAY / 02 SEP"
+    <AppScreen
+      eyebrow="TODAY / LIVE DATA"
       title="Ваш киберспорт без шума"
-      copy="Live-матчи, форма избранных и важные рейтинговые изменения."
+      copy="Матчи, рейтинги и важные изменения — напрямую из Arena API."
+      refreshing={refreshing}
+      onRefresh={refresh}
     >
-      <View style={styles.live}>
-        <View style={styles.liveTop}>
-          <Text style={styles.liveLabel}>LIVE · NORTHERN CUP</Text>
-          <Text style={styles.map}>MAP 2 / 3</Text>
-        </View>
-        <View style={styles.score}>
-          <Text style={styles.team}>NRTH</Text>
-          <Text style={styles.number}>1 : 0</Text>
-          <Text style={styles.team}>TGC</Text>
-        </View>
-        <Text style={styles.caption}>Mirage · 9:7 · 18 раунд</Text>
-      </View>
-      <Text style={styles.section}>ИЗБРАННЫЕ</Text>
-      <View style={styles.player}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>FR</Text>
-        </View>
-        <View>
-          <Text style={styles.playerName}>frostbyte</Text>
-          <Text style={styles.caption}>AWP · Northern Lights</Text>
-        </View>
-        <View style={styles.rating}>
-          <Text style={styles.ratingNumber}>541</Text>
-          <Text style={styles.delta}>+8</Text>
-        </View>
-      </View>
-    </FoundationScreen>
+      <OfflineNotice visible={network.isConnected === false} />
+      {loading ? <LoadingState rows={4} /> : null}
+      {error ? <ErrorState retry={refresh} /> : null}
+      {matches.data?.data.length ? (
+        <>
+          <SectionHeader
+            title="Ближайшие матчи"
+            action={<TextLink label="Все матчи" onPress={() => router.push('/matches' as Href)} />}
+          />
+          {matches.data.data.map((match) => (
+            <MatchCard key={match.id} match={match} reminder />
+          ))}
+        </>
+      ) : null}
+      {state.favorites.length ? (
+        <>
+          <SectionHeader
+            title="Избранное"
+            action={<TextLink label="Открыть" onPress={() => router.push('/favorites' as Href)} />}
+          />
+          <View style={styles.favoriteStrip}>
+            {state.favorites.slice(0, 3).map((item) => (
+              <Pressable
+                key={`${item.kind}-${item.slug}`}
+                style={styles.favorite}
+                onPress={() =>
+                  router.push(
+                    `/${item.kind === 'player' ? 'players' : 'teams'}/${item.slug}` as Href,
+                  )
+                }
+              >
+                <Text style={styles.favoriteLabel}>{item.label}</Text>
+                <Text style={styles.favoriteMeta}>{item.subtitle}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      ) : null}
+      {players.data?.data.length ? (
+        <>
+          <SectionHeader title="Топ игроков" />
+          {players.data.data.map((player, index) => (
+            <PlayerRow key={player.id} player={player} position={index + 1} />
+          ))}
+        </>
+      ) : null}
+      {teams.data?.data.length ? (
+        <>
+          <SectionHeader title="Топ команд" />
+          {teams.data.data.map((team, index) => (
+            <TeamRow key={team.id} team={team} position={index + 1} />
+          ))}
+        </>
+      ) : null}
+      {tournaments.data?.data.length ? (
+        <>
+          <SectionHeader title="Турниры" />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {tournaments.data.data.map((tournament) => (
+              <TournamentCard key={tournament.id} tournament={tournament} />
+            ))}
+          </ScrollView>
+        </>
+      ) : null}
+    </AppScreen>
+  );
+}
+
+function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress}>
+      <Text style={styles.link}>{label} →</Text>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  live: {
-    marginTop: 34,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    backgroundColor: colors.elevated,
+  link: { color: colors.accent, fontSize: 11, fontWeight: '800' },
+  favoriteStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  favorite: {
+    flexGrow: 1,
+    minWidth: 130,
+    padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  liveTop: { flexDirection: 'row', justifyContent: 'space-between' },
-  liveLabel: { color: colors.accent, fontWeight: '800', fontSize: 10, letterSpacing: 1.3 },
-  map: { color: colors.faint, fontSize: 10 },
-  score: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginVertical: 28,
-  },
-  team: { color: colors.text, fontSize: 17, fontWeight: '800' },
-  number: { color: colors.text, fontSize: 38, fontWeight: '800', letterSpacing: -1.5 },
-  caption: { color: colors.muted, fontSize: 12 },
-  section: {
-    color: colors.accent,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    marginTop: 36,
-    marginBottom: 12,
-  },
-  player: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.md,
-    backgroundColor: '#1e2941',
-    marginRight: 12,
-  },
-  avatarText: { color: colors.text, fontWeight: '800' },
-  playerName: { color: colors.text, fontSize: 18, fontWeight: '800' },
-  rating: { marginLeft: 'auto', alignItems: 'flex-end' },
-  ratingNumber: { color: colors.text, fontSize: 22, fontWeight: '800' },
-  delta: { color: colors.success, fontSize: 11 },
+  favoriteLabel: { color: colors.text, fontWeight: '800' },
+  favoriteMeta: { color: colors.faint, fontSize: 10, marginTop: 4 },
 });

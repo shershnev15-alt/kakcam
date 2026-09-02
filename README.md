@@ -42,6 +42,8 @@ Email-аутентификация использует Argon2id и отзыва
 pnpm --filter @arena/mobile dev
 ```
 
+В mobile подключены live Home, Matches, Rankings, Discover, Search, профили игрока/команды, матчи и турниры. Избранное, match reminders, inbox и preferences работают guest-first и сохраняются на устройстве.
+
 ## Проверки
 
 Node локально не требуется; CI выполняет `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`. Архитектура и roadmap: [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md). Текущий статус: [docs/PROGRESS.md](docs/PROGRESS.md).

@@ -1,6 +1,6 @@
 # Progress
 
-Дата обновления: 2 сентября 2026. Этапы **0–9 завершены**: specification, foundation, auth/RBAC, public directory, competition flow, reproducible ratings, career/achievements, claim/verification, full admin и mobile foundation.
+Дата обновления: 2 сентября 2026. Этапы **0–11 завершены**: specification, foundation, auth/RBAC, public directory, competition flow, reproducible ratings, career/achievements, claim/verification, full admin, mobile foundation, mobile product screens и mobile engagement.
 
 ## Completed
 
@@ -38,6 +38,11 @@
 - локальный `SUPER_ADMIN` создаётся только при заданных seed credentials;
 - Expo SDK 57 / React Native mobile workspace с Expo Router, пятью bottom tabs и пропускаемым onboarding;
 - mobile TanStack Query offline-first cache, NetInfo, SecureStore, notification-permission adapter и canonical deep links;
+- live mobile Home, Matches, PPR/TPR Rankings, Discover и grouped Search на публичном REST API;
+- mobile Player/Team passports, Match Center и Tournament Hub с pull-to-refresh, loading/error/empty/offline states;
+- guest-first favorites, match reminders, notification preferences и inbox с AsyncStorage persistence;
+- local Expo notifications за 15 минут, foreground handler, push-token adapter и permission rationale;
+- canonical share actions, app/universal links и notification deep-link routing для players/teams/matches/tournaments;
 - изолированные зависимости Docker-сервисов без конкурентной записи в host `node_modules`.
 
 ## Tests
@@ -45,10 +50,10 @@
 - Prisma schema validation, migration deploy и idempotent seed: passed;
 - API strict typecheck, 32 unit tests и production build: passed;
 - Admin strict typecheck, 3 component/command tests и production build: passed;
-- Mobile strict typecheck, 2 deep-link tests и Expo static export: passed;
+- Mobile strict typecheck, 9 format/engagement/deep-link tests и Expo static export: passed;
 - Web strict typecheck, 3 component tests и production build: passed;
 - rating engine: 6 deterministic PPR/TPR tests; achievement engine: 6 tests;
-- полный monorepo test suite: 52 tests passed;
+- полный monorepo test suite: 59 tests passed;
 - auth/RBAC e2e: register 201, me 200, unauthorized mutation 403, foreign Origin 403, logout 201, revoked session 401;
 - Statistician e2e: Player/Team create 201 и update 200; временные QA-записи очищены;
 - Moderator e2e: Player/Team soft-archive 200, archived public read 404; временные QA-записи очищены;
@@ -62,6 +67,7 @@
 - Stage 7 e2e: claim 201, moderation queue 200, approve 201, duplicate decision 409, public verification level 2; QA records cleaned;
 - Stage 8 e2e: admin login 200, anonymous access 401, organization create/update 200, stale `If-Match` 412, assertion resolve 201, duplicate import 409 и immutable audit; QA records cleaned;
 - Stage 9 verification: 13 Expo web routes exported, onboarding/tabs/deep-link routes compiled, mobile typecheck/tests passed;
+- Stage 10–11 verification: 20 Expo web routes exported, 9 mobile tests passed; live product routes, local engagement persistence, reminders, share и notification deep-link bridge compiled;
 - Web smoke: transfers, achievements, career, account claim и moderation routes return 200;
 - HTTP smoke: public web 200, admin 200, current API health 200; Docker postgres/redis/API healthy and web 200.
 
@@ -75,10 +81,11 @@
 - email verification/recovery и Steam/Google OAuth ещё не реализованы;
 - evidence reference в local prototype хранится в restricted DB field; encrypted object storage, malware scanning и retention enforcement обязательны до production;
 - bulk admin operations и MFA/step-up authentication остаются обязательными до production;
-- мобильные product screens пока используют foundation/demo shell; live profiles/matches/rankings/search входят в Этап 10;
+- push-token backend registration ждёт production EAS project ID и API origin; local reminders уже работают;
+- guest favorites/inbox пока локальные; merge с account engagement потребует `/me/*` endpoints;
 - native device/simulator smoke и signing выполняются перед store beta;
 - изображения представлены monograms; S3 media pipeline ещё не подключён.
 
 ## Next step
 
-Этап 10: подключить мобильные профили, матчи, рейтинги и поиск к live API с полными loading/empty/error/offline states.
+Этап 12: подключить два независимых внешних provider adapter, staging/normalization, idempotent replay и import safety.
