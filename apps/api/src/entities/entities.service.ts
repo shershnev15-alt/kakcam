@@ -51,9 +51,18 @@ const teamDetailInclude = {
   },
 } satisfies Prisma.TeamInclude;
 
+const publicMatchInclude = {
+  tournament: { select: { slug: true, name: true } },
+  homeTeam: { select: { id: true, slug: true, name: true, shortName: true } },
+  awayTeam: { select: { id: true, slug: true, name: true, shortName: true } },
+} satisfies Prisma.MatchInclude;
+
 type PlayerRecord = Prisma.PlayerGetPayload<{ include: typeof playerInclude }>;
 type TeamRecord = Prisma.TeamGetPayload<{ include: typeof teamInclude }>;
 type TeamDetailRecord = Prisma.TeamGetPayload<{ include: typeof teamDetailInclude }>;
+type PublicMatchRecord = Prisma.MatchGetPayload<{ include: typeof publicMatchInclude }>;
+type PlayerStatisticRecord = Prisma.PlayerStatisticGetPayload<Record<string, never>>;
+type TeamStatisticRecord = Prisma.TeamStatisticGetPayload<Record<string, never>>;
 
 function errorCode(error: unknown): string | undefined {
   return error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
@@ -105,6 +114,7 @@ export class EntitiesService {
         ratings.map((item) => this.playerDto(item.player)),
         total,
         query,
+        run,
       );
     }
 
@@ -134,19 +144,58 @@ export class EntitiesService {
       include: playerInclude,
     });
     if (!record) throw new NotFoundException('Player not found');
-    const similar = await this.prisma.player.findMany({
-      where: {
-        status: 'ACTIVE',
-        id: { not: record.id },
-        ...(record.currentTeamId ? { currentTeamId: record.currentTeamId } : {}),
-      },
-      include: playerInclude,
-      orderBy: { aggregateVerificationLevel: 'desc' },
-      take: 4,
-    });
+    const [similar, performance, matchStatistics, achievements, ratingHistory] = await Promise.all([
+      this.prisma.player.findMany({
+        where: {
+          status: 'ACTIVE',
+          id: { not: record.id },
+          ...(record.currentTeamId ? { currentTeamId: record.currentTeamId } : {}),
+        },
+        include: playerInclude,
+        orderBy: { aggregateVerificationLevel: 'desc' },
+        take: 4,
+      }),
+      this.prisma.playerStatistic.findFirst({
+        where: { playerId: record.id },
+        orderBy: { periodEnd: 'desc' },
+      }),
+      this.prisma.playerMatchStatistic.findMany({
+        where: { playerId: record.id, verifiedAt: { not: null }, mapKey: 'all' },
+        include: {
+          match: { include: publicMatchInclude },
+        },
+        orderBy: { match: { startsAt: 'desc' } },
+        take: 6,
+      }),
+      this.prisma.playerAchievement.findMany({
+        where: { playerId: record.id, status: 'GRANTED' },
+        include: { achievement: true },
+        orderBy: { grantedAt: 'desc' },
+      }),
+      this.prisma.playerRating.findMany({
+        where: { playerId: record.id, run: { status: 'PUBLISHED' } },
+        include: { run: { select: { formulaVersion: true } } },
+        orderBy: { publishedAt: 'desc' },
+        take: 12,
+      }),
+    ]);
     return {
       ...this.playerDto(record),
       similar: similar.map((item) => this.playerDto(item)),
+      performance: performance ? this.playerPerformanceDto(performance) : null,
+      matches: matchStatistics.map((item) => this.matchSummaryDto(item.match)),
+      achievements: achievements.map((item) => ({
+        code: item.achievement.code,
+        title: item.achievement.title,
+        description: item.achievement.description,
+        category: item.achievement.category,
+        rarity: this.rarity(item.achievement.rarity),
+        progress: Number(item.progress),
+        target: Number(item.target),
+        grantedAt: item.grantedAt,
+      })),
+      ratingHistory: ratingHistory.map((item) => this.ratingHistoryDto(item)),
+      ratingFactors: this.ratingFactors(record.ratings[0]?.explanation),
     };
   }
 
@@ -269,6 +318,7 @@ export class EntitiesService {
         ratings.map((item) => this.teamDto(item.team)),
         total,
         query,
+        run,
       );
     }
 
@@ -298,7 +348,62 @@ export class EntitiesService {
       include: teamDetailInclude,
     });
     if (!record) throw new NotFoundException('Team not found');
-    return this.teamDetailDto(record);
+    const [performance, matches, placements, achievements, ratingHistory] = await Promise.all([
+      this.prisma.teamStatistic.findFirst({
+        where: { teamId: record.id },
+        orderBy: { periodEnd: 'desc' },
+      }),
+      this.prisma.match.findMany({
+        where: { OR: [{ homeTeamId: record.id }, { awayTeamId: record.id }] },
+        include: publicMatchInclude,
+        orderBy: { startsAt: 'desc' },
+        take: 6,
+      }),
+      this.prisma.tournamentPlacement.findMany({
+        where: { teamId: record.id },
+        include: { tournament: true },
+        orderBy: { tournament: { endsAt: 'desc' } },
+        take: 6,
+      }),
+      this.prisma.teamAchievement.findMany({
+        where: { teamId: record.id, status: 'GRANTED' },
+        include: { achievement: true },
+        orderBy: { grantedAt: 'desc' },
+      }),
+      this.prisma.teamRating.findMany({
+        where: { teamId: record.id, run: { status: 'PUBLISHED' } },
+        include: { run: { select: { formulaVersion: true } } },
+        orderBy: { publishedAt: 'desc' },
+        take: 12,
+      }),
+    ]);
+    return {
+      ...this.teamDetailDto(record),
+      performance: performance ? this.teamPerformanceDto(performance) : null,
+      matches: matches.map((match) => this.matchSummaryDto(match)),
+      tournaments: placements.map((item) => ({
+        id: item.tournament.id,
+        slug: item.tournament.slug,
+        name: item.tournament.name,
+        mode: item.tournament.mode,
+        endsAt: item.tournament.endsAt,
+        placeFrom: item.placeFrom,
+        placeTo: item.placeTo,
+        prizeAmount: Number(item.prizeAmount ?? 0),
+      })),
+      achievements: achievements.map((item) => ({
+        code: item.achievement.code,
+        title: item.achievement.title,
+        description: item.achievement.description,
+        category: item.achievement.category,
+        rarity: this.rarity(item.achievement.rarity),
+        progress: Number(item.progress),
+        target: Number(item.target),
+        grantedAt: item.grantedAt,
+      })),
+      ratingHistory: ratingHistory.map((item) => this.ratingHistoryDto(item)),
+      ratingFactors: this.ratingFactors(record.ratings[0]?.explanation),
+    };
   }
 
   async search(query: string) {
@@ -483,6 +588,108 @@ export class EntitiesService {
     };
   }
 
+  private matchSummaryDto(match: PublicMatchRecord) {
+    return {
+      id: match.id,
+      startsAt: match.startsAt,
+      status: match.status === 'SCHEDULED' ? 'UPCOMING' : match.status,
+      tournament: match.tournament?.name ?? 'Вне турнира',
+      tournamentSlug: match.tournament?.slug ?? null,
+      stage: match.stage ?? 'Матч',
+      bestOf: match.bestOf,
+      homeTeamId: match.homeTeamId,
+      awayTeamId: match.awayTeamId,
+      homeTeam: match.homeTeam,
+      awayTeam: match.awayTeam,
+      homeScore: match.homeScore,
+      awayScore: match.awayScore,
+      verificationLevel: match.verificationLevel,
+    };
+  }
+
+  private playerPerformanceDto(record: PlayerStatisticRecord) {
+    const metrics = jsonObject(record.metrics);
+    return {
+      periodStart: record.periodStart,
+      periodEnd: record.periodEnd,
+      sampleMatches: record.sampleMatches,
+      sampleMaps: record.sampleMaps,
+      rounds: record.rounds,
+      kills: record.kills,
+      deaths: record.deaths,
+      assists: record.assists,
+      wins: record.wins,
+      losses: record.losses,
+      kd: typeof metrics.kd === 'number' ? metrics.kd : 0,
+      adr: typeof metrics.adr === 'number' ? metrics.adr : 0,
+      kast: typeof metrics.kast === 'number' ? metrics.kast : 0,
+      winRate: Number((record.wins / Math.max(1, record.sampleMatches)).toFixed(3)),
+      performanceRating:
+        typeof metrics.performanceRating === 'number' ? metrics.performanceRating : 0,
+    };
+  }
+
+  private teamPerformanceDto(record: TeamStatisticRecord) {
+    return {
+      periodStart: record.periodStart,
+      periodEnd: record.periodEnd,
+      sampleMatches: record.sampleMatches,
+      wins: record.wins,
+      losses: record.losses,
+      mapsWon: record.mapsWon,
+      mapsLost: record.mapsLost,
+      roundsWon: record.roundsWon,
+      roundsLost: record.roundsLost,
+      winRate: Number((record.wins / Math.max(1, record.sampleMatches)).toFixed(3)),
+      roundDifference: record.roundsWon - record.roundsLost,
+    };
+  }
+
+  private rarity(value: string): 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic' {
+    const normalized = value.toLocaleLowerCase('en-US');
+    return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}` as
+      | 'Common'
+      | 'Rare'
+      | 'Epic'
+      | 'Legendary'
+      | 'Mythic';
+  }
+
+  private ratingHistoryDto(record: {
+    score: number;
+    confidence: Prisma.Decimal;
+    rank: number | null;
+    publishedAt: Date;
+    explanation: Prisma.JsonValue;
+    run: { formulaVersion: string };
+  }) {
+    return {
+      score: record.score,
+      confidence: Math.round(Number(record.confidence)),
+      rank: record.rank ?? 0,
+      publishedAt: record.publishedAt,
+      formulaVersion: record.run.formulaVersion,
+      factors: this.ratingFactors(record.explanation),
+    };
+  }
+
+  private ratingFactors(value: Prisma.JsonValue | null | undefined) {
+    const factors = jsonObject(value).factors;
+    if (!Array.isArray(factors)) return [];
+    return factors.flatMap((factor) => {
+      if (!factor || typeof factor !== 'object' || Array.isArray(factor)) return [];
+      const item = factor as Record<string, Prisma.JsonValue>;
+      if (
+        typeof item.key !== 'string' ||
+        typeof item.label !== 'string' ||
+        typeof item.contribution !== 'number'
+      ) {
+        return [];
+      }
+      return [{ key: item.key, label: item.label, contribution: item.contribution }];
+    });
+  }
+
   private playerWhere(query: DirectoryQuery): Prisma.PlayerWhereInput {
     return {
       status: 'ACTIVE',
@@ -516,7 +723,17 @@ export class EntitiesService {
     };
   }
 
-  private page<T>(data: T[], total: number, query: DirectoryQuery) {
+  private page<T>(
+    data: T[],
+    total: number,
+    query: DirectoryQuery,
+    ratingRun?: {
+      id: string;
+      formulaVersion: string;
+      inputCutoff: Date;
+      checksum: string;
+    },
+  ) {
     return {
       data,
       meta: {
@@ -525,6 +742,16 @@ export class EntitiesService {
         pageSize: query.pageSize,
         totalPages: Math.ceil(total / query.pageSize),
         source: 'postgresql',
+        ...(ratingRun
+          ? {
+              ratingRun: {
+                id: ratingRun.id,
+                formulaVersion: ratingRun.formulaVersion,
+                inputCutoff: ratingRun.inputCutoff,
+                checksum: ratingRun.checksum,
+              },
+            }
+          : {}),
       },
     };
   }

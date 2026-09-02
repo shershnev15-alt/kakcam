@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@arena/demo-data": "workspace:*",
+    "@arena/rating-engine": "workspace:*",
     "@arena/types": "workspace:*",
     "@nestjs/common": "12.0.1",
     "@nestjs/core": "12.0.1",

@@ -4,9 +4,17 @@ import type { ReactNode } from 'react';
 export function RankingsShell({
   active,
   children,
+  ratingRun,
 }: {
   active: 'players' | 'teams';
   children: ReactNode;
+  ratingRun:
+    | {
+        formulaVersion: string;
+        inputCutoff: string;
+        checksum: string;
+      }
+    | undefined;
 }) {
   return (
     <>
@@ -50,10 +58,19 @@ export function RankingsShell({
           <span className="rounded-lg border border-[rgba(67,209,125,.35)] bg-[rgba(67,209,125,.08)] px-3 py-2.5 text-[var(--success)]">
             Источник: PostgreSQL
           </span>
+          {ratingRun ? (
+            <span className="rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2.5 text-[var(--text-2)]">
+              Формула: {ratingRun.formulaVersion}
+            </span>
+          ) : null}
         </div>
         {children}
         <div className="mt-5 flex flex-col gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] p-4 text-xs text-[var(--text-3)] sm:flex-row sm:items-center">
-          <span>Рейтинг обновлен 2 сентября 2026, 08:00 МСК</span>
+          <span>
+            {ratingRun
+              ? `Cutoff: ${new Date(ratingRun.inputCutoff).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })} · checksum ${ratingRun.checksum.slice(0, 10)}`
+              : 'Опубликованный рейтинг пока недоступен'}
+          </span>
           <Link href="/methodology" className="font-bold text-[var(--accent)] sm:ml-auto">
             Как рассчитывается рейтинг →
           </Link>

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { calculatePpr, recencyWeight, type RatingObservation } from './index';
+import {
+  calculatePpr,
+  calculatePprDetailed,
+  calculateTprLeaderboard,
+  recencyWeight,
+  tierForScore,
+  type RatingObservation,
+} from './index';
 
 const observation: RatingObservation = {
   performanceZ: 1.2,
@@ -32,5 +39,59 @@ describe('PPR v1 foundation', () => {
 
   it('returns neutral provisional value without current observations', () => {
     expect(calculatePpr([])).toEqual({ score: 500, confidence: 0, effectiveSample: 0 });
+  });
+
+  it('explains score factors without changing deterministic output', () => {
+    const detailed = calculatePprDetailed(Array.from({ length: 20 }, () => observation));
+    expect(detailed.score).toBe(calculatePpr(Array.from({ length: 20 }, () => observation)).score);
+    expect(detailed.factors.map((factor) => factor.key)).toEqual([
+      'performance',
+      'sample',
+      'opponents',
+      'trust',
+    ]);
+    expect(detailed.tier).toBe(tierForScore(detailed.score));
+  });
+});
+
+describe('TPR v1', () => {
+  const matches = [
+    {
+      id: 'm1',
+      playedAt: '2026-08-20T12:00:00.000Z',
+      homeTeamId: 'alpha',
+      awayTeamId: 'bravo',
+      homeScore: 2,
+      awayScore: 0,
+      tournamentCoefficient: 1,
+      dataQuality: 1,
+    },
+    {
+      id: 'm2',
+      playedAt: '2026-08-25T12:00:00.000Z',
+      homeTeamId: 'alpha',
+      awayTeamId: 'charlie',
+      homeScore: 2,
+      awayScore: 1,
+      tournamentCoefficient: 1.1,
+      dataQuality: 0.9,
+    },
+  ];
+
+  it('replays matches deterministically and rewards wins', () => {
+    const first = calculateTprLeaderboard(
+      ['alpha', 'bravo', 'charlie'],
+      matches,
+      '2026-09-02T00:00:00.000Z',
+    );
+    expect(first).toEqual(
+      calculateTprLeaderboard(
+        ['alpha', 'bravo', 'charlie'],
+        [...matches].reverse(),
+        '2026-09-02T00:00:00.000Z',
+      ),
+    );
+    expect(first[0]).toMatchObject({ teamId: 'alpha', rank: 1, form: ['W', 'W'] });
+    expect(first.every((team) => team.score >= 0 && team.score <= 1000)).toBe(true);
   });
 });

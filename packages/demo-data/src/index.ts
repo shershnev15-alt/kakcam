@@ -217,6 +217,9 @@ export const tournaments: TournamentSummary[] = [
     endsAt: '2026-09-14T18:00:00.000Z',
     prizePool: 250000,
     currency: 'USD',
+    status: 'UPCOMING',
+    participantCount: teams.length,
+    matchCount: 10,
   },
   {
     id: 'tournament-2',
@@ -228,6 +231,9 @@ export const tournaments: TournamentSummary[] = [
     endsAt: '2026-09-28T18:00:00.000Z',
     prizePool: 50000,
     currency: 'USD',
+    status: 'UPCOMING',
+    participantCount: teams.length,
+    matchCount: 10,
   },
   {
     id: 'tournament-3',
@@ -239,6 +245,9 @@ export const tournaments: TournamentSummary[] = [
     endsAt: '2026-08-30T18:00:00.000Z',
     prizePool: 100000,
     currency: 'USD',
+    status: 'FINISHED',
+    participantCount: teams.length,
+    matchCount: 10,
   },
 ];
 
@@ -246,21 +255,37 @@ export const matches: MatchSummary[] = Array.from({ length: 30 }, (_, index) => 
   const status: MatchSummary['status'] = index < 2 ? 'LIVE' : index < 12 ? 'UPCOMING' : 'FINISHED';
   const home = teams[index % teams.length]!;
   const away = teams[(index + 3) % teams.length]!;
+  const bestOf = index % 4 === 0 ? 3 : 1;
+  const startsAt =
+    status === 'FINISHED'
+      ? new Date(Date.UTC(2026, 7, 12 + Math.floor((index - 12) / 2), 13 + (index % 2) * 3))
+      : new Date(Date.UTC(2026, 8, 2 + Math.floor(index / 3), 10 + (index % 3) * 3));
   return {
     id: `match-${index + 1}`,
-    startsAt: new Date(
-      Date.UTC(2026, 8, 2 + Math.floor(index / 3), 10 + (index % 3) * 3),
-    ).toISOString(),
+    startsAt: startsAt.toISOString(),
     status,
     tournament: tournaments[index % tournaments.length]!.name,
     stage: index % 4 === 0 ? 'Playoffs' : 'Group stage',
-    bestOf: index % 4 === 0 ? 3 : 1,
+    bestOf,
     homeTeamId: home.id,
     awayTeamId: away.id,
+    homeTeam: {
+      id: home.id,
+      slug: home.slug,
+      name: home.name,
+      shortName: home.shortName,
+    },
+    awayTeam: {
+      id: away.id,
+      slug: away.slug,
+      name: away.name,
+      shortName: away.shortName,
+    },
+    verificationLevel: status === 'FINISHED' ? 3 : 1,
     ...(status !== 'UPCOMING'
       ? {
-          homeScore: status === 'LIVE' ? 1 : index % 3,
-          awayScore: status === 'LIVE' ? 0 : (index + 1) % 3,
+          homeScore: status === 'LIVE' ? 1 : index % 2 === 0 ? Math.ceil(bestOf / 2) : 0,
+          awayScore: status === 'LIVE' ? 0 : index % 2 === 0 ? 0 : Math.ceil(bestOf / 2),
         }
       : {}),
   };

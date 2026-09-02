@@ -242,27 +242,29 @@ model Organization {
 }
 
 model Player {
-  id                         String                 @id @default(uuid()) @db.Uuid
-  slug                       String                 @unique
+  id                         String                      @id @default(uuid()) @db.Uuid
+  slug                       String                      @unique
   nickname                   String
   normalizedNickname         String
-  countryId                  String?                @db.Uuid
-  currentTeamId              String?                @db.Uuid
-  status                     EntityStatus           @default(ACTIVE)
-  aggregateVerificationLevel Int                    @default(0)
-  country                    Country?               @relation(fields: [countryId], references: [id])
-  currentTeam                Team?                  @relation("CurrentPlayers", fields: [currentTeamId], references: [id])
+  countryId                  String?                     @db.Uuid
+  currentTeamId              String?                     @db.Uuid
+  status                     EntityStatus                @default(ACTIVE)
+  aggregateVerificationLevel Int                         @default(0)
+  country                    Country?                    @relation(fields: [countryId], references: [id])
+  currentTeam                Team?                       @relation("CurrentPlayers", fields: [currentTeamId], references: [id])
   profile                    PlayerProfile?
   accounts                   PlayerGameAccount[]
   memberships                TeamMember[]
   ratings                    PlayerRating[]
   achievements               PlayerAchievement[]
   statistics                 PlayerMatchStatistic[]
+  aggregateStatistics        PlayerStatistic[]
+  tournamentStatistics       PlayerTournamentStatistic[]
   career                     CareerHistory[]
   transfers                  Transfer[]
   followers                  UserFollow[]
-  createdAt                  DateTime               @default(now())
-  updatedAt                  DateTime               @updatedAt
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
 
   @@index([normalizedNickname])
   @@index([countryId, status])
@@ -297,26 +299,29 @@ model PlayerGameAccount {
 }
 
 model Team {
-  id                         String            @id @default(uuid()) @db.Uuid
-  slug                       String            @unique
+  id                         String                  @id @default(uuid()) @db.Uuid
+  slug                       String                  @unique
   name                       String
   shortName                  String
-  countryId                  String?           @db.Uuid
-  organizationId             String?           @db.Uuid
-  foundedAt                  DateTime?         @db.Date
+  countryId                  String?                 @db.Uuid
+  organizationId             String?                 @db.Uuid
+  foundedAt                  DateTime?               @db.Date
   logoUrl                    String?
-  status                     EntityStatus      @default(ACTIVE)
-  aggregateVerificationLevel Int               @default(0)
-  country                    Country?          @relation(fields: [countryId], references: [id])
-  organization               Organization?     @relation(fields: [organizationId], references: [id])
-  currentPlayers             Player[]          @relation("CurrentPlayers")
+  status                     EntityStatus            @default(ACTIVE)
+  aggregateVerificationLevel Int                     @default(0)
+  country                    Country?                @relation(fields: [countryId], references: [id])
+  organization               Organization?           @relation(fields: [organizationId], references: [id])
+  currentPlayers             Player[]                @relation("CurrentPlayers")
   rosters                    TeamRoster[]
   ratings                    TeamRating[]
   achievements               TeamAchievement[]
-  homeMatches                Match[]           @relation("HomeTeam")
-  awayMatches                Match[]           @relation("AwayTeam")
-  createdAt                  DateTime          @default(now())
-  updatedAt                  DateTime          @updatedAt
+  homeMatches                Match[]                 @relation("HomeTeam")
+  awayMatches                Match[]                 @relation("AwayTeam")
+  aggregateStatistics        TeamStatistic[]
+  tournamentParticipants     TournamentParticipant[]
+  tournamentPlacements       TournamentPlacement[]
+  createdAt                  DateTime                @default(now())
+  updatedAt                  DateTime                @updatedAt
 
   @@index([countryId, status])
 }
@@ -351,20 +356,23 @@ model TeamMember {
 }
 
 model Tournament {
-  id        String   @id @default(uuid()) @db.Uuid
-  slug      String   @unique
-  gameId    String   @db.Uuid
-  name      String
-  tier      String
-  mode      String
-  startsAt  DateTime
-  endsAt    DateTime
-  prizePool Decimal? @db.Decimal(14, 2)
-  currency  String?  @db.VarChar(3)
-  game      Game     @relation(fields: [gameId], references: [id])
-  matches   Match[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String                      @id @default(uuid()) @db.Uuid
+  slug             String                      @unique
+  gameId           String                      @db.Uuid
+  name             String
+  tier             String
+  mode             String
+  startsAt         DateTime
+  endsAt           DateTime
+  prizePool        Decimal?                    @db.Decimal(14, 2)
+  currency         String?                     @db.VarChar(3)
+  game             Game                        @relation(fields: [gameId], references: [id])
+  matches          Match[]
+  participants     TournamentParticipant[]
+  placements       TournamentPlacement[]
+  playerStatistics PlayerTournamentStatistic[]
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
 
   @@index([gameId, startsAt])
 }
@@ -382,11 +390,16 @@ model Match {
   homeScore         Int?
   awayScore         Int?
   verificationLevel Int                    @default(0)
+  sourceCode        String                 @default("arena-demo")
+  observedAt        DateTime               @default(now())
+  finalizedAt       DateTime?
   game              Game                   @relation(fields: [gameId], references: [id])
   tournament        Tournament?            @relation(fields: [tournamentId], references: [id])
   homeTeam          Team?                  @relation("HomeTeam", fields: [homeTeamId], references: [id])
   awayTeam          Team?                  @relation("AwayTeam", fields: [awayTeamId], references: [id])
   statistics        PlayerMatchStatistic[]
+  maps              MatchMap[]
+  result            MatchResult?
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
 
@@ -395,63 +408,206 @@ model Match {
 }
 
 model PlayerMatchStatistic {
-  id            String   @id @default(uuid()) @db.Uuid
-  playerId      String   @db.Uuid
-  matchId       String   @db.Uuid
-  mapKey        String   @default("all")
-  kills         Int?
-  deaths        Int?
-  assists       Int?
-  rounds        Int?
-  metrics       Json
-  schemaVersion Int      @default(1)
-  player        Player   @relation(fields: [playerId], references: [id])
-  match         Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  createdAt     DateTime @default(now())
+  id                String    @id @default(uuid()) @db.Uuid
+  playerId          String    @db.Uuid
+  matchId           String    @db.Uuid
+  mapKey            String    @default("all")
+  kills             Int?
+  deaths            Int?
+  assists           Int?
+  rounds            Int?
+  teamId            String?   @db.Uuid
+  opponentTeamId    String?   @db.Uuid
+  performanceRating Decimal?  @db.Decimal(6, 3)
+  adr               Decimal?  @db.Decimal(7, 2)
+  kast              Decimal?  @db.Decimal(5, 2)
+  impact            Decimal?  @db.Decimal(6, 3)
+  headshotRate      Decimal?  @db.Decimal(5, 2)
+  openingDuelRate   Decimal?  @db.Decimal(5, 2)
+  verifiedAt        DateTime?
+  sourceCode        String    @default("arena-demo")
+  metrics           Json
+  schemaVersion     Int       @default(1)
+  player            Player    @relation(fields: [playerId], references: [id])
+  match             Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  createdAt         DateTime  @default(now())
 
   @@unique([playerId, matchId, mapKey])
+  @@index([matchId, teamId])
+}
+
+model MatchMap {
+  id        String   @id @default(uuid()) @db.Uuid
+  matchId   String   @db.Uuid
+  mapKey    String
+  mapOrder  Int
+  homeScore Int?
+  awayScore Int?
+  overtime  Boolean  @default(false)
+  status    String   @default("SCHEDULED")
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([matchId, mapOrder])
+  @@index([mapKey, status])
+}
+
+model MatchResult {
+  id           String   @id @default(uuid()) @db.Uuid
+  matchId      String   @unique @db.Uuid
+  winnerTeamId String?  @db.Uuid
+  homeScore    Int
+  awayScore    Int
+  checksum     String   @db.VarChar(64)
+  sourceCode   String
+  finalizedAt  DateTime
+  match        Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+}
+
+model TournamentParticipant {
+  id           String     @id @default(uuid()) @db.Uuid
+  tournamentId String     @db.Uuid
+  teamId       String     @db.Uuid
+  seed         Int?
+  status       String     @default("ACTIVE")
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team         Team       @relation(fields: [teamId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@unique([tournamentId, teamId])
+  @@index([teamId, status])
+}
+
+model TournamentPlacement {
+  id           String     @id @default(uuid()) @db.Uuid
+  tournamentId String     @db.Uuid
+  teamId       String     @db.Uuid
+  placeFrom    Int
+  placeTo      Int
+  prizeAmount  Decimal?   @db.Decimal(14, 2)
+  points       Decimal?   @db.Decimal(10, 2)
+  verifiedAt   DateTime?
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team         Team       @relation(fields: [teamId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@unique([tournamentId, teamId])
+  @@index([teamId, placeFrom])
+}
+
+model PlayerStatistic {
+  id            String   @id @default(uuid()) @db.Uuid
+  playerId      String   @db.Uuid
+  gameId        String   @db.Uuid
+  periodStart   DateTime @db.Date
+  periodEnd     DateTime @db.Date
+  sampleMatches Int
+  sampleMaps    Int
+  rounds        Int
+  kills         Int
+  deaths        Int
+  assists       Int
+  wins          Int
+  losses        Int
+  metrics       Json
+  schemaVersion Int      @default(1)
+  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([playerId, gameId, periodStart, periodEnd])
+  @@index([gameId, periodEnd])
+}
+
+model PlayerTournamentStatistic {
+  id            String     @id @default(uuid()) @db.Uuid
+  playerId      String     @db.Uuid
+  tournamentId  String     @db.Uuid
+  sampleMatches Int
+  sampleMaps    Int
+  kills         Int
+  deaths        Int
+  assists       Int
+  metrics       Json
+  schemaVersion Int        @default(1)
+  player        Player     @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([playerId, tournamentId])
+  @@index([tournamentId, kills])
+}
+
+model TeamStatistic {
+  id            String   @id @default(uuid()) @db.Uuid
+  teamId        String   @db.Uuid
+  gameId        String   @db.Uuid
+  periodStart   DateTime @db.Date
+  periodEnd     DateTime @db.Date
+  sampleMatches Int
+  wins          Int
+  losses        Int
+  mapsWon       Int
+  mapsLost      Int
+  roundsWon     Int
+  roundsLost    Int
+  metrics       Json
+  schemaVersion Int      @default(1)
+  team          Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([teamId, gameId, periodStart, periodEnd])
+  @@index([gameId, periodEnd])
 }
 
 model RatingRun {
-  id             String       @id @default(uuid()) @db.Uuid
+  id             String         @id @default(uuid()) @db.Uuid
   engine         RatingEngine
   formulaVersion String
   inputCutoff    DateTime
   checksum       String
   status         String
   config         Json
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime       @default(now())
+  playerRatings  PlayerRating[]
+  teamRatings    TeamRating[]
 
   @@unique([engine, formulaVersion, inputCutoff])
 }
 
 model PlayerRating {
-  id          String   @id @default(uuid()) @db.Uuid
-  playerId    String   @db.Uuid
-  gameId      String   @db.Uuid
-  runId       String   @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
+  playerId    String    @db.Uuid
+  gameId      String    @db.Uuid
+  runId       String    @db.Uuid
   score       Int
-  confidence  Decimal  @db.Decimal(5, 2)
+  confidence  Decimal   @db.Decimal(5, 2)
   rank        Int?
   explanation Json
   publishedAt DateTime
-  player      Player   @relation(fields: [playerId], references: [id])
+  player      Player    @relation(fields: [playerId], references: [id])
+  run         RatingRun @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@unique([playerId, gameId, runId])
   @@index([gameId, score(sort: Desc)])
 }
 
 model TeamRating {
-  id          String   @id @default(uuid()) @db.Uuid
-  teamId      String   @db.Uuid
-  gameId      String   @db.Uuid
-  runId       String   @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
+  teamId      String    @db.Uuid
+  gameId      String    @db.Uuid
+  runId       String    @db.Uuid
   score       Int
-  confidence  Decimal  @db.Decimal(5, 2)
+  confidence  Decimal   @db.Decimal(5, 2)
   rank        Int?
   explanation Json
   publishedAt DateTime
-  team        Team     @relation(fields: [teamId], references: [id])
+  team        Team      @relation(fields: [teamId], references: [id])
+  run         RatingRun @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, gameId, runId])
   @@index([gameId, score(sort: Desc)])

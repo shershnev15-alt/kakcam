@@ -1,4 +1,16 @@
-import type { PlayerSummary, TeamSummary } from '@arena/types';
+import type {
+  AchievementSummary,
+  MatchDetail,
+  MatchSummary,
+  PlayerPerformanceSummary,
+  PlayerSummary,
+  RatingFactor,
+  RatingHistoryPoint,
+  TeamPerformanceSummary,
+  TeamSummary,
+  TournamentDetail,
+  TournamentSummary,
+} from '@arena/types';
 
 export type PageMeta = {
   total: number;
@@ -6,6 +18,12 @@ export type PageMeta = {
   pageSize: number;
   totalPages: number;
   source: 'postgresql';
+  ratingRun?: {
+    id: string;
+    formulaVersion: string;
+    inputCutoff: string;
+    checksum: string;
+  };
 };
 
 export type PageResult<T> = { data: T[]; meta: PageMeta };
@@ -14,11 +32,31 @@ export type PlayerProfile = PlayerSummary & {
   currentTeam: { id: string; slug: string; name: string; shortName: string } | null;
   ratingPublishedAt: string | null;
   similar: PlayerSummary[];
+  performance: PlayerPerformanceSummary | null;
+  matches: MatchSummary[];
+  achievements: Array<AchievementSummary & { grantedAt: string | null }>;
+  ratingHistory: RatingHistoryPoint[];
+  ratingFactors: RatingFactor[];
 };
 
 export type TeamProfile = TeamSummary & {
   ratingPublishedAt: string | null;
   roster: PlayerSummary[];
+  performance: TeamPerformanceSummary | null;
+  matches: MatchSummary[];
+  tournaments: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    mode: string;
+    endsAt: string;
+    placeFrom: number;
+    placeTo: number;
+    prizeAmount: number;
+  }>;
+  achievements: Array<AchievementSummary & { grantedAt: string | null }>;
+  ratingHistory: RatingHistoryPoint[];
+  ratingFactors: RatingFactor[];
 };
 
 export type SearchResult = {
@@ -97,4 +135,20 @@ export async function getTeamRankings(params: Record<string, string | number | u
 
 export async function searchDirectory(query: string) {
   return (await api<{ data: SearchResult }>(`/search${queryString({ q: query })}`)).data;
+}
+
+export async function getMatches(params: Record<string, string | number | undefined> = {}) {
+  return api<PageResult<MatchSummary>>(`/matches${queryString(params)}`);
+}
+
+export async function getMatch(id: string) {
+  return (await api<{ data: MatchDetail }>(`/matches/${encodeURIComponent(id)}`)).data;
+}
+
+export async function getTournaments(params: Record<string, string | number | undefined> = {}) {
+  return api<PageResult<TournamentSummary>>(`/tournaments${queryString(params)}`);
+}
+
+export async function getTournament(slug: string) {
+  return (await api<{ data: TournamentDetail }>(`/tournaments/${encodeURIComponent(slug)}`)).data;
 }

@@ -1,11 +1,27 @@
-import { matches, players, teams, tournaments } from '@arena/demo-data';
 import Link from 'next/link';
 import { ArrowIcon, CheckIcon } from '@/components/icons';
 import { MatchCard } from '@/components/match-card';
 import { Monogram, PlayerCard, SectionHeading, Sparkline, TeamCard } from '@/components/ui';
+import {
+  getMatches,
+  getPlayer,
+  getPlayerRankings,
+  getTeamRankings,
+  getTournaments,
+} from '@/lib/api';
 
-export default function HomePage() {
-  const lead = players[0]!;
+export default async function HomePage() {
+  const [playerRanking, teamRanking, matchResult, tournamentResult] = await Promise.all([
+    getPlayerRankings({ pageSize: 8 }),
+    getTeamRankings({ pageSize: 5 }),
+    getMatches({ pageSize: 6 }),
+    getTournaments({ pageSize: 3 }),
+  ]);
+  const players = playerRanking.data;
+  const teams = teamRanking.data;
+  const matches = matchResult.data;
+  const tournaments = tournamentResult.data;
+  const lead = await getPlayer(players[0]!.slug);
   return (
     <>
       <section className="grain overflow-hidden border-b border-[var(--border)]">
@@ -102,9 +118,9 @@ export default function HomePage() {
             <Sparkline values={lead.form} className="mt-5 h-20 w-full" />
             <div className="mt-4 grid grid-cols-3 gap-2">
               {[
-                ['K/D', '1.28'],
-                ['ADR', '86.4'],
-                ['KAST', '74.2%'],
+                ['K/D', (lead.performance?.kd ?? 0).toFixed(2)],
+                ['ADR', (lead.performance?.adr ?? 0).toFixed(1)],
+                ['KAST', `${(lead.performance?.kast ?? 0).toFixed(1)}%`],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-lg bg-[var(--surface-2)] p-3">
                   <span className="text-[10px] text-[var(--text-3)]">{label}</span>
@@ -161,7 +177,7 @@ export default function HomePage() {
           <SectionHeading
             eyebrow="Форма за 30 дней"
             title="Восходящие игроки"
-            action={{ label: 'Перейти в Discover', href: '/discover' }}
+            action={{ label: 'Все игроки', href: '/players?sort=rating' }}
           />
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             {players.slice(4, 8).map((player) => (
@@ -201,14 +217,22 @@ export default function HomePage() {
             action={{ label: 'Все турниры', href: '/tournaments' }}
           />
           <div className="grid gap-4 lg:grid-cols-3">
-            {tournaments.map((tournament, index) => (
-              <article key={tournament.id} className="surface p-5">
+            {tournaments.map((tournament) => (
+              <Link
+                key={tournament.id}
+                href={`/tournaments/${tournament.slug}`}
+                className="surface p-5 transition hover:border-[var(--text-3)]"
+              >
                 <div className="flex items-center justify-between">
                   <span className="rounded-md bg-[var(--surface-3)] px-2 py-1 text-[10px] font-bold text-[var(--text-2)]">
                     {tournament.mode}
                   </span>
                   <span className="text-xs text-[var(--text-3)]">
-                    0{index + 7}–{index + 14} SEP
+                    {new Date(tournament.startsAt).toLocaleDateString('ru-RU', {
+                      day: '2-digit',
+                      month: 'short',
+                      timeZone: 'Europe/Moscow',
+                    })}
                   </span>
                 </div>
                 <h3 className="mt-10 text-xl font-bold">{tournament.name}</h3>
@@ -222,7 +246,7 @@ export default function HomePage() {
                   </div>
                   <ArrowIcon className="size-5 text-[var(--text-3)]" />
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         </section>

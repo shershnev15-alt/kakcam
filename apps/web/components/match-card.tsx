@@ -1,13 +1,16 @@
-import { teamById } from '@arena/demo-data';
 import type { MatchSummary } from '@arena/types';
+import Link from 'next/link';
 import { Monogram } from './ui';
 
 export function MatchCard({ match }: { match: MatchSummary }) {
-  const home = teamById(match.homeTeamId);
-  const away = teamById(match.awayTeamId);
+  const home = match.homeTeam;
+  const away = match.awayTeam;
   const live = match.status === 'LIVE';
   return (
-    <article className="surface overflow-hidden">
+    <Link
+      href={`/matches/${match.id}`}
+      className="surface block overflow-hidden transition hover:border-[var(--text-3)]"
+    >
       <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3 text-[11px]">
         <span className={live ? 'font-bold text-[var(--danger)]' : 'text-[var(--text-3)]'}>
           {live ? '● LIVE' : match.status === 'UPCOMING' ? 'СКОРО' : 'ЗАВЕРШЕН'}
@@ -38,6 +41,6 @@ export function MatchCard({ match }: { match: MatchSummary }) {
           <strong className="hidden truncate text-sm sm:block">{away.shortName}</strong>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

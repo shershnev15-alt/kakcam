@@ -1,4 +1,4 @@
-import { players, teams } from '@arena/demo-data';
+import { players, teams, tournaments } from '@arena/demo-data';
 import type { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -7,6 +7,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: base, changeFrequency: 'daily', priority: 1 },
     { url: `${base}/players`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/teams`, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${base}/matches`, changeFrequency: 'hourly', priority: 0.9 },
+    { url: `${base}/tournaments`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/rankings/players`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/rankings/teams`, changeFrequency: 'daily', priority: 0.9 },
     ...players.map((player) => ({
@@ -16,6 +18,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     ...teams.map((team) => ({
       url: `${base}/teams/${team.slug}`,
+      changeFrequency: 'daily' as const,
+      priority: 0.8,
+    })),
+    ...tournaments.map((tournament) => ({
+      url: `${base}/tournaments/${tournament.slug}`,
       changeFrequency: 'daily' as const,
       priority: 0.8,
     })),

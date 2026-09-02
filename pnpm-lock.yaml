@@ -29,6 +29,9 @@ importers:
       '@arena/demo-data':
         specifier: workspace:*
         version: link:../../packages/demo-data
+      '@arena/rating-engine':
+        specifier: workspace:*
+        version: link:../../packages/rating-engine
       '@arena/types':
         specifier: workspace:*
         version: link:../../packages/types

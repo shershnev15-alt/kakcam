@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function TeamRankingsPage() {
   const result = await getTeamRankings({ pageSize: 20 });
   return (
-    <RankingsShell active="teams">
+    <RankingsShell active="teams" ratingRun={result.meta.ratingRun}>
       <TeamRankingTable items={result.data} />
     </RankingsShell>
   );

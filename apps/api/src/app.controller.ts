@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Logger, ServiceUnavailableException } from '@nestjs/common';
-import { demoCounts, matches, tournaments } from './demo';
+import { demoCounts } from './demo';
 import { DatabaseService } from './database.service';
 
 @Controller()
@@ -39,15 +39,5 @@ export class AppController {
       counts: demoCounts,
       resources: ['auth', 'players', 'teams', 'rankings', 'search', 'matches', 'tournaments'],
     };
-  }
-
-  @Get('api/v1/matches')
-  listMatches() {
-    return { data: matches, meta: { total: matches.length, mode: 'demo' } };
-  }
-
-  @Get('api/v1/tournaments')
-  listTournaments() {
-    return { data: tournaments, meta: { total: tournaments.length, mode: 'demo' } };
   }
 }

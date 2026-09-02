@@ -1,4 +1,3 @@
-import { achievements, matches, teams } from '@arena/demo-data';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -50,11 +49,9 @@ export default async function PlayerPage({ params }: PageProps) {
     name: 'Без команды',
     shortName: 'FA',
   };
-  const demoTeam = teams.find((item) => item.slug === team.slug) ?? teams[0]!;
-  const playerMatches = matches
-    .filter((match) => match.homeTeamId === demoTeam.id || match.awayTeamId === demoTeam.id)
-    .slice(0, 3);
-  const unlocked = achievements.filter((item) => item.progress >= item.target).slice(0, 5);
+  const performance = player.performance;
+  const ratingSeries = [...player.ratingHistory].reverse().map((item) => item.score);
+  const periodDelta = ratingSeries.length > 1 ? ratingSeries.at(-1)! - ratingSeries[0]! : 0;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
@@ -124,7 +121,9 @@ export default async function PlayerPage({ params }: PageProps) {
                 <div className="mt-2">
                   <Delta value={player.rating.delta30d} period="30 дней" />
                 </div>
-                <p className="mt-4 text-xs text-[var(--text-3)]">{player.rating.tier} · 31 карта</p>
+                <p className="mt-4 text-xs text-[var(--text-3)]">
+                  {player.rating.tier} · {performance?.sampleMaps ?? 0} карт
+                </p>
               </div>
             </div>
           </div>
@@ -135,12 +134,28 @@ export default async function PlayerPage({ params }: PageProps) {
         <section>
           <SectionHeading eyebrow="Последние 90 дней" title="Performance snapshot" />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-            <StatCard label="K/D" value="1.28" note="Топ 12%" />
-            <StatCard label="ADR" value="86.4" note="+4.7 к среднему" />
-            <StatCard label="KAST" value="74.2%" note="Стабильно" />
-            <StatCard label="Win rate" value="64%" note="18 из 28" />
-            <StatCard label="Карт" value="31" note="8 соперников" />
-            <StatCard label="Форма" value="8.6" note="Растет" />
+            <StatCard label="K/D" value={(performance?.kd ?? 0).toFixed(2)} note="90 дней" />
+            <StatCard label="ADR" value={(performance?.adr ?? 0).toFixed(1)} note="Среднее" />
+            <StatCard
+              label="KAST"
+              value={`${(performance?.kast ?? 0).toFixed(1)}%`}
+              note="Среднее"
+            />
+            <StatCard
+              label="Win rate"
+              value={`${Math.round((performance?.winRate ?? 0) * 100)}%`}
+              note={`${performance?.wins ?? 0} побед`}
+            />
+            <StatCard
+              label="Матчей"
+              value={String(performance?.sampleMatches ?? 0)}
+              note={`${performance?.rounds ?? 0} раундов`}
+            />
+            <StatCard
+              label="Rating"
+              value={(performance?.performanceRating ?? 0).toFixed(2)}
+              note="Verified facts"
+            />
           </div>
         </section>
 
@@ -152,12 +167,21 @@ export default async function PlayerPage({ params }: PageProps) {
                 <h2 className="mt-2 text-xl font-bold">Динамика рейтинга</h2>
               </div>
               <div className="text-right">
-                <span className="data-number text-2xl font-bold">+96</span>
+                <span className="data-number text-2xl font-bold">
+                  {periodDelta > 0 ? '+' : ''}
+                  {periodDelta}
+                </span>
                 <p className="text-xs text-[var(--text-3)]">за период</p>
               </div>
             </div>
             <Sparkline
-              values={player.form.length ? player.form : [player.rating.score, player.rating.score]}
+              values={
+                ratingSeries.length > 1
+                  ? ratingSeries
+                  : player.form.length
+                    ? player.form
+                    : [player.rating.score, player.rating.score]
+              }
               className="mt-7 h-52 w-full"
             />
             <div className="mt-3 flex justify-between text-[10px] text-[var(--text-3)]">
@@ -169,24 +193,26 @@ export default async function PlayerPage({ params }: PageProps) {
             </div>
           </div>
           <aside className="surface p-5 md:p-6">
-            <p className="eyebrow">Почему 842?</p>
+            <p className="eyebrow">Почему {player.rating.score}?</p>
             <h2 className="mt-2 text-xl font-bold">Факторы PPR</h2>
             <div className="mt-6 space-y-5">
-              {[
-                ['Индивидуальная форма', '+31', 82],
-                ['Сила соперников', '+12', 68],
-                ['Стабильность', '+8', 63],
-                ['Результаты турниров', '+6', 57],
-              ].map(([label, value, width]) => (
-                <div key={label as string}>
+              {player.ratingFactors.map((factor) => (
+                <div key={factor.key}>
                   <div className="mb-2 flex justify-between text-xs">
-                    <span className="text-[var(--text-2)]">{label}</span>
-                    <strong className="text-[var(--success)]">{value}</strong>
+                    <span className="text-[var(--text-2)]">{factor.label}</span>
+                    <strong
+                      className={
+                        factor.contribution >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'
+                      }
+                    >
+                      {factor.contribution > 0 ? '+' : ''}
+                      {factor.contribution}
+                    </strong>
                   </div>
                   <div className="h-1.5 rounded-full bg-[var(--surface-3)]">
                     <div
                       className="h-full rounded-full bg-[var(--brand)]"
-                      style={{ width: `${width}%` }}
+                      style={{ width: `${Math.min(100, Math.max(8, 50 + factor.contribution))}%` }}
                     />
                   </div>
                 </div>
@@ -208,7 +234,7 @@ export default async function PlayerPage({ params }: PageProps) {
             action={{ label: 'Вся история', href: '/matches' }}
           />
           <div className="grid gap-3 lg:grid-cols-3">
-            {playerMatches.map((match) => (
+            {player.matches.slice(0, 3).map((match) => (
               <MatchCard key={match.id} match={match} />
             ))}
           </div>
@@ -220,9 +246,11 @@ export default async function PlayerPage({ params }: PageProps) {
             <div className="surface p-5 md:p-6">
               <div className="relative space-y-7 before:absolute before:bottom-3 before:left-[22px] before:top-3 before:w-px before:bg-[var(--border)]">
                 {[
-                  [team, '2025 — сейчас', '142 матча'],
-                  [teams[2]!, '2023 — 2025', '96 матчей'],
-                  [teams[7]!, '2022 — 2023', 'Дебют'],
+                  [
+                    team,
+                    'Текущий состав',
+                    `${performance?.sampleMatches ?? 0} подтвержденных матчей`,
+                  ],
                 ].map(([careerTeam, period, note]) => {
                   const typed = careerTeam as typeof team;
                   return (
@@ -234,11 +262,9 @@ export default async function PlayerPage({ params }: PageProps) {
                           {period as string} · {note as string}
                         </p>
                       </div>
-                      {typed.id === team.id ? (
-                        <span className="rounded-full bg-[rgba(67,209,125,.1)] px-2 py-1 text-[10px] font-bold text-[var(--success)]">
-                          ТЕКУЩАЯ
-                        </span>
-                      ) : null}
+                      <span className="rounded-full bg-[rgba(67,209,125,.1)] px-2 py-1 text-[10px] font-bold text-[var(--success)]">
+                        ТЕКУЩАЯ
+                      </span>
                     </div>
                   );
                 })}
@@ -246,13 +272,9 @@ export default async function PlayerPage({ params }: PageProps) {
             </div>
           </div>
           <div>
-            <SectionHeading
-              eyebrow="Награды"
-              title="Достижения"
-              action={{ label: 'Все достижения', href: `/players/${player.slug}/achievements` }}
-            />
+            <SectionHeading eyebrow="Награды" title="Достижения" />
             <div className="grid grid-cols-2 gap-3">
-              {unlocked.slice(0, 4).map((item, index) => (
+              {player.achievements.slice(0, 4).map((item, index) => (
                 <div key={item.code} className="surface p-4">
                   <div
                     className={`grid size-10 place-items-center rounded-lg ${index === 3 ? 'bg-[rgba(243,182,75,.12)] text-[var(--warning)]' : 'bg-[rgba(95,139,255,.12)] text-[#8BAAFF]'}`}
@@ -263,55 +285,6 @@ export default async function PlayerPage({ params }: PageProps) {
                   <p className="mt-1 text-[11px] text-[var(--text-3)]">
                     {item.rarity} · подтверждено
                   </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="grid gap-10 lg:grid-cols-2">
-          <div>
-            <SectionHeading eyebrow="Арсенал" title="Лучшее оружие" />
-            <div className="surface overflow-hidden">
-              {[
-                ['AWP', '348', '1.42', '71%'],
-                ['AK-47', '291', '1.18', '62%'],
-                ['Desert Eagle', '84', '1.31', '58%'],
-                ['M4A1-S', '76', '1.09', '54%'],
-              ].map((row, index) => (
-                <div
-                  key={row[0]}
-                  className={`grid grid-cols-[1fr_repeat(3,auto)] items-center gap-5 px-5 py-4 ${index ? 'border-t border-[var(--border)]' : ''}`}
-                >
-                  <strong className="text-sm">{row[0]}</strong>
-                  <span className="data-number text-sm">
-                    {row[1]} <small className="text-[9px] text-[var(--text-3)]">KILLS</small>
-                  </span>
-                  <span className="data-number text-sm">
-                    {row[2]} <small className="text-[9px] text-[var(--text-3)]">K/D</small>
-                  </span>
-                  <span className="data-number text-sm">
-                    {row[3]} <small className="text-[9px] text-[var(--text-3)]">ACC</small>
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <SectionHeading eyebrow="Карты" title="Лучшие площадки" />
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                ['Ancient', '1.34', '72%'],
-                ['Mirage', '1.29', '68%'],
-                ['Nuke', '1.22', '64%'],
-                ['Dust II', '1.18', '61%'],
-              ].map(([name, rating, win]) => (
-                <div key={name} className="surface p-4">
-                  <strong>{name}</strong>
-                  <div className="mt-5 flex items-end justify-between">
-                    <span className="data-number text-2xl font-bold">{rating}</span>
-                    <span className="text-xs text-[var(--success)]">{win} wins</span>
-                  </div>
                 </div>
               ))}
             </div>
@@ -332,7 +305,14 @@ export default async function PlayerPage({ params }: PageProps) {
             <CheckIcon className="size-4 text-[var(--success)]" />
             Профиль проверен платформой
           </span>
-          <span>Данные обновлены 2 сентября 2026, 12:40 МСК</span>
+          <span>
+            Данные обновлены{' '}
+            {player.ratingPublishedAt
+              ? new Date(player.ratingPublishedAt).toLocaleString('ru-RU', {
+                  timeZone: 'Europe/Moscow',
+                })
+              : '—'}
+          </span>
           <button className="sm:ml-auto hover:text-[var(--text-1)]">Сообщить об ошибке</button>
         </div>
       </div>

@@ -1,4 +1,3 @@
-import { matches, teams, tournaments } from '@arena/demo-data';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -40,10 +39,10 @@ export default async function TeamPage({ params }: PageProps) {
     throw error;
   }
   const roster = team.roster;
-  const demoTeam = teams.find((item) => item.slug === team.slug) ?? teams[0]!;
-  const teamMatches = matches
-    .filter((match) => match.homeTeamId === demoTeam.id || match.awayTeamId === demoTeam.id)
-    .slice(0, 6);
+  const performance = team.performance;
+  const ratingSeries = [...team.ratingHistory].reverse().map((item) => item.score);
+  const periodDelta = ratingSeries.length > 1 ? ratingSeries.at(-1)! - ratingSeries[0]! : 0;
+  const recentWins = team.form.filter((result) => result === 'W').length;
   return (
     <>
       <section className="grain border-b border-[var(--border)] bg-[linear-gradient(180deg,rgba(214,255,95,.025),transparent)]">
@@ -95,23 +94,32 @@ export default async function TeamPage({ params }: PageProps) {
               <PlayerCard key={player.id} player={player} />
             ))}
           </div>
-          <div className="mt-4 flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] p-4">
-            <Monogram label="NV" size="sm" />
-            <div>
-              <strong className="text-sm">navius</strong>
-              <p className="mt-1 text-xs text-[var(--text-3)]">Главный тренер · с марта 2025</p>
-            </div>
-          </div>
         </section>
         <section>
           <SectionHeading eyebrow="Командная форма" title="Результаты за 90 дней" />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-            <StatCard label="Win rate" value="68%" note="19 из 28" />
-            <StatCard label="Maps" value="41" note="+12 за месяц" />
-            <StatCard label="Round diff" value="+46" note="Топ-3 СНГ" />
-            <StatCard label="LAN" value="71%" note="10 матчей" />
-            <StatCard label="Серия" value="4 W" note="Текущая" />
-            <StatCard label="Состав" value="86%" note="Стабильность" />
+            <StatCard
+              label="Win rate"
+              value={`${Math.round((performance?.winRate ?? 0) * 100)}%`}
+              note={`${performance?.wins ?? 0} побед`}
+            />
+            <StatCard
+              label="Матчи"
+              value={String(performance?.sampleMatches ?? 0)}
+              note="90 дней"
+            />
+            <StatCard
+              label="Round diff"
+              value={`${(performance?.roundDifference ?? 0) >= 0 ? '+' : ''}${performance?.roundDifference ?? 0}`}
+              note={`${performance?.roundsWon ?? 0} выиграно`}
+            />
+            <StatCard
+              label="Карты W"
+              value={String(performance?.mapsWon ?? 0)}
+              note={`${performance?.mapsLost ?? 0} поражений`}
+            />
+            <StatCard label="Победы" value={String(performance?.wins ?? 0)} note="Verified" />
+            <StatCard label="Поражения" value={String(performance?.losses ?? 0)} note="Verified" />
           </div>
         </section>
         <section className="grid gap-5 lg:grid-cols-[1.5fr_.5fr]">
@@ -121,23 +129,15 @@ export default async function TeamPage({ params }: PageProps) {
                 <p className="eyebrow">TPR · 12 месяцев</p>
                 <h2 className="mt-2 text-xl font-bold">Динамика силы</h2>
               </div>
-              <span className="data-number text-2xl font-bold">+74</span>
+              <span className="data-number text-2xl font-bold">
+                {periodDelta > 0 ? '+' : ''}
+                {periodDelta}
+              </span>
             </div>
             <Sparkline
-              values={[
-                team.rating.score - 74,
-                team.rating.score - 66,
-                team.rating.score - 60,
-                team.rating.score - 65,
-                team.rating.score - 51,
-                team.rating.score - 46,
-                team.rating.score - 38,
-                team.rating.score - 30,
-                team.rating.score - 33,
-                team.rating.score - 21,
-                team.rating.score - 14,
-                team.rating.score,
-              ]}
+              values={
+                ratingSeries.length > 1 ? ratingSeries : [team.rating.score, team.rating.score]
+              }
               className="mt-8 h-52 w-full"
             />
           </div>
@@ -155,8 +155,23 @@ export default async function TeamPage({ params }: PageProps) {
               ))}
             </div>
             <p className="mt-8 text-sm leading-6 text-[var(--text-2)]">
-              4 победы в 5 последних сериях. Сильнее всего команда играет на Ancient.
+              {recentWins} побед в {team.form.length} последних подтвержденных сериях.
             </p>
+            <div className="mt-5 space-y-2 border-t border-[var(--border)] pt-4">
+              {team.ratingFactors.map((factor) => (
+                <div key={factor.key} className="flex justify-between text-xs">
+                  <span className="text-[var(--text-3)]">{factor.label}</span>
+                  <strong
+                    className={
+                      factor.contribution >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'
+                    }
+                  >
+                    {factor.contribution > 0 ? '+' : ''}
+                    {factor.contribution}
+                  </strong>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
         <section>
@@ -166,7 +181,7 @@ export default async function TeamPage({ params }: PageProps) {
             action={{ label: 'Все матчи', href: '/matches' }}
           />
           <div className="grid gap-3 lg:grid-cols-3">
-            {teamMatches.map((match) => (
+            {team.matches.map((match) => (
               <MatchCard key={match.id} match={match} />
             ))}
           </div>
@@ -175,13 +190,13 @@ export default async function TeamPage({ params }: PageProps) {
           <div>
             <SectionHeading eyebrow="История" title="Результаты турниров" />
             <div className="surface overflow-hidden">
-              {tournaments.map((tournament, index) => (
+              {team.tournaments.map((tournament, index) => (
                 <div
                   key={tournament.id}
                   className={`flex items-center gap-4 px-5 py-5 ${index ? 'border-t border-[var(--border)]' : ''}`}
                 >
                   <span className="data-number grid size-10 place-items-center rounded-lg bg-[var(--surface-2)] text-lg font-bold">
-                    {index + 1}
+                    {tournament.placeFrom}
                   </span>
                   <div className="min-w-0">
                     <strong className="block truncate text-sm">{tournament.name}</strong>
@@ -190,7 +205,7 @@ export default async function TeamPage({ params }: PageProps) {
                     </p>
                   </div>
                   <span className="data-number ml-auto text-sm font-bold">
-                    ${[100000, 18000, 12500][index]?.toLocaleString('en-US')}
+                    ${tournament.prizeAmount.toLocaleString('en-US')}
                   </span>
                 </div>
               ))}
@@ -199,18 +214,15 @@ export default async function TeamPage({ params }: PageProps) {
           <div>
             <SectionHeading eyebrow="Награды" title="Достижения команды" />
             <div className="grid grid-cols-2 gap-3">
-              {[
-                ['Чемпион Севера', 'Legendary'],
-                ['Серия из 10 побед', 'Epic'],
-                ['LAN дебют', 'Rare'],
-                ['Топ-3 СНГ', 'Epic'],
-              ].map(([title, rarity]) => (
-                <div key={title} className="surface p-4">
+              {team.achievements.map((achievement) => (
+                <div key={achievement.code} className="surface p-4">
                   <div className="grid size-10 place-items-center rounded-lg bg-[rgba(243,182,75,.1)] text-[var(--warning)]">
                     <CheckIcon className="size-5" />
                   </div>
-                  <strong className="mt-4 block text-sm">{title}</strong>
-                  <p className="mt-1 text-[11px] text-[var(--text-3)]">{rarity} · подтверждено</p>
+                  <strong className="mt-4 block text-sm">{achievement.title}</strong>
+                  <p className="mt-1 text-[11px] text-[var(--text-3)]">
+                    {achievement.rarity} · подтверждено
+                  </p>
                 </div>
               ))}
             </div>

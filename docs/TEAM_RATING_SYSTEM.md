@@ -1,6 +1,6 @@
 # Team Power Rating (TPR)
 
-Статус: proposal v1. Диапазон 0–1000, отдельно Confidence 0–100%.
+Статус: implemented v1.0.0. Диапазон 0–1000, отдельно Confidence 0–100%.
 
 ## Цель
 
