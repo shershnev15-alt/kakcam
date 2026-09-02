@@ -1,10 +1,10 @@
-import { product } from '@arena/config';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowIcon, CheckIcon } from '@/components/icons';
 import { MatchCard } from '@/components/match-card';
 import { ApiError, getPlayer, getPlayerCareer, getPlayerVerification } from '@/lib/api';
+import { absoluteUrl, serializeJsonLd, twitterCard } from '@/lib/seo';
 import {
   Monogram,
   PlayerCard,
@@ -31,7 +31,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title,
     description,
     alternates: { canonical: `/players/${player.slug}` },
-    openGraph: { title, description, type: 'profile' },
+    openGraph: { title, description, type: 'profile', url: `/players/${player.slug}` },
+    twitter: { ...twitterCard, title, description },
   };
 }
 
@@ -66,14 +67,14 @@ export default async function PlayerPage({ params }: PageProps) {
     alternateName: player.nickname,
     nationality: player.countryName,
     affiliation: { '@type': 'SportsTeam', name: player.teamName },
-    url: `${product.publicUrl}/players/${player.slug}`,
+    url: absoluteUrl(`/players/${player.slug}`),
   };
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <section className="signal-stage border-b border-[var(--border)]">
         <div className="container py-5 md:py-7">

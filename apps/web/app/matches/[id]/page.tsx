@@ -4,16 +4,21 @@ import { notFound } from 'next/navigation';
 import { CheckIcon } from '@/components/icons';
 import { Monogram, SectionHeading } from '@/components/ui';
 import { ApiError, getMatch } from '@/lib/api';
+import { absoluteUrl, serializeJsonLd, twitterCard } from '@/lib/seo';
 
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const match = await getMatch((await params).id);
+    const title = `${match.homeTeam.name} — ${match.awayTeam.name}: матч и статистика`;
+    const description = `${match.tournament}, ${match.stage}: состав карт, итог и подтвержденная статистика игроков.`;
     return {
-      title: `${match.homeTeam.name} — ${match.awayTeam.name}: матч и статистика`,
-      description: `${match.tournament}, ${match.stage}: состав карт, итог и подтвержденная статистика игроков.`,
+      title,
+      description,
       alternates: { canonical: `/matches/${match.id}` },
+      openGraph: { title, description, type: 'website', url: `/matches/${match.id}` },
+      twitter: { ...twitterCard, title, description },
     };
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return { title: 'Матч не найден' };
@@ -36,9 +41,32 @@ export default async function MatchPage({ params }: Props) {
   }).format(new Date(match.startsAt));
   const homeStats = match.playerStatistics.filter((item) => item.teamId === match.homeTeamId);
   const awayStats = match.playerStatistics.filter((item) => item.teamId === match.awayTeamId);
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: `${match.homeTeam.name} — ${match.awayTeam.name}`,
+    sport: 'Counter-Strike 2',
+    startDate: match.startsAt,
+    eventStatus:
+      match.status === 'FINISHED'
+        ? 'https://schema.org/EventCompleted'
+        : match.status === 'LIVE'
+          ? 'https://schema.org/EventInProgress'
+          : 'https://schema.org/EventScheduled',
+    competitor: [match.homeTeam, match.awayTeam].map((team) => ({
+      '@type': 'SportsTeam',
+      name: team.name,
+      url: absoluteUrl(`/teams/${team.slug}`),
+    })),
+    url: absoluteUrl(`/matches/${match.id}`),
+  };
 
   return (
     <div className="container space-y-12 py-8 md:py-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       <div className="flex items-center gap-2 text-xs text-[var(--text-3)]">
         <Link href="/matches">Матчи</Link>
         <span>/</span>

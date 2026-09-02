@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { CheckIcon } from '@/components/icons';
 import { MatchCard } from '@/components/match-card';
 import { ApiError, getTeam } from '@/lib/api';
+import { absoluteUrl, serializeJsonLd, twitterCard } from '@/lib/seo';
 import {
   Delta,
   Monogram,
@@ -19,10 +20,14 @@ type PageProps = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   try {
     const team = await getTeam((await params).slug);
+    const title = `${team.name} — состав, TPR ${team.rating.score} и матчи`;
+    const description = `${team.name}: #${team.rating.rank} в командном рейтинге CS2, текущий состав и история выступлений.`;
     return {
-      title: `${team.name} — состав, TPR ${team.rating.score} и матчи`,
-      description: `${team.name}: #${team.rating.rank} в командном рейтинге CS2, текущий состав и история выступлений.`,
+      title,
+      description,
       alternates: { canonical: `/teams/${team.slug}` },
+      openGraph: { title, description, type: 'website', url: `/teams/${team.slug}` },
+      twitter: { ...twitterCard, title, description },
     };
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return { title: 'Команда не найдена' };
@@ -43,8 +48,26 @@ export default async function TeamPage({ params }: PageProps) {
   const ratingSeries = [...team.ratingHistory].reverse().map((item) => item.score);
   const periodDelta = ratingSeries.length > 1 ? ratingSeries.at(-1)! - ratingSeries[0]! : 0;
   const recentWins = team.form.filter((result) => result === 'W').length;
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsTeam',
+    name: team.name,
+    alternateName: team.shortName,
+    sport: 'Counter-Strike 2',
+    url: absoluteUrl(`/teams/${team.slug}`),
+    location: { '@type': 'Country', name: team.countryName },
+    athlete: team.roster.map((player) => ({
+      '@type': 'Person',
+      name: player.nickname,
+      url: absoluteUrl(`/players/${player.slug}`),
+    })),
+  };
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       <section className="signal-stage border-b border-[var(--border)]">
         <div className="container py-8 md:py-12">
           <div className="mb-7 flex items-center gap-2 text-xs text-[var(--text-3)]">

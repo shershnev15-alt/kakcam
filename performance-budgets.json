@@ -1,0 +1,12 @@
+{
+  "apps/web/.next/static": {
+    "maxSingleGzipJsBytes": 180000,
+    "maxTotalGzipJsBytes": 900000,
+    "maxSingleCssBytes": 160000
+  },
+  "apps/admin/.next/static": {
+    "maxSingleGzipJsBytes": 180000,
+    "maxTotalGzipJsBytes": 700000,
+    "maxSingleCssBytes": 160000
+  }
+}

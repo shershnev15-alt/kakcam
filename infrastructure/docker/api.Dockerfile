@@ -29,8 +29,9 @@ RUN pnpm --filter @arena/api build
 FROM node:24-alpine AS production
 ENV NODE_ENV=production
 WORKDIR /app
-COPY --from=builder /workspace/apps/api/dist ./dist
-COPY --from=dependencies /workspace/node_modules ./node_modules
-COPY --from=dependencies /workspace/apps/api/node_modules ./node_modules
+COPY --chown=node:node --from=builder /workspace/apps/api/dist ./dist
+COPY --chown=node:node --from=dependencies /workspace/node_modules ./node_modules
+COPY --chown=node:node --from=dependencies /workspace/apps/api/node_modules ./node_modules
 EXPOSE 4000
+USER node
 CMD ["node", "dist/src/main.js"]

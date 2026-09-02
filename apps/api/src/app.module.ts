@@ -17,6 +17,9 @@ import { TeamsController } from './entities/teams.controller';
 import { PrismaService } from './prisma.service';
 import { ImportsController } from './imports/imports.controller';
 import { ImportsService } from './imports/imports.service';
+import { MetricsGuard } from './observability/observability.guard';
+import { ObservabilityController } from './observability/observability.controller';
+import { ObservabilityService } from './observability/observability.service';
 import { RatingsController } from './ratings/ratings.controller';
 import { RatingsService } from './ratings/ratings.service';
 import { VerificationController } from './verification/verification.controller';
@@ -38,6 +41,7 @@ import { GameAccountsService } from './game-accounts/game-accounts.service';
     VerificationController,
     ImportsController,
     GameAccountsController,
+    ObservabilityController,
   ],
   providers: [
     AdminService,
@@ -55,6 +59,8 @@ import { GameAccountsService } from './game-accounts/game-accounts.service';
     VerificationService,
     ImportsService,
     GameAccountsService,
+    MetricsGuard,
+    ObservabilityService,
   ],
 })
 export class AppModule {}

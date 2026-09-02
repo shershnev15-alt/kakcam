@@ -3,7 +3,12 @@ import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: { userAgent: '*', allow: '/', disallow: ['/admin/', '/settings/'] },
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: ['/account', '/login', '/moderation', '/register', '/settings/'],
+    },
     sitemap: `${product.publicUrl}/sitemap.xml`,
+    host: product.publicUrl,
   };
 }

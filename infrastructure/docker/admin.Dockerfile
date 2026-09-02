@@ -21,7 +21,8 @@ RUN pnpm --filter @arena/admin build
 FROM node:24-alpine AS production
 ENV NODE_ENV=production
 WORKDIR /app
-COPY --from=builder /workspace/apps/admin/.next/standalone ./
-COPY --from=builder /workspace/apps/admin/.next/static ./apps/admin/.next/static
+COPY --chown=node:node --from=builder /workspace/apps/admin/.next/standalone ./
+COPY --chown=node:node --from=builder /workspace/apps/admin/.next/static ./apps/admin/.next/static
 EXPOSE 3001
+USER node
 CMD ["node", "apps/admin/server.js"]

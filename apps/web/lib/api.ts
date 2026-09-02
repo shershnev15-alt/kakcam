@@ -33,6 +33,7 @@ export type PageMeta = {
 export type PageResult<T> = { data: T[]; meta: PageMeta };
 
 export type PlayerProfile = PlayerSummary & {
+  avatarUrl: string | null;
   currentTeam: { id: string; slug: string; name: string; shortName: string } | null;
   ratingPublishedAt: string | null;
   similar: PlayerSummary[];
@@ -44,6 +45,7 @@ export type PlayerProfile = PlayerSummary & {
 };
 
 export type TeamProfile = TeamSummary & {
+  logoUrl: string | null;
   ratingPublishedAt: string | null;
   roster: PlayerSummary[];
   performance: TeamPerformanceSummary | null;

@@ -57,7 +57,7 @@ pnpm --filter @arena/mobile dev
 
 ## Проверки
 
-Node локально не требуется для Docker-запуска; CI выполняет `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`. Вручную весь gate запускается теми же четырьмя командами. Архитектура и roadmap: [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md). Текущий статус: [docs/PROGRESS.md](docs/PROGRESS.md).
+Node локально не требуется для Docker-запуска; CI выполняет lint/typecheck/test/build, затем проверяет security baseline и JS/CSS budgets. Архитектура и roadmap: [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md), gates и метрики: [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md), текущий статус: [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Структура
 
