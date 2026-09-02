@@ -97,3 +97,26 @@ Current FACEIT reference captured on 2026-09-02:
 Current NEVA homepage reference captured on 2026-09-02:
 
 - `research/neva-gg-home-2026-09-02.png`
+
+## Public product design atlas
+
+The selected direction has been expanded into the complete public product map. See
+`PRODUCT_DESIGN_ATLAS.md` for the route inventory, metric taxonomy and implementation sequence.
+
+- `21-home-neva-system.png`
+- `22-players-directory-neva-system.png`
+- `23-player-profile-infographic-neva.png`
+- `24-player-achievements-neva.png`
+- `25-player-career-neva.png`
+- `26-teams-directory-neva.png`
+- `27-team-profile-neva.png`
+- `28-rankings-center-neva.png`
+- `29-matches-center-neva.png`
+- `30-match-detail-neva.png`
+- `31-tournaments-hub-neva.png`
+- `32-tournament-detail-neva.png`
+- `33-transfers-ledger-neva.png`
+- `34-global-search-neva.png`
+- `35-metrics-map-neva.png`
+
+All application code remains intentionally unchanged pending user approval.
