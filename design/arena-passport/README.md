@@ -83,8 +83,17 @@ Sixth exploration after the first hybrid was rejected, varying the balance betwe
 - `18-split-competition.png`
 - `19-competitive-profile-deck.png`
 
+The user selected `17-typographic-arena.png` for refinement. NEVA-inspired palette pass:
+
+- `20-typographic-arena-neva-palette.png`
+- Canvas `#121212`, surface `#1B1B1B`, divider `#494949`, mint `#45FFA6`, text `#E1E1E1`, muted `#878787`, with restrained cool violet-blue atmospheric light.
+
 Comparable-site screenshots and notes are stored in `research/`.
 
 Current FACEIT reference captured on 2026-09-02:
 
 - `research/faceit-player-profile-2026-09-02.png`
+
+Current NEVA homepage reference captured on 2026-09-02:
+
+- `research/neva-gg-home-2026-09-02.png`
