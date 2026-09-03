@@ -410,6 +410,37 @@ td code {
   margin: 0 0 20px;
   font-size: 20px;
 }
+
+.evidence-review {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 20px;
+}
+
+.evidence-summary,
+.evidence-review article {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.evidence-summary span,
+.evidence-review small {
+  color: var(--muted);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.evidence-review a {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .command-panel label {
   display: grid;
   gap: 7px;
@@ -607,8 +638,7 @@ td code {
 
 @media (max-width: 480px) {
   .metric-grid,
-  .queue-grid,
-  .sidebar nav {
+  .queue-grid {
     grid-template-columns: 1fr;
   }
   .toolbar,

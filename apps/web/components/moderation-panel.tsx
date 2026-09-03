@@ -16,7 +16,15 @@ type ModerationCase = {
     statement: string | null;
     player: { slug: string; nickname: string };
     claimant: { email: string; displayName: string | null };
-    evidence: Array<{ id: string; kind: string; reference: string; checksum: string }>;
+    identityStatus: string | null;
+    evidence: Array<{
+      id: string;
+      kind: string;
+      reference: string;
+      checksum: string;
+      contentUrl?: string;
+      file?: { contentType: string; byteSize: number; scanStatus: string; originalName: string };
+    }>;
   };
 };
 
@@ -25,10 +33,12 @@ export function ModerationPanel() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [reason, setReason] = useState('Доказательства проверены модератором cyberID');
+  const [status, setStatus] = useState('OPEN');
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetch(`${apiUrl}/moderation/claims?status=OPEN`, {
+    setLoading(true);
+    void fetch(`${apiUrl}/moderation/claims?status=${status}`, {
       credentials: 'include',
       signal: controller.signal,
     })
@@ -45,7 +55,7 @@ export function ModerationPanel() {
       })
       .finally(() => setLoading(false));
     return () => controller.abort();
-  }, []);
+  }, [status]);
 
   async function decide(claimId: string, decision: string) {
     setMessage(null);
@@ -55,9 +65,13 @@ export function ModerationPanel() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ decision, reason }),
     });
-    const result = (await response.json()) as { message?: string };
+    const result = (await response.json()) as { message?: string | string[] };
     if (!response.ok) {
-      setMessage(result.message ?? 'Не удалось сохранить решение.');
+      setMessage(
+        Array.isArray(result.message)
+          ? result.message.join(', ')
+          : (result.message ?? 'Не удалось сохранить решение.'),
+      );
       return;
     }
     setCases((current) => current.filter((item) => item.claim.id !== claimId));
@@ -76,7 +90,18 @@ export function ModerationPanel() {
             Evidence остаётся ограниченным, каждое решение фиксируется в AuditLog.
           </p>
         </div>
-        <span className="surface-soft px-4 py-3 text-sm font-bold">OPEN · {cases.length}</span>
+        <label className="surface-soft grid gap-1 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)]">
+          Очередь
+          <select
+            className="bg-transparent text-sm font-bold text-[var(--text-1)]"
+            onChange={(event) => setStatus(event.target.value)}
+            value={status}
+          >
+            <option value="OPEN">Новые · {status === 'OPEN' ? cases.length : ''}</option>
+            <option value="WAITING_EVIDENCE">Ждём исправления</option>
+            <option value="RESOLVED">Завершённые</option>
+          </select>
+        </label>
       </div>
 
       <label className="mt-8 grid gap-2 text-sm font-semibold">
@@ -114,6 +139,18 @@ export function ModerationPanel() {
             {item.claim.statement ? (
               <p className="surface-soft mt-4 p-4 text-sm">{item.claim.statement}</p>
             ) : null}
+            <p className="mt-4 text-xs font-bold text-[var(--text-2)]">
+              Документ + лицо + liveness:{' '}
+              <span
+                className={
+                  item.claim.identityStatus === 'APPROVED'
+                    ? 'text-[var(--success)]'
+                    : 'text-[var(--warning)]'
+                }
+              >
+                {item.claim.identityStatus ?? 'НЕ НАЧАТО'}
+              </span>
+            </p>
             <div className="mt-4 grid gap-2">
               {item.claim.evidence.map((evidence) => (
                 <div
@@ -122,35 +159,53 @@ export function ModerationPanel() {
                 >
                   <strong>{evidence.kind}</strong>
                   <p className="mt-1 break-all text-[var(--text-2)]">{evidence.reference}</p>
+                  {evidence.file ? (
+                    <p className="mt-1 text-[var(--text-3)]">
+                      {evidence.file.originalName} · {Math.ceil(evidence.file.byteSize / 1024)} КБ ·{' '}
+                      {evidence.file.scanStatus}
+                    </p>
+                  ) : null}
+                  {evidence.contentUrl ? (
+                    <a
+                      className="mt-3 inline-flex min-h-9 items-center border border-[var(--brand)] px-3 font-bold text-[var(--brand)]"
+                      href={`${apiUrl}${evidence.contentUrl}`}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Открыть доказательство
+                    </a>
+                  ) : null}
                   <p className="mt-1 truncate font-mono text-[10px] text-[var(--text-3)]">
                     {evidence.checksum}
                   </p>
                 </div>
               ))}
             </div>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <button
-                className="rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-black text-[#0b1016]"
-                onClick={() => decide(item.claim.id, 'APPROVED')}
-                type="button"
-              >
-                Одобрить
-              </button>
-              <button
-                className="rounded-lg border border-[var(--border)] px-4 py-2 text-xs font-bold"
-                onClick={() => decide(item.claim.id, 'EVIDENCE_REQUESTED')}
-                type="button"
-              >
-                Запросить evidence
-              </button>
-              <button
-                className="rounded-lg border border-[rgba(255,95,109,.4)] px-4 py-2 text-xs font-bold text-[var(--danger)]"
-                onClick={() => decide(item.claim.id, 'REJECTED')}
-                type="button"
-              >
-                Отклонить
-              </button>
-            </div>
+            {status !== 'RESOLVED' ? (
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button
+                  className="rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-black text-[#0b1016]"
+                  onClick={() => decide(item.claim.id, 'APPROVED')}
+                  type="button"
+                >
+                  Одобрить
+                </button>
+                <button
+                  className="rounded-lg border border-[var(--border)] px-4 py-2 text-xs font-bold"
+                  onClick={() => decide(item.claim.id, 'EVIDENCE_REQUESTED')}
+                  type="button"
+                >
+                  Запросить evidence
+                </button>
+                <button
+                  className="rounded-lg border border-[rgba(255,95,109,.4)] px-4 py-2 text-xs font-bold text-[var(--danger)]"
+                  onClick={() => decide(item.claim.id, 'REJECTED')}
+                  type="button"
+                >
+                  Отклонить
+                </button>
+              </div>
+            ) : null}
           </article>
         ))}
         {!cases.length && !message ? (

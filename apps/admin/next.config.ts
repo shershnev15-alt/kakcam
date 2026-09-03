@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
               "frame-ancestors 'none'",
               "img-src 'self' data: blob:",
               "object-src 'none'",
-              "script-src 'self' 'unsafe-inline'",
+              `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''}`,
               "style-src 'self' 'unsafe-inline'",
             ].join('; '),
           },

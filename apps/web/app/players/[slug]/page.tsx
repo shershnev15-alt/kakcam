@@ -7,6 +7,7 @@ import { ApiError, getPlayer, getPlayerCareer, getPlayerVerification } from '@/l
 import { absoluteUrl, serializeJsonLd, twitterCard } from '@/lib/seo';
 import {
   Monogram,
+  CyberLevelPanel,
   PlayerCard,
   PlayerPhoto,
   RatingRing,
@@ -158,7 +159,8 @@ export default async function PlayerPage({ params }: PageProps) {
               ) : null}
             </div>
             <aside className="border border-[var(--border)] bg-[rgba(15,15,15,.88)] p-5 backdrop-blur">
-              <div className="border-b border-[var(--border)] pb-5 text-center">
+              <CyberLevelPanel rating={player.rating} />
+              <div className="mt-5 border-b border-[var(--border)] pb-5 text-center">
                 <p className="eyebrow">Рейтинг PPR</p>
                 <p className="data-number mt-2 text-7xl font-black text-[var(--brand)]">
                   {player.rating.score}

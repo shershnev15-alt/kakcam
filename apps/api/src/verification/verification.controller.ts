@@ -1,4 +1,19 @@
-import { Body, Controller, Get, Inject, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Inject,
+  Param,
+  Post,
+  Query,
+  Req,
+  StreamableFile,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { RequirePermissions } from '../auth/auth.decorators';
 import { CsrfGuard, PermissionsGuard, SessionGuard } from '../auth/auth.guards';
 import type { AuthenticatedRequest } from '../auth/auth.types';
@@ -11,10 +26,14 @@ import {
   parseSubmitClaim,
 } from './verification.validation';
 import { VerificationService } from './verification.service';
+import { EvidenceStorageService, type UploadedEvidenceFile } from './evidence-storage.service';
 
 @Controller('api/v1')
 export class VerificationController {
-  constructor(@Inject(VerificationService) private readonly verification: VerificationService) {}
+  constructor(
+    @Inject(VerificationService) private readonly verification: VerificationService,
+    @Inject(EvidenceStorageService) private readonly evidenceStorage: EvidenceStorageService,
+  ) {}
 
   @Get('players/:slug/verification')
   async playerVerification(@Param('slug') slug: string) {
@@ -22,6 +41,17 @@ export class VerificationController {
       data: await this.verification.playerVerification(slug),
       meta: { source: 'postgresql' },
     };
+  }
+
+  @Get('media/players/:filename')
+  @Header('Cache-Control', 'public, max-age=31536000, immutable')
+  async publicProfilePhoto(@Param('filename') filename: string) {
+    const file = await this.evidenceStorage.publicProfilePhoto(filename);
+    return new StreamableFile(file.buffer, {
+      type: file.contentType,
+      disposition: 'inline',
+      length: file.buffer.length,
+    });
   }
 
   @Post('claims')
@@ -61,11 +91,37 @@ export class VerificationController {
     };
   }
 
+  @Post('claims/:id/evidence/upload')
+  @UseGuards(CsrfGuard, SessionGuard)
+  @UseInterceptors(FileInterceptor('file', { limits: { files: 1, fileSize: 15 * 1024 * 1024 } }))
+  async uploadEvidence(
+    @Param('id') id: string,
+    @Body('kind') kind: string,
+    @UploadedFile() file: UploadedEvidenceFile | undefined,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return {
+      data: await this.evidenceStorage.storeClaimEvidence(id, kind ?? '', file, request.auth!.id),
+    };
+  }
+
   @Get('moderation/claims')
   @RequirePermissions('claim.review')
   @UseGuards(SessionGuard, PermissionsGuard)
   async queue(@Query() query: Record<string, string | undefined>) {
     return { data: await this.verification.moderationQueue(parseModerationQuery(query).status) };
+  }
+
+  @Get('moderation/evidence/:id/content')
+  @RequirePermissions('claim.review')
+  @UseGuards(SessionGuard, PermissionsGuard)
+  async evidenceContent(@Param('id') id: string) {
+    const file = await this.evidenceStorage.content(id);
+    return new StreamableFile(file.buffer, {
+      type: file.contentType,
+      disposition: `inline; filename="${file.originalName.replace(/["\\\r\n]/g, '_')}"`,
+      length: file.buffer.length,
+    });
   }
 
   @Post('moderation/claims/:id/decision')

@@ -10,6 +10,7 @@ describe('verified-only public player policy', () => {
         approvedPhoto: true,
         verifiedSteam: true,
         verifiedFaceit: true,
+        identityApproved: true,
       }),
     ).toEqual([]);
   });
@@ -22,7 +23,8 @@ describe('verified-only public player policy', () => {
         approvedPhoto: true,
         verifiedSteam: false,
         verifiedFaceit: false,
+        identityApproved: false,
       }),
-    ).toEqual(['FEDERATION', 'STEAM', 'FACEIT']);
+    ).toEqual(['FEDERATION', 'STEAM', 'FACEIT', 'IDENTITY']);
   });
 });

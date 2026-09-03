@@ -420,6 +420,20 @@ async function main(): Promise<void> {
     },
   });
   const photoChecksum = createHash('sha256').update('demo-player-frostbyte.png:v1').digest('hex');
+  await prisma.identityCheck.upsert({
+    where: { externalUserId: `demo:${demoClaim.id}` },
+    update: { status: 'APPROVED', reviewAnswer: 'GREEN', completedAt: new Date('2026-09-01') },
+    create: {
+      userId: demoClaimant.id,
+      claimId: demoClaim.id,
+      provider: 'SUMSUB',
+      externalUserId: `demo:${demoClaim.id}`,
+      applicantId: 'synthetic-demo-applicant',
+      status: 'APPROVED',
+      reviewAnswer: 'GREEN',
+      completedAt: new Date('2026-09-01'),
+    },
+  });
   const photoEvidence = await prisma.verificationEvidence.upsert({
     where: { id: '30000000-0000-4000-8000-000000000001' },
     update: {

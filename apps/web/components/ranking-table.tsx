@@ -1,15 +1,16 @@
 import type { PlayerSummary, TeamSummary } from '@arena/types';
 import Link from 'next/link';
-import { Delta, Monogram, Sparkline, VerificationBadge } from './ui';
+import { CyberLevelBadge, Delta, Monogram, Sparkline, VerificationBadge } from './ui';
 
 export function PlayerRankingTable({ items }: { items: PlayerSummary[] }) {
   return (
     <div className="surface overflow-hidden">
-      <div className="hidden grid-cols-[56px_1.5fr_.8fr_.7fr_120px_90px] gap-4 border-b border-[var(--border)] px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)] md:grid">
+      <div className="hidden grid-cols-[56px_1.5fr_.8fr_.7fr_90px_120px_90px] gap-4 border-b border-[var(--border)] px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)] md:grid">
         <span>Место</span>
         <span>Игрок</span>
         <span>Команда</span>
         <span>Форма</span>
+        <span>Level</span>
         <span>PPR</span>
         <span>Confidence</span>
       </div>
@@ -17,7 +18,7 @@ export function PlayerRankingTable({ items }: { items: PlayerSummary[] }) {
         <Link
           href={`/players/${player.slug}`}
           key={player.id}
-          className={`grid grid-cols-[40px_1fr_auto] items-center gap-3 px-4 py-4 transition hover:bg-[rgba(69,255,166,.04)] md:grid-cols-[56px_1.5fr_.8fr_.7fr_120px_90px] md:gap-4 md:px-5 ${index ? 'border-t border-[var(--border)]' : ''} ${player.slug === 'frostbyte' ? 'bg-[rgba(69,255,166,.035)] shadow-[inset_3px_0_var(--brand)]' : ''}`}
+          className={`grid grid-cols-[40px_1fr_auto] items-center gap-3 px-4 py-4 transition hover:bg-[rgba(69,255,166,.04)] md:grid-cols-[56px_1.5fr_.8fr_.7fr_90px_120px_90px] md:gap-4 md:px-5 ${index ? 'border-t border-[var(--border)]' : ''} ${player.slug === 'frostbyte' ? 'bg-[rgba(69,255,166,.035)] shadow-[inset_3px_0_var(--brand)]' : ''}`}
         >
           <span className="data-number text-center text-sm text-[var(--text-3)]">
             {player.rating.rank}
@@ -34,12 +35,18 @@ export function PlayerRankingTable({ items }: { items: PlayerSummary[] }) {
               <p className="mt-1 text-[11px] text-[var(--text-3)] md:hidden">
                 {player.teamShortName} · {player.roles[0]}
               </p>
+              <div className="mt-2 md:hidden">
+                <CyberLevelBadge rating={player.rating} compact />
+              </div>
             </div>
           </div>
           <span className="hidden text-sm text-[var(--text-2)] md:block">
             {player.teamShortName}
           </span>
           <Sparkline values={player.form} className="hidden h-8 w-24 md:block" />
+          <div className="hidden md:block">
+            <CyberLevelBadge rating={player.rating} compact />
+          </div>
           <div className="text-right md:text-left">
             <strong className="data-number block text-lg">{player.rating.score}</strong>
             <Delta value={player.rating.delta30d} />

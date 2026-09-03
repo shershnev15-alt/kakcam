@@ -6,7 +6,7 @@ import { ObservabilityService } from './observability/observability.service';
 import { createRequestTelemetry } from './observability/request-telemetry';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, { bufferLogs: true, rawBody: true });
   const port = Number(process.env.PORT ?? 4000);
   const origins = (process.env.APP_ORIGIN ?? 'http://localhost:3000,http://localhost:3001')
     .split(',')

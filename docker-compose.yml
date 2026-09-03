@@ -42,11 +42,16 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-arena}:${POSTGRES_PASSWORD:-arena_local_only}@postgres:5432/${POSTGRES_DB:-arena_passport}?schema=public
       REDIS_URL: redis://redis:6379
       APP_ORIGIN: http://localhost:3000,http://localhost:3001
+      API_PUBLIC_URL: http://localhost:4000
+      PRIVATE_UPLOAD_ROOT: /data/evidence/private
+      PUBLIC_MEDIA_ROOT: /data/evidence/public/players
       IP_HASH_SALT: ${IP_HASH_SALT:-arena-local-ip-salt-change-me}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@arena.local}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-ArenaAdminDemo2026!}
     ports:
       - '4000:4000'
+    volumes:
+      - arena-evidence:/data/evidence
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,3 +97,4 @@ services:
 volumes:
   arena-postgres:
   arena-redis:
+  arena-evidence:

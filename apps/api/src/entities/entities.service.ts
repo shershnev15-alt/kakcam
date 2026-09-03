@@ -16,6 +16,7 @@ import type {
 } from './entities.validation';
 import type { DirectoryQuery } from './directory.validation';
 import { publicPlayerEligibilityWhere } from '../verification/publication.policy';
+import { cyberLevelForPpr } from '@arena/rating-engine';
 
 const playerInclude = {
   country: { select: { code: true, name: true } },
@@ -616,6 +617,9 @@ export class EntitiesService {
   private playerDto(player: PlayerRecord) {
     const ratingRecord = player.ratings[0];
     const explanation = jsonObject(ratingRecord?.explanation);
+    const ratingScore = ratingRecord?.score ?? 0;
+    const ratingConfidence = Math.round(Number(ratingRecord?.confidence ?? 0));
+    const cyberLevel = cyberLevelForPpr(ratingScore, ratingConfidence);
     const age = player.profile?.birthDate
       ? new Date().getUTCFullYear() - player.profile.birthDate.getUTCFullYear()
       : null;
@@ -649,12 +653,18 @@ export class EntitiesService {
           }
         : null,
       rating: {
-        score: ratingRecord?.score ?? 0,
-        confidence: Math.round(Number(ratingRecord?.confidence ?? 0)),
+        score: ratingScore,
+        confidence: ratingConfidence,
         rank: ratingRecord?.rank ?? 0,
         delta7d: typeof explanation.delta7d === 'number' ? explanation.delta7d : 0,
         delta30d: typeof explanation.delta30d === 'number' ? explanation.delta30d : 0,
         tier: typeof explanation.tier === 'string' ? explanation.tier : 'Unrated',
+        level: cyberLevel.level,
+        levelStatus: cyberLevel.status,
+        levelVisible: cyberLevel.visible,
+        nextLevelAt: cyberLevel.nextLevelAt,
+        pointsToNextLevel: cyberLevel.pointsToNextLevel,
+        levelProgress: cyberLevel.progress,
       },
       form: numberList(explanation.form),
       matchCount: player.aggregateStatistics[0]?.sampleMatches ?? 0,

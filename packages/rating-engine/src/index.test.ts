@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  cyberLevelForPpr,
   calculatePpr,
   calculatePprDetailed,
   calculateTprLeaderboard,
@@ -18,6 +19,19 @@ const observation: RatingObservation = {
 };
 
 describe('PPR v1 foundation', () => {
+  it('maps PPR to a stable 1-100 Cyber Level with calibration states', () => {
+    expect(cyberLevelForPpr(842, 91)).toEqual({
+      level: 84,
+      status: 'OFFICIAL',
+      visible: true,
+      nextLevelAt: 850,
+      pointsToNextLevel: 8,
+      progress: 20,
+    });
+    expect(cyberLevelForPpr(634, 31)).toMatchObject({ level: 63, status: 'PROVISIONAL' });
+    expect(cyberLevelForPpr(500, 24)).toMatchObject({ level: 50, visible: false });
+    expect(cyberLevelForPpr(1000, 100)).toMatchObject({ level: 100, nextLevelAt: null });
+  });
   it('implements documented decay boundaries', () => {
     expect([30, 31, 90, 91, 180, 181, 365, 366].map(recencyWeight)).toEqual([
       1, 0.85, 0.85, 0.65, 0.65, 0.4, 0.4, 0,

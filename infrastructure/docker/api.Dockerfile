@@ -28,10 +28,13 @@ RUN pnpm --filter @arena/api build
 
 FROM node:24-alpine AS production
 ENV NODE_ENV=production
+ENV PRIVATE_UPLOAD_ROOT=/data/evidence/private
+ENV PUBLIC_MEDIA_ROOT=/data/evidence/public/players
 WORKDIR /app
 COPY --chown=node:node --from=builder /workspace/apps/api/dist ./dist
 COPY --chown=node:node --from=dependencies /workspace/node_modules ./node_modules
 COPY --chown=node:node --from=dependencies /workspace/apps/api/node_modules ./node_modules
+RUN mkdir -p /data/evidence/private /data/evidence/public/players && chown -R node:node /data/evidence
 EXPOSE 4000
 USER node
 CMD ["node", "dist/src/main.js"]

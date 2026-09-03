@@ -19,6 +19,7 @@ import {
   publicPhotoEvidenceKinds,
   publicPlayerEligibilityWhere,
 } from './publication.policy';
+import { EvidenceStorageService } from './evidence-storage.service';
 
 const ACTIVE_CLAIM_STATUSES = ['SUBMITTED', 'EVIDENCE_REQUESTED', 'IN_REVIEW'];
 
@@ -28,7 +29,10 @@ function sha256(value: string): string {
 
 @Injectable()
 export class VerificationService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(EvidenceStorageService) private readonly evidenceStorage: EvidenceStorageService,
+  ) {}
 
   async onboarding(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -40,6 +44,7 @@ export class VerificationService {
           take: 1,
           include: {
             evidence: { select: { kind: true } },
+            identityChecks: { select: { status: true }, orderBy: { updatedAt: 'desc' }, take: 1 },
             player: {
               select: {
                 slug: true,
@@ -72,6 +77,8 @@ export class VerificationService {
           publicPhotoEvidenceKinds.includes(evidence.kind as never),
         ),
       ),
+      identityApproved: claim?.identityChecks[0]?.status === 'APPROVED',
+      identityStatus: claim?.identityChecks[0]?.status ?? null,
       steamVerified: providers.has('STEAM'),
       faceitVerified: providers.has('FACEIT'),
       federationApproved: published,
@@ -199,17 +206,23 @@ export class VerificationService {
         player.publication.selfClaimId === input.selfClaimId &&
         player.publication.federationId === input.federationId &&
         player.publication.photoEvidenceId === input.photoEvidenceId &&
-        player.publication.publicPhotoUrl === input.publicPhotoUrl
+        (!input.publicPhotoUrl || player.publication.publicPhotoUrl === input.publicPhotoUrl)
       ) {
         return this.publicationDto(player.publication, player.accounts);
       }
       throw new ConflictException('Сначала отзовите действующую публикацию');
     }
 
-    const [claim, federation, photoEvidence] = await Promise.all([
+    const [claim, federation, photoEvidence, identityCheck] = await Promise.all([
       this.prisma.profileClaim.findUnique({ where: { id: input.selfClaimId } }),
       this.prisma.organization.findUnique({ where: { id: input.federationId } }),
-      this.prisma.verificationEvidence.findUnique({ where: { id: input.photoEvidenceId } }),
+      this.prisma.verificationEvidence.findUnique({
+        where: { id: input.photoEvidenceId },
+        include: { blob: true },
+      }),
+      this.prisma.identityCheck.findFirst({
+        where: { claimId: input.selfClaimId, status: 'APPROVED' },
+      }),
     ]);
     const providers = new Set(player.accounts.map((account) => account.provider));
     const signals = {
@@ -227,6 +240,7 @@ export class VerificationService {
       ),
       verifiedSteam: providers.has('STEAM'),
       verifiedFaceit: providers.has('FACEIT'),
+      identityApproved: Boolean(identityCheck),
     };
     const missing = missingPublicEligibilitySignals(signals);
     if (missing.length) {
@@ -234,6 +248,13 @@ export class VerificationService {
         message: 'Игрок не выполнил обязательные условия публикации',
         missing,
       });
+    }
+
+    const publicPhotoUrl = photoEvidence!.blob
+      ? await this.evidenceStorage.publishProfilePhoto(photoEvidence!.id, player.slug)
+      : input.publicPhotoUrl;
+    if (!publicPhotoUrl) {
+      throw new ConflictException('Для публикации требуется обработанная копия фотографии');
     }
 
     const now = new Date();
@@ -260,7 +281,7 @@ export class VerificationService {
           verificationId: verification.id,
           reviewerId,
           status: 'PUBLISHED',
-          publicPhotoUrl: input.publicPhotoUrl,
+          publicPhotoUrl,
           reason: input.reason,
           publishedAt: now,
         },
@@ -271,7 +292,7 @@ export class VerificationService {
           verificationId: verification.id,
           reviewerId,
           status: 'PUBLISHED',
-          publicPhotoUrl: input.publicPhotoUrl,
+          publicPhotoUrl,
           reason: input.reason,
           publishedAt: now,
           revokedAt: null,
@@ -280,8 +301,8 @@ export class VerificationService {
       });
       await tx.playerProfile.upsert({
         where: { playerId: player.id },
-        create: { playerId: player.id, avatarUrl: input.publicPhotoUrl },
-        update: { avatarUrl: input.publicPhotoUrl },
+        create: { playerId: player.id, avatarUrl: publicPhotoUrl },
+        update: { avatarUrl: publicPhotoUrl },
       });
       await tx.player.update({
         where: { id: player.id },
@@ -329,9 +350,9 @@ export class VerificationService {
       where: { userId, playerId: player.id, status: { in: ACTIVE_CLAIM_STATUSES } },
     });
     if (active) throw new ConflictException('Активная заявка на этот профиль уже существует');
-    const checksum = sha256(
-      `${userId}:${player.id}:${input.evidence.kind}:${input.evidence.reference}`,
-    );
+    const checksum = input.evidence
+      ? sha256(`${userId}:${player.id}:${input.evidence.kind}:${input.evidence.reference}`)
+      : null;
     const claim = await this.prisma.$transaction(async (tx) => {
       const created = await tx.profileClaim.create({
         data: {
@@ -340,16 +361,22 @@ export class VerificationService {
           status: 'SUBMITTED',
           method: input.method,
           statement: input.statement ?? null,
-          evidenceSummary: { count: 1, kinds: [input.evidence.kind] },
-          evidence: {
-            create: {
-              submittedById: userId,
-              kind: input.evidence.kind,
-              reference: input.evidence.reference,
-              checksum,
-              visibility: 'RESTRICTED',
-            },
-          },
+          evidenceSummary: input.evidence
+            ? { count: 1, kinds: [input.evidence.kind] }
+            : { count: 0, kinds: [] },
+          ...(input.evidence && checksum
+            ? {
+                evidence: {
+                  create: {
+                    submittedById: userId,
+                    kind: input.evidence.kind,
+                    reference: input.evidence.reference,
+                    checksum,
+                    visibility: 'RESTRICTED',
+                  },
+                },
+              }
+            : {}),
           moderationCase: { create: { status: 'OPEN', priority: 1 } },
         },
         include: {
@@ -368,7 +395,7 @@ export class VerificationService {
             after: {
               playerSlug: player.slug,
               method: input.method,
-              evidenceKind: input.evidence.kind,
+              evidenceKind: input.evidence?.kind ?? null,
               evidenceChecksum: checksum,
             },
           },
@@ -438,8 +465,9 @@ export class VerificationService {
       where: { userId },
       include: {
         player: { select: { id: true, slug: true, nickname: true } },
-        evidence: true,
+        evidence: { include: { blob: true } },
         moderationCase: true,
+        identityChecks: { orderBy: { updatedAt: 'desc' }, take: 1 },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -454,7 +482,8 @@ export class VerificationService {
           include: {
             claimant: { select: { id: true, email: true, displayName: true } },
             player: { select: { id: true, slug: true, nickname: true } },
-            evidence: true,
+            evidence: { include: { blob: true } },
+            identityChecks: { orderBy: { updatedAt: 'desc' }, take: 1 },
           },
         },
       },
@@ -481,14 +510,37 @@ export class VerificationService {
     const claim = await this.prisma.profileClaim.findUnique({
       where: { id: claimId },
       include: {
-        player: true,
-        evidence: true,
+        player: {
+          include: {
+            accounts: {
+              where: { provider: { in: ['STEAM', 'FACEIT'] }, verifiedAt: { not: null } },
+              select: { provider: true },
+            },
+          },
+        },
+        evidence: { include: { blob: true } },
         moderationCase: true,
+        identityChecks: { orderBy: { updatedAt: 'desc' }, take: 1 },
       },
     });
     if (!claim) throw new NotFoundException('Claim not found');
     if (['APPROVED', 'REJECTED'].includes(claim.status)) {
       throw new ConflictException('Заявка уже рассмотрена');
+    }
+    if (input.decision === 'APPROVED') {
+      const providers = new Set(claim.player.accounts.map((account) => account.provider));
+      const missing = [
+        !claim.evidence.some((item) => item.kind === 'PROFILE_PHOTO' && item.blob) ? 'PHOTO' : null,
+        !providers.has('STEAM') ? 'STEAM' : null,
+        !providers.has('FACEIT') ? 'FACEIT' : null,
+        claim.identityChecks[0]?.status !== 'APPROVED' ? 'IDENTITY' : null,
+      ].filter((item): item is string => item !== null);
+      if (missing.length) {
+        throw new ConflictException({
+          message: 'Нельзя одобрить незавершённую заявку',
+          missing,
+        });
+      }
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -572,8 +624,9 @@ export class VerificationService {
       include: {
         claimant: { select: { id: true, email: true, displayName: true } },
         player: { select: { id: true, slug: true, nickname: true } },
-        evidence: true,
+        evidence: { include: { blob: true } },
         moderationCase: true,
+        identityChecks: { orderBy: { updatedAt: 'desc' }, take: 1 },
       },
     });
     if (!claim) throw new NotFoundException('Claim not found');
@@ -599,8 +652,15 @@ export class VerificationService {
         checksum: string;
         visibility: string;
         createdAt: Date;
+        blob?: {
+          contentType: string;
+          byteSize: number;
+          scanStatus: string;
+          originalName: string;
+        } | null;
       }>;
       moderationCase: { id: string; status: string } | null;
+      identityChecks?: Array<{ status: string; reviewAnswer: string | null }>;
     },
     moderator: boolean,
   ) {
@@ -616,11 +676,23 @@ export class VerificationService {
         id: item.id,
         kind: item.kind,
         ...(moderator ? { reference: item.reference } : {}),
+        ...(moderator && item.blob
+          ? {
+              file: {
+                originalName: item.blob.originalName,
+                contentType: item.blob.contentType,
+                byteSize: item.blob.byteSize,
+                scanStatus: item.blob.scanStatus,
+              },
+              contentUrl: `/moderation/evidence/${item.id}/content`,
+            }
+          : {}),
         checksum: item.checksum,
         visibility: item.visibility,
         createdAt: item.createdAt,
       })),
       moderationStatus: claim.moderationCase?.status ?? null,
+      identityStatus: claim.identityChecks?.[0]?.status ?? null,
       createdAt: claim.createdAt,
       updatedAt: claim.updatedAt,
     };
@@ -668,7 +740,7 @@ export class VerificationService {
       where: {
         userId: reviewerId,
         role: { code: 'FEDERATION_REVIEWER' },
-        scopeType: 'Organization',
+        scopeType: { in: ['ORGANIZATION', 'Organization'] },
         scopeId: federationId,
         OR: [{ validUntil: null }, { validUntil: { gt: new Date() } }],
       },

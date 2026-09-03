@@ -1,4 +1,4 @@
-import type { PlayerSummary, TeamSummary, VerificationLevel } from '@arena/types';
+import type { PlayerSummary, RatingSnapshot, TeamSummary, VerificationLevel } from '@arena/types';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { CheckIcon, TrendIcon } from './icons';
@@ -181,6 +181,83 @@ export function RatingRing({
   );
 }
 
+export function CyberLevelBadge({
+  rating,
+  compact = false,
+}: {
+  rating: RatingSnapshot;
+  compact?: boolean;
+}) {
+  const status = rating.levelStatus ?? 'CALIBRATING';
+  const visible = rating.levelVisible ?? rating.confidence >= 25;
+  const level = rating.level ?? Math.max(1, Math.min(100, Math.floor(rating.score / 10)));
+  const label =
+    status === 'OFFICIAL'
+      ? 'официальный'
+      : status === 'PROVISIONAL'
+        ? 'предварительный'
+        : 'калибруется';
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center border border-[rgba(69,255,166,.36)] bg-[rgba(69,255,166,.08)] font-black uppercase text-[var(--brand)] ${compact ? 'min-h-7 gap-1 px-2 text-[10px]' : 'min-h-10 gap-2 px-3 text-xs'}`}
+      aria-label={`Cyber Level ${level}, ${label}`}
+    >
+      <span className="text-[var(--text-3)]">LVL</span>
+      <span className="data-number text-[var(--text-1)]">{visible ? level : `~${level}`}</span>
+    </span>
+  );
+}
+
+export function CyberLevelPanel({ rating }: { rating: RatingSnapshot }) {
+  const visible = rating.levelVisible ?? rating.confidence >= 25;
+  const level = rating.level ?? Math.max(1, Math.min(100, Math.floor(rating.score / 10)));
+  const progress = rating.levelProgress ?? (rating.score % 10) * 10;
+  const points = rating.pointsToNextLevel ?? Math.max(0, (level + 1) * 10 - rating.score);
+  const statusLabel =
+    rating.levelStatus === 'OFFICIAL'
+      ? 'Официальный уровень'
+      : rating.levelStatus === 'PROVISIONAL'
+        ? 'Предварительный уровень'
+        : 'Идёт калибровка';
+  return (
+    <div className="border border-[rgba(69,255,166,.32)] bg-[linear-gradient(135deg,rgba(69,255,166,.12),rgba(12,18,16,.35)_55%)] p-5">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[var(--brand)]">
+            Cyber Level
+          </p>
+          <p className="data-number mt-1 text-6xl font-black leading-none text-[var(--text-1)]">
+            {visible ? level : `~${level}`}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs font-bold text-[var(--text-2)]">{statusLabel}</p>
+          <p className="mt-1 text-[10px] text-[var(--text-3)]">{rating.confidence}% confidence</p>
+        </div>
+      </div>
+      {!visible ? (
+        <p className="mt-5 text-xs leading-5 text-[var(--text-2)]">
+          Оценочный уровень отмечен знаком ~ и может заметно измениться до 25% confidence.
+        </p>
+      ) : null}
+      <div className="mt-5">
+        <div className="mb-2 flex justify-between gap-3 text-[10px] font-semibold text-[var(--text-3)]">
+          <span>Level {level}</span>
+          <span className="text-right">
+            {level >= 100 ? 'Максимальный уровень' : `${points} PPR до Level ${level + 1}`}
+          </span>
+        </div>
+        <div className="h-2 overflow-hidden bg-[var(--surface-3)]">
+          <div
+            className="h-full bg-[var(--brand)]"
+            style={{ width: `${level >= 100 ? 100 : progress}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function StatCard({
   label,
   value,
@@ -233,6 +310,7 @@ export function PlayerCard({
         </p>
       </div>
       <div className="text-right">
+        <CyberLevelBadge rating={player.rating} compact />
         <p className="data-number font-bold">{player.rating.score}</p>
         <Delta value={player.rating.delta30d} />
       </div>

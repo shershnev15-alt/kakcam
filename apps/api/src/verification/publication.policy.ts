@@ -9,7 +9,7 @@ export const publicPlayerEligibilityWhere = {
       status: 'PUBLISHED',
       publishedAt: { not: null },
       publicPhotoUrl: { not: '' },
-      selfClaim: { is: { status: 'APPROVED' } },
+      selfClaim: { is: { status: 'APPROVED', identityChecks: { some: { status: 'APPROVED' } } } },
       federation: { is: { isFederation: true } },
       verification: { is: { status: 'APPROVED' } },
       photoEvidence: {
@@ -45,6 +45,7 @@ export type PublicEligibilitySignals = {
   approvedPhoto: boolean;
   verifiedSteam: boolean;
   verifiedFaceit: boolean;
+  identityApproved: boolean;
 };
 
 export function missingPublicEligibilitySignals(signals: PublicEligibilitySignals): string[] {
@@ -54,5 +55,6 @@ export function missingPublicEligibilitySignals(signals: PublicEligibilitySignal
     !signals.approvedPhoto ? 'PHOTO' : null,
     !signals.verifiedSteam ? 'STEAM' : null,
     !signals.verifiedFaceit ? 'FACEIT' : null,
+    !signals.identityApproved ? 'IDENTITY' : null,
   ].filter((item): item is string => item !== null);
 }

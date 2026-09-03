@@ -19,6 +19,8 @@ type Onboarding = {
   claimStatus: string | null;
   playerSlug: string | null;
   photoSubmitted: boolean;
+  identityApproved: boolean;
+  identityStatus: string | null;
   steamVerified: boolean;
   faceitVerified: boolean;
   federationApproved: boolean;
@@ -46,11 +48,11 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
   const [onboarding, setOnboarding] = useState<Onboarding | null>(null);
   const [playerSlug, setPlayerSlug] = useState(initialPlayerSlug);
   const [method, setMethod] = useState('SOCIAL_CHALLENGE');
-  const [evidenceKind, setEvidenceKind] = useState('REFERENCE');
-  const [evidenceReference, setEvidenceReference] = useState('');
   const [statement, setStatement] = useState('');
   const [claimMessage, setClaimMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadKind, setUploadKind] = useState('PROFILE_PHOTO');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -105,19 +107,98 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
           playerSlug,
           method,
           statement: statement || undefined,
-          evidence: { kind: evidenceKind, reference: evidenceReference },
         }),
       });
       const result = (await response.json()) as { data?: Claim; message?: string };
       if (!response.ok || !result.data)
         throw new Error(result.message ?? 'Не удалось отправить заявку');
       setClaims((current) => [result.data!, ...current]);
-      setEvidenceReference('');
       setStatement('');
-      setClaimMessage('Заявка принята и передана модератору.');
+      setClaimMessage('Заявка создана. Теперь загрузите фото и пройдите обязательные привязки.');
     } catch (cause) {
       setClaimMessage(cause instanceof Error ? cause.message : 'Не удалось отправить заявку');
     } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function startAccountLink(provider: 'steam' | 'faceit') {
+    const slug = onboarding?.playerSlug ?? playerSlug;
+    if (!slug) return setClaimMessage('Сначала создайте заявку на профиль.');
+    setSubmitting(true);
+    setClaimMessage(null);
+    try {
+      const response = await fetch(
+        `${apiUrl}/integrations/${provider}/start?playerSlug=${encodeURIComponent(slug)}`,
+        { method: 'POST', credentials: 'include' },
+      );
+      const result = (await response.json()) as {
+        data?: { authorizeUrl?: string };
+        message?: string;
+      };
+      if (!response.ok || !result.data?.authorizeUrl) {
+        throw new Error(result.message ?? `Интеграция ${provider.toUpperCase()} не настроена`);
+      }
+      window.location.assign(result.data.authorizeUrl);
+    } catch (cause) {
+      setClaimMessage(cause instanceof Error ? cause.message : 'Не удалось начать привязку');
+      setSubmitting(false);
+    }
+  }
+
+  async function uploadEvidence(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const claim = claims.find((item) =>
+      ['SUBMITTED', 'EVIDENCE_REQUESTED', 'IN_REVIEW'].includes(item.status),
+    );
+    if (!claim || !uploadFile) return setClaimMessage('Выберите файл и активную заявку.');
+    setSubmitting(true);
+    setClaimMessage(null);
+    try {
+      const form = new FormData();
+      form.set('kind', uploadKind);
+      form.set('file', uploadFile);
+      const response = await fetch(`${apiUrl}/claims/${claim.id}/evidence/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        body: form,
+      });
+      const result = (await response.json()) as { data?: { id: string }; message?: string };
+      if (!response.ok || !result.data) throw new Error(result.message ?? 'Файл не загружен');
+      setUploadFile(null);
+      setClaimMessage('Файл зашифрован, очищен и добавлен в заявку.');
+      window.location.reload();
+    } catch (cause) {
+      setClaimMessage(cause instanceof Error ? cause.message : 'Файл не загружен');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function startIdentityCheck() {
+    const claim = claims.find((item) =>
+      ['SUBMITTED', 'EVIDENCE_REQUESTED', 'IN_REVIEW'].includes(item.status),
+    );
+    if (!claim) return setClaimMessage('Сначала создайте активную заявку.');
+    setSubmitting(true);
+    setClaimMessage(null);
+    try {
+      const response = await fetch(`${apiUrl}/identity/session`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claimId: claim.id }),
+      });
+      const result = (await response.json()) as {
+        data?: { webSdkUrl?: string };
+        message?: string;
+      };
+      if (!response.ok || !result.data?.webSdkUrl) {
+        throw new Error(result.message ?? 'Проверка личности не настроена');
+      }
+      window.location.assign(result.data.webSdkUrl);
+    } catch (cause) {
+      setClaimMessage(cause instanceof Error ? cause.message : 'Проверка личности недоступна');
       setSubmitting(false);
     }
   }
@@ -149,9 +230,13 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
     ['Отправить self-claim и фото', onboarding?.claimSubmitted && onboarding.photoSubmitted],
     ['Подтвердить Steam', onboarding?.steamVerified],
     ['Подтвердить FACEIT', onboarding?.faceitVerified],
+    ['Документ, лицо и liveness', onboarding?.identityApproved],
     ['Проверка местной федерацией', onboarding?.federationApproved],
     ['Ручное одобрение публикации', onboarding?.manualApproval],
   ] as const;
+  const activeClaim = claims.find((item) =>
+    ['SUBMITTED', 'EVIDENCE_REQUESTED', 'IN_REVIEW'].includes(item.status),
+  );
 
   return (
     <section className="mx-auto max-w-3xl space-y-6">
@@ -182,7 +267,7 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
               <h2 className="mt-2 text-2xl font-black">Проверка профиля</h2>
             </div>
             <span className="data-number text-sm text-[var(--text-2)]">
-              {onboardingSteps.filter(([, complete]) => complete).length}/6
+              {onboardingSteps.filter(([, complete]) => complete).length}/{onboardingSteps.length}
             </span>
           </div>
           <ol className="mt-5 grid gap-2 sm:grid-cols-2">
@@ -266,10 +351,11 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
             'Предоставить обязательное фото',
             'Привязать и подтвердить Steam',
             'Привязать и подтвердить FACEIT',
+            'Пройти документ, лицо и liveness',
           ].map((requirement, index) => (
             <div className="surface-soft flex items-center gap-3 p-3 text-sm" key={requirement}>
               <span className="data-number text-xs font-black text-[var(--accent)]">
-                {index + 1}/5
+                {index + 1}/6
               </span>
               <span>{requirement}</span>
             </div>
@@ -303,27 +389,6 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
             </select>
           </label>
           <label className="grid gap-2 text-sm font-semibold">
-            Тип доказательства
-            <select
-              className="focus-ring h-11 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3"
-              onChange={(event) => setEvidenceKind(event.target.value)}
-              value={evidenceKind}
-            >
-              <option value="REFERENCE">Ссылка или идентификатор</option>
-              <option value="PROFILE_PHOTO">Обязательное фото профиля</option>
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-semibold">
-            Защищённая ссылка или идентификатор доказательства
-            <input
-              className="focus-ring h-11 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3"
-              onChange={(event) => setEvidenceReference(event.target.value)}
-              placeholder="https://… или secure-upload:123"
-              required
-              value={evidenceReference}
-            />
-          </label>
-          <label className="grid gap-2 text-sm font-semibold">
             Комментарий
             <textarea
               className="focus-ring min-h-24 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-3"
@@ -333,10 +398,14 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
           </label>
           <button
             className="h-11 rounded-lg bg-[var(--accent)] px-5 text-sm font-black text-[#0b1016] disabled:opacity-50"
-            disabled={submitting}
+            disabled={submitting || !user.emailVerifiedAt || Boolean(activeClaim)}
             type="submit"
           >
-            {submitting ? 'Отправляем…' : 'Отправить на проверку'}
+            {activeClaim
+              ? 'Активная заявка уже создана'
+              : submitting
+                ? 'Отправляем…'
+                : 'Отправить на проверку'}
           </button>
           {claimMessage ? (
             <p className="text-sm text-[var(--text-2)]" role="status">
@@ -344,6 +413,90 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
             </p>
           ) : null}
         </form>
+      </div>
+
+      <div className="surface p-6 sm:p-8">
+        <p className="eyebrow">Защищённые доказательства</p>
+        <h2 className="mt-2 text-2xl font-black">Фото, аккаунты и проверка личности</h2>
+        <p className="muted mt-2 text-sm leading-6">
+          Файлы шифруются и доступны только проверяющим. Документ и биометрия проходят напрямую
+          через Sumsub; cyberID получает только итог проверки.
+        </p>
+        {!activeClaim ? (
+          <p className="mt-4 border border-[var(--warning)]/35 bg-[var(--warning)]/10 p-3 text-xs leading-5 text-[var(--warning)]">
+            Сначала подтвердите email и создайте заявку на профиль — после этого откроются загрузка
+            и привязки.
+          </p>
+        ) : null}
+        <form
+          className="mt-6 grid gap-4 sm:grid-cols-[180px_1fr_auto] sm:items-end"
+          onSubmit={uploadEvidence}
+        >
+          <label className="grid gap-2 text-sm font-semibold">
+            Назначение файла
+            <select
+              className="focus-ring h-11 border border-[var(--border)] bg-[var(--surface-2)] px-3"
+              disabled={!activeClaim}
+              onChange={(event) => setUploadKind(event.target.value)}
+              value={uploadKind}
+            >
+              <option value="PROFILE_PHOTO">Фото профиля</option>
+              <option value="IDENTITY_DOCUMENT">Документ</option>
+            </select>
+          </label>
+          <label className="grid min-w-0 gap-2 text-sm font-semibold">
+            JPEG, PNG, WebP или PDF
+            <input
+              accept={
+                uploadKind === 'PROFILE_PHOTO'
+                  ? 'image/jpeg,image/png,image/webp'
+                  : 'image/jpeg,image/png,image/webp,application/pdf'
+              }
+              className="focus-ring min-h-11 min-w-0 border border-[var(--border)] bg-[var(--surface-2)] p-2 text-xs"
+              disabled={!activeClaim}
+              onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)}
+              type="file"
+            />
+          </label>
+          <button
+            className="min-h-11 bg-[var(--brand)] px-5 text-sm font-black text-[#101512] disabled:opacity-50"
+            disabled={submitting || !uploadFile || !activeClaim}
+            type="submit"
+          >
+            Загрузить
+          </button>
+        </form>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <button
+            className="min-h-12 border border-[var(--border)] px-4 text-sm font-black hover:border-[var(--brand)] disabled:opacity-50"
+            disabled={submitting || !activeClaim || onboarding?.steamVerified}
+            onClick={() => startAccountLink('steam')}
+            type="button"
+          >
+            {onboarding?.steamVerified ? '✓ Steam подтверждён' : 'Подключить Steam'}
+          </button>
+          <button
+            className="min-h-12 border border-[var(--border)] px-4 text-sm font-black hover:border-[var(--brand)] disabled:opacity-50"
+            disabled={submitting || !activeClaim || onboarding?.faceitVerified}
+            onClick={() => startAccountLink('faceit')}
+            type="button"
+          >
+            {onboarding?.faceitVerified ? '✓ FACEIT подтверждён' : 'Подключить FACEIT'}
+          </button>
+          <button
+            className="min-h-12 border border-[var(--brand)] px-4 text-sm font-black text-[var(--brand)] disabled:opacity-50"
+            disabled={submitting || !activeClaim || onboarding?.identityApproved}
+            onClick={startIdentityCheck}
+            type="button"
+          >
+            {onboarding?.identityApproved ? '✓ Личность подтверждена' : 'Документ + liveness'}
+          </button>
+        </div>
+        {onboarding?.identityStatus && !onboarding.identityApproved ? (
+          <p className="mt-4 text-xs text-[var(--warning)]">
+            Статус проверки личности: {onboarding.identityStatus}
+          </p>
+        ) : null}
       </div>
 
       <div className="surface p-6 sm:p-8">

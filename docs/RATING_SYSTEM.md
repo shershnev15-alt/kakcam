@@ -71,7 +71,24 @@ trust = weighted verification/completeness score
 confidence = 100 × (0.45·sample + 0.20·diversity + 0.20·freshness + 0.15·trust)
 ```
 
-Confidence ниже 40% помечает provisional rating; ниже 25% исключает из основного leaderboard. Независимо от confidence, PPR и профиль полностью закрыты, пока игрок не выполнит verified-only publication policy: self-claim, federation, photo, Steam и FACEIT.
+Confidence ниже 40% помечает provisional rating; ниже 25% исключает из основного leaderboard. Независимо от confidence, PPR и профиль полностью закрыты, пока игрок не выполнит verified-only publication policy: self-claim, federation, photo, Steam, FACEIT и identity/liveness.
+
+## Cyber Level 1–100
+
+Cyber Level — визуальный слой поверх PPR, а не отдельная формула силы. Точное значение PPR остаётся первичным и используется для сортировки рейтинга.
+
+```text
+level = clamp(floor(round(PPR) / 10), 1, 100)
+nextLevelAt = (level + 1) × 10
+progress = (round(PPR) mod 10) × 10%
+```
+
+- confidence 0–24%: `CALIBRATING`, уровень показывается как оценочный со знаком `~`;
+- confidence 25–39%: `PROVISIONAL`, уровень виден как предварительный;
+- confidence 40–100%: `OFFICIAL`, уровень опубликован;
+- PPR 1000: Level 100, прогресс завершён.
+
+Так один и тот же расчёт детерминированно используется API, каталогом, таблицей рейтинга и паспортом игрока. Уровень не повышается за подписку, активность на сайте или ручное действие администратора.
 
 ## Ranks
 

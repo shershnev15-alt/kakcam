@@ -239,7 +239,7 @@ export function commandsFor(resource: string, row: AdminRow | undefined): Comman
             federationId: '00000000-0000-4000-8000-000000000000',
             photoEvidenceId: '00000000-0000-4000-8000-000000000000',
             publicPhotoUrl: '/media/players/verified-photo.webp',
-            reason: 'Self-claim, фото, Steam и FACEIT подтверждены местной федерацией',
+            reason: 'Self-claim, фото, Steam, FACEIT и KYC подтверждены местной федерацией',
           },
           selection: true,
           reason: true,
@@ -447,6 +447,54 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(payload?.message ?? `HTTP ${response.status}`);
   }
   return response.json() as Promise<T>;
+}
+
+function EvidenceReview({ row }: { row: AdminRow }) {
+  const evidence = Array.isArray(row.fields.evidence)
+    ? (row.fields.evidence as Array<Record<string, unknown>>)
+    : [];
+  const accounts = Array.isArray(row.fields.verifiedAccounts)
+    ? (row.fields.verifiedAccounts as Array<Record<string, unknown>>)
+    : [];
+  return (
+    <section className="evidence-review" aria-label="Проверка доказательств">
+      <div className="evidence-summary">
+        <span>KYC</span>
+        <strong>{String(row.fields.identityStatus ?? 'НЕ НАЧАТО')}</strong>
+      </div>
+      <div className="evidence-summary">
+        <span>Аккаунты</span>
+        <strong>
+          {accounts
+            .filter((item) => item.verifiedAt)
+            .map((item) => String(item.provider))
+            .join(' + ') || 'НЕ ПОДТВЕРЖДЕНЫ'}
+        </strong>
+      </div>
+      {evidence.map((item) => {
+        const file =
+          item.file && typeof item.file === 'object'
+            ? (item.file as Record<string, unknown>)
+            : null;
+        const contentUrl = typeof item.contentUrl === 'string' ? item.contentUrl : null;
+        return (
+          <article key={String(item.id)}>
+            <strong>{String(item.kind)}</strong>
+            <small>
+              {file
+                ? `${String(file.originalName)} · ${Math.ceil(Number(file.byteSize) / 1024)} КБ · ${String(file.scanStatus)}`
+                : 'Внешняя ссылка'}
+            </small>
+            {contentUrl ? (
+              <a href={`${API_BASE}${contentUrl}`} target="_blank" rel="noreferrer">
+                Просмотреть файл
+              </a>
+            ) : null}
+          </article>
+        );
+      })}
+    </section>
+  );
 }
 
 export function AdminConsole({ resource }: { resource?: string }) {
@@ -702,6 +750,7 @@ export function AdminConsole({ resource }: { resource?: string }) {
             <aside className="command-panel">
               <p className="eyebrow">Команда</p>
               <h2>{selected ? selected.title : 'Новая операция'}</h2>
+              {resource === 'verification' && selected ? <EvidenceReview row={selected} /> : null}
               {!commands.length ? (
                 <p className="muted">
                   Модуль доступен только для чтения. Immutable данные не изменяются.

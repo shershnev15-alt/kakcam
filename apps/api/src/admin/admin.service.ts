@@ -307,7 +307,8 @@ export class AdminService {
                   publication: { include: { federation: true } },
                 },
               },
-              evidence: true,
+              evidence: { include: { blob: true } },
+              identityChecks: { orderBy: { updatedAt: 'desc' }, take: 1 },
               moderationCase: true,
             },
             orderBy: { updatedAt: 'desc' },
@@ -334,7 +335,18 @@ export class AdminService {
                   kind: evidence.kind,
                   reference: evidence.reference,
                   checksum: evidence.checksum,
+                  contentUrl: evidence.blob ? `/moderation/evidence/${evidence.id}/content` : null,
+                  file: evidence.blob
+                    ? {
+                        originalName: evidence.blob.originalName,
+                        contentType: evidence.blob.contentType,
+                        byteSize: evidence.blob.byteSize,
+                        scanStatus: evidence.blob.scanStatus,
+                      }
+                    : null,
                 })),
+                identityStatus: item.identityChecks[0]?.status ?? null,
+                identityReviewAnswer: item.identityChecks[0]?.reviewAnswer ?? null,
                 priority: item.moderationCase?.priority ?? 0,
                 decisionReason: item.decisionReason,
                 verifiedAccounts: item.player.accounts,
@@ -919,7 +931,7 @@ export class AdminService {
         where: {
           userId,
           role: { code: 'FEDERATION_REVIEWER' },
-          scopeType: 'Organization',
+          scopeType: { in: ['ORGANIZATION', 'Organization'] },
           scopeId: federationId,
         },
       }),
@@ -940,7 +952,7 @@ export class AdminService {
               data: {
                 userId,
                 roleId: role.id,
-                scopeType: 'Organization',
+                scopeType: 'ORGANIZATION',
                 scopeId: federationId,
                 validUntil: input.validUntil ?? null,
                 grantedById: actorId,

@@ -14,6 +14,12 @@ export interface RatingSnapshot {
   delta7d: number;
   delta30d: number;
   tier: 'Rookie' | 'Challenger' | 'Contender' | 'Pro' | 'Elite' | 'Master' | 'Legend';
+  level?: number;
+  levelStatus?: 'CALIBRATING' | 'PROVISIONAL' | 'OFFICIAL';
+  levelVisible?: boolean;
+  nextLevelAt?: number | null;
+  pointsToNextLevel?: number;
+  levelProgress?: number;
 }
 
 export interface PlayerSummary {

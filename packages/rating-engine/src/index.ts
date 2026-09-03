@@ -35,6 +35,33 @@ export interface PprDetailedResult extends PprResult {
   weakestFactor: string;
 }
 
+export type CyberLevelStatus = 'CALIBRATING' | 'PROVISIONAL' | 'OFFICIAL';
+
+export interface CyberLevel {
+  level: number;
+  status: CyberLevelStatus;
+  visible: boolean;
+  nextLevelAt: number | null;
+  pointsToNextLevel: number;
+  progress: number;
+}
+
+export function cyberLevelForPpr(score: number, confidence: number): CyberLevel {
+  const normalizedScore = Math.round(clamp(score, 0, 1000));
+  const level = Math.max(1, Math.min(100, Math.floor(normalizedScore / 10)));
+  const status: CyberLevelStatus =
+    confidence < 25 ? 'CALIBRATING' : confidence < 40 ? 'PROVISIONAL' : 'OFFICIAL';
+  const nextLevelAt = level >= 100 ? null : (level + 1) * 10;
+  return {
+    level,
+    status,
+    visible: confidence >= 25,
+    nextLevelAt,
+    pointsToNextLevel: nextLevelAt === null ? 0 : Math.max(0, nextLevelAt - normalizedScore),
+    progress: level >= 100 ? 100 : Math.max(0, Math.min(100, (normalizedScore % 10) * 10)),
+  };
+}
+
 export interface TprMatchObservation {
   id: string;
   playedAt: string;

@@ -116,29 +116,31 @@ enum RatingEngine {
 }
 
 model User {
-  id                    String                 @id @default(uuid()) @db.Uuid
-  email                 String                 @unique
-  displayName           String?
-  locale                String                 @default("ru")
-  status                UserStatus             @default(ACTIVE)
-  emailVerifiedAt       DateTime?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  follows               UserFollow[]
-  notifications         Notification[]
-  auditLogs             AuditLog[]             @relation("AuditActor")
-  identities            Identity[]
-  sessions              Session[]
+  id                      String                   @id @default(uuid()) @db.Uuid
+  email                   String                   @unique
+  displayName             String?
+  locale                  String                   @default("ru")
+  status                  UserStatus               @default(ACTIVE)
+  emailVerifiedAt         DateTime?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  follows                 UserFollow[]
+  notifications           Notification[]
+  auditLogs               AuditLog[]               @relation("AuditActor")
+  identities              Identity[]
+  sessions                Session[]
   emailVerificationTokens EmailVerificationToken[]
-  subscriptions         Subscription[]         @relation("UserSubscriptions")
-  roles                 UserRole[]             @relation("UserRoleSubject")
-  grantedRoles          UserRole[]             @relation("UserRoleGrantor")
-  profileClaims         ProfileClaim[]         @relation("Claimant")
-  reviewedClaims        ProfileClaim[]         @relation("ClaimReviewer")
-  submittedEvidence     VerificationEvidence[] @relation("EvidenceSubmitter")
-  reviewedVerifications Verification[]         @relation("VerificationReviewer")
-  publicationReviews    PlayerPublication[]    @relation("PublicationReviewer")
-  moderationCases       ModerationCase[]       @relation("ModerationAssignee")
+  subscriptions           Subscription[]           @relation("UserSubscriptions")
+  roles                   UserRole[]               @relation("UserRoleSubject")
+  grantedRoles            UserRole[]               @relation("UserRoleGrantor")
+  profileClaims           ProfileClaim[]           @relation("Claimant")
+  reviewedClaims          ProfileClaim[]           @relation("ClaimReviewer")
+  submittedEvidence       VerificationEvidence[]   @relation("EvidenceSubmitter")
+  reviewedVerifications   Verification[]           @relation("VerificationReviewer")
+  publicationReviews      PlayerPublication[]      @relation("PublicationReviewer")
+  moderationCases         ModerationCase[]         @relation("ModerationAssignee")
+  accountLinkTransactions AccountLinkTransaction[]
+  identityChecks          IdentityCheck[]
 }
 
 model Identity {
@@ -325,6 +327,7 @@ model Player {
   claims                     ProfileClaim[]
   followers                  UserFollow[]
   publication                PlayerPublication?
+  accountLinkTransactions    AccountLinkTransaction[]
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
 
@@ -357,6 +360,7 @@ model PlayerGameAccount {
   createdAt  DateTime  @default(now())
 
   @@unique([provider, externalId])
+  @@unique([playerId, gameId, provider])
   @@index([playerId, gameId])
 }
 
@@ -906,6 +910,7 @@ model ProfileClaim {
   evidence        VerificationEvidence[]
   moderationCase  ModerationCase?
   publication     PlayerPublication?
+  identityChecks  IdentityCheck[]
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
 
@@ -926,10 +931,63 @@ model VerificationEvidence {
   verification     Verification?      @relation(fields: [verificationId], references: [id], onDelete: Cascade)
   submittedBy      User?              @relation("EvidenceSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
   publicationPhoto PlayerPublication?
+  blob             EvidenceBlob?
   createdAt        DateTime           @default(now())
 
   @@unique([claimId, checksum])
   @@index([verificationId])
+}
+
+model EvidenceBlob {
+  id                String               @id @default(uuid()) @db.Uuid
+  evidenceId        String               @unique @db.Uuid
+  storageKey        String               @unique
+  originalName      String
+  contentType       String
+  byteSize          Int
+  encryptionVersion Int                  @default(1)
+  scanStatus        String
+  sanitizedAt       DateTime?
+  evidence          VerificationEvidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  createdAt         DateTime             @default(now())
+
+  @@index([scanStatus, createdAt])
+}
+
+model AccountLinkTransaction {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  playerId   String    @db.Uuid
+  provider   String
+  stateHash  String    @unique @db.VarChar(64)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  player     Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, provider, consumedAt, expiresAt])
+  @@index([playerId, provider])
+}
+
+model IdentityCheck {
+  id             String       @id @default(uuid()) @db.Uuid
+  userId         String       @db.Uuid
+  claimId        String       @db.Uuid
+  provider       String
+  externalUserId String       @unique
+  applicantId    String?
+  status         String       @default("CREATED")
+  reviewAnswer   String?
+  rejectLabels   Json?
+  completedAt    DateTime?
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claim          ProfileClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([claimId, status])
+  @@index([applicantId])
 }
 
 model PlayerPublication {

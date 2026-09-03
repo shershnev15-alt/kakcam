@@ -14,8 +14,10 @@ export function VerifyEmailForm() {
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
+    const linkToken = new URLSearchParams(window.location.search).get('token');
     const preview = sessionStorage.getItem('cyberid-preview-email-token');
-    if (preview) setToken(preview);
+    if (linkToken) setToken(linkToken);
+    else if (preview) setToken(preview);
   }, []);
 
   async function verify(event: FormEvent<HTMLFormElement>) {
@@ -77,7 +79,7 @@ export function VerifyEmailForm() {
   return (
     <div className="container grid min-h-[calc(100vh-8rem)] place-items-center py-12">
       <section className="surface w-full max-w-lg p-6 sm:p-8" aria-labelledby="verify-title">
-        <p className="eyebrow">cyberID · шаг 2 из 6</p>
+        <p className="eyebrow">cyberID · шаг 2 из 7</p>
         <h1 id="verify-title" className="display-title mt-4 text-5xl">
           Подтвердите email
         </h1>

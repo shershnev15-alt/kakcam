@@ -45,7 +45,7 @@ export type SubmitClaimInput = {
   playerSlug: string;
   method: (typeof CLAIM_METHODS)[number];
   statement?: string;
-  evidence: ClaimEvidenceInput;
+  evidence?: ClaimEvidenceInput;
 };
 
 export function parseSubmitClaim(value: unknown): SubmitClaimInput {
@@ -58,7 +58,7 @@ export function parseSubmitClaim(value: unknown): SubmitClaimInput {
     playerSlug: playerSlug(body.playerSlug),
     method: method as (typeof CLAIM_METHODS)[number],
     ...(body.statement ? { statement: text(body.statement, 'statement', 4, 1000) } : {}),
-    evidence: parseClaimEvidence(body.evidence),
+    ...(body.evidence ? { evidence: parseClaimEvidence(body.evidence) } : {}),
   };
 }
 
@@ -93,7 +93,7 @@ export type PublicationDecisionInput =
       selfClaimId: string;
       federationId: string;
       photoEvidenceId: string;
-      publicPhotoUrl: string;
+      publicPhotoUrl?: string;
       reason: string;
     }
   | { decision: 'REVOKE'; reason: string };
@@ -121,7 +121,7 @@ export function parsePublicationDecision(value: unknown): PublicationDecisionInp
     selfClaimId: uuid(body.selfClaimId, 'selfClaimId'),
     federationId: uuid(body.federationId, 'federationId'),
     photoEvidenceId: uuid(body.photoEvidenceId, 'photoEvidenceId'),
-    publicPhotoUrl: publicPhotoUrl(body.publicPhotoUrl),
+    ...(body.publicPhotoUrl ? { publicPhotoUrl: publicPhotoUrl(body.publicPhotoUrl) } : {}),
     reason,
   };
 }

@@ -27,6 +27,9 @@ import { VerificationController } from './verification/verification.controller';
 import { VerificationService } from './verification/verification.service';
 import { GameAccountsController } from './game-accounts/game-accounts.controller';
 import { GameAccountsService } from './game-accounts/game-accounts.service';
+import { EvidenceStorageService } from './verification/evidence-storage.service';
+import { IdentityVerificationController } from './identity-verification/identity-verification.controller';
+import { IdentityVerificationService } from './identity-verification/identity-verification.service';
 
 @Module({
   controllers: [
@@ -43,6 +46,7 @@ import { GameAccountsService } from './game-accounts/game-accounts.service';
     ImportsController,
     GameAccountsController,
     ObservabilityController,
+    IdentityVerificationController,
   ],
   providers: [
     AdminService,
@@ -61,6 +65,8 @@ import { GameAccountsService } from './game-accounts/game-accounts.service';
     VerificationService,
     ImportsService,
     GameAccountsService,
+    EvidenceStorageService,
+    IdentityVerificationService,
     MetricsGuard,
     ObservabilityService,
   ],
