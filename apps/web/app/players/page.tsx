@@ -32,8 +32,8 @@ export default async function PlayersPage({ searchParams }: Props) {
           <p className="eyebrow">cyberID directory · CS2</p>
           <h1 className="display-title mt-5 text-[72px] md:text-[104px]">Игроки</h1>
           <p className="muted mt-5 max-w-2xl leading-7">
-            В общий доступ попадают только игроки с self-claim, подтверждением местной федерации,
-            обязательным фото и проверенными аккаунтами Steam и FACEIT.
+            В общий доступ попадают только игроки с подтвержденной заявкой, обязательным фото и
+            проверенными аккаунтами Steam и FACEIT.
           </p>
         </div>
         <div className="surface p-5">
@@ -73,7 +73,7 @@ export default async function PlayersPage({ searchParams }: Props) {
           <div className="surface py-16 text-center">
             <h2 className="text-xl font-bold">Нет игроков с полным допуском</h2>
             <p className="muted mx-auto mt-2 max-w-xl text-sm">
-              В общий доступ попадают только игроки, выполнившие все пять условий верификации.
+              В общий доступ попадают только игроки, выполнившие все обязательные условия верификации.
               Измените фильтры или завершите проверку профиля.
             </p>
           </div>

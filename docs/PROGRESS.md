@@ -1,6 +1,6 @@
 # Progress
 
-Дата обновления: 3 сентября 2026. Этапы **0–13 завершены**. После Stage 13 добавлена verified-only publication policy: рейтинг и профиль игрока по умолчанию закрыты, а общий доступ требует self-claim, местную федерацию, фото, Steam, FACEIT и identity/liveness.
+Дата обновления: 3 сентября 2026. Этапы **0–14 завершены**. В Этапе 14 закрыт production baseline для публичного запуска: добавлены prod-smoke, запусковая проверка, production-compose и migration-слой для DB (`api-migrate`).
 
 ## Completed
 
@@ -60,7 +60,7 @@
 - Web/Admin CSP и security headers, Helmet API hardening, non-root production images и Dependabot policy;
 - privacy-safe allow-listed analytics, нормализованные structured request logs, correlation id и защищённый Prometheus endpoint;
 - CI gates для измеримых JS/CSS budgets и security baseline.
-- явный `PlayerPublication`: только все шесть подтверждений одновременно открывают Player/PPR, а отзыв любого сигнала динамически закрывает профиль;
+- явный `PlayerPublication`: только все обязательные подтверждения одновременно открывают Player/PPR, а отзыв любого сигнала динамически закрывает профиль;
 - единая server-side policy применена к каталогу, поиску, рейтингу, sitemap, карьере, достижениям, переходам, составам и player statistics в матчах;
 - scoped `FEDERATION_REVIEWER` для конкретной Organization, отдельные publish/revoke команды и audit без исходного фото/evidence reference;
 - публичный профиль показывает одобренное фото, проверенные Steam/FACEIT и федерацию; кабинет объясняет весь путь допуска.
@@ -105,14 +105,13 @@
 - security gate: mandatory Web/Admin/API headers и tracked-file secret baseline passed.
 - verified-only integration: миграции применены к чистой PostgreSQL 17, seed создаёт 13 ролей/25 permissions, закрытые каталог/PPR пусты и detail возвращает 404;
 - positive/revocation integration: профиль появляется только при всех шести сигналах и немедленно снова получает 404 после отзыва verified FACEIT;
-- production identity flow: API/Web/Admin build, 58 API + 3 Web + 4 Admin + 9 Mobile + 7 Rating + 6 Achievement tests, lint/typecheck/format/security/performance gates passed; полный HTTP-путь с email, evidence, KYC, moderation, federation publish и revoke пройден, QA-данные очищены.
+- production identity flow: API/Web/Admin build, 58 API + 3 Web + 4 Admin + 9 Mobile + 7 Rating + 6 Achievement tests, lint/typecheck/format/security/performance gates passed; полный HTTP-путь с email, evidence, KYC, moderation, publication и revoke пройден, QA-данные очищены.
 
 ## Known limitations
 
 - поиск Stage 3 использует индексируемый PostgreSQL `contains`; weighted FTS/`pg_trgm` projection остаётся следующим расширением;
 - live-интеграции требуют production credentials, публичного HTTPS callback-домена, настроенных webhook и договоров/SLA с Resend, FACEIT и Sumsub;
 - clutch/perfect-map/MVP rules остаются LOCKED до granular provider events; движок уже поддерживает безопасный replay этих версий правил;
-- auth rate limit хранится в памяти процесса; Redis-backed distributed limiter нужен до горизонтального масштабирования;
 - password recovery ещё не реализован; email verification, Steam OpenID и FACEIT OAuth уже подключены;
 - локально encrypted evidence хранится на private volume; production object storage, внешний malware scanner, backup/restore и retention enforcement обязательны до запуска;
 - bulk admin operations и MFA/step-up authentication остаются обязательными до production;
@@ -120,8 +119,8 @@
 - guest favorites/inbox пока локальные; merge с account engagement потребует `/me/*` endpoints;
 - native device/simulator smoke и signing выполняются перед store beta;
 - KYC production activation ждёт утверждённого Sumsub verification level, ключей и юридических правил consent/биометрии/удаления/апелляции.
-- observability counters и analytics limiter пока in-memory; production collector, Redis coordination, retention и alerts входят в Этап 14.
+- observability counters и analytics limiter пока in-memory; production collector, Redis coordination, retention и alerts входят в следующий этап.
 
 ## Next step
 
-Этап 14: production deployment — runbooks, secrets, SBOM/signing, collector/alerts, backup restore, SLO и launch checklist.
+Этап 15: production hardening — SBOM/signing, collector/alerts, backup/restore drill, SLO и финальный compliance.

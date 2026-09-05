@@ -4,6 +4,7 @@ import { AdminService } from './admin/admin.service';
 import { AppController } from './app.controller';
 import { AuthController } from './auth/auth.controller';
 import { AuthRateLimitGuard, CsrfGuard, PermissionsGuard, SessionGuard } from './auth/auth.guards';
+import { AuthRateLimitService } from './auth/auth-rate-limit.service';
 import { AuthService } from './auth/auth.service';
 import { EmailDeliveryService } from './auth/email-delivery.service';
 import { CareerController } from './career/career.controller';
@@ -59,6 +60,7 @@ import { IdentityVerificationService } from './identity-verification/identity-ve
     CsrfGuard,
     AuthRateLimitGuard,
     EntitiesService,
+    AuthRateLimitService,
     CompetitionService,
     RatingsService,
     CareerService,

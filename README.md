@@ -28,12 +28,45 @@
 
 Требуется только Docker Desktop:
 
+Для быстрой разработки:
+
 ```bash
 docker compose up -d --build
 docker compose ps
 ```
 
-Первый запуск загружает образы и зависимости, применяет миграцию и idempotent seed. Остановка: `docker compose down`. Данные PostgreSQL/Redis остаются в named volumes.
+Для production-like проверки (с проверками gate и production env):
+
+```bash
+cp .env.production.example .env.production
+# заполнить .env.production секретами и production-доменами
+
+pnpm stage14:launch
+
+# миграция запускается автоматически через одноразовый контейнер api-migrate
+pnpm stage14:verify
+```
+
+Остановка после production-like проверки:
+
+```bash
+pnpm stage14:down
+```
+
+Старый способ разработки:
+
+```bash
+docker compose up -d --build
+docker compose ps
+```
+
+Проверка без full-verify:
+
+```bash
+PUBLIC_WEB_URL=$PUBLIC_WEB_URL API_URL=http://localhost:${API_PORT:-4000} METRICS_TOKEN=$METRICS_TOKEN pnpm stage14:smoke
+```
+
+Первый запуск загружает образы и зависимости, применяет миграции через `api-migrate`. Остановка: `docker compose down`. Данные PostgreSQL/Redis остаются в named volumes.
 
 Email-аутентификация использует Argon2id и отзываемые HttpOnly-сессии. Новая учётная запись получает роль `REGISTERED_USER`; права на изменение реестра назначаются отдельными ролями через RBAC.
 

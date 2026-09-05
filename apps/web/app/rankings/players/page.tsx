@@ -18,7 +18,7 @@ export default async function PlayerRankingsPage() {
         <div className="surface py-16 text-center">
           <h2 className="text-xl font-bold">Публичный PPR пока пуст</h2>
           <p className="muted mx-auto mt-2 max-w-xl text-sm">
-            Рейтинг показывает только игроков с self-claim, подтверждением федерации, фотографией,
+            Рейтинг показывает только игроков с self-claim, подтвержденным профилем, фотографией,
             Steam и FACEIT.
           </p>
         </div>

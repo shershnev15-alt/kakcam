@@ -10,7 +10,6 @@ export const publicPlayerEligibilityWhere = {
       publishedAt: { not: null },
       publicPhotoUrl: { not: '' },
       selfClaim: { is: { status: 'APPROVED', identityChecks: { some: { status: 'APPROVED' } } } },
-      federation: { is: { isFederation: true } },
       verification: { is: { status: 'APPROVED' } },
       photoEvidence: {
         is: { kind: { in: [...publicPhotoEvidenceKinds] }, visibility: 'RESTRICTED' },
@@ -41,7 +40,6 @@ export const publicPlayerEligibilityWhere = {
 
 export type PublicEligibilitySignals = {
   approvedSelfClaim: boolean;
-  federationApproval: boolean;
   approvedPhoto: boolean;
   verifiedSteam: boolean;
   verifiedFaceit: boolean;
@@ -51,7 +49,6 @@ export type PublicEligibilitySignals = {
 export function missingPublicEligibilitySignals(signals: PublicEligibilitySignals): string[] {
   return [
     !signals.approvedSelfClaim ? 'SELF_CLAIM' : null,
-    !signals.federationApproval ? 'FEDERATION' : null,
     !signals.approvedPhoto ? 'PHOTO' : null,
     !signals.verifiedSteam ? 'STEAM' : null,
     !signals.verifiedFaceit ? 'FACEIT' : null,

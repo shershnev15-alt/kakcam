@@ -6,7 +6,6 @@ describe('verified-only public player policy', () => {
     expect(
       missingPublicEligibilitySignals({
         approvedSelfClaim: true,
-        federationApproval: true,
         approvedPhoto: true,
         verifiedSteam: true,
         verifiedFaceit: true,
@@ -19,12 +18,11 @@ describe('verified-only public player policy', () => {
     expect(
       missingPublicEligibilitySignals({
         approvedSelfClaim: true,
-        federationApproval: false,
         approvedPhoto: true,
         verifiedSteam: false,
         verifiedFaceit: false,
         identityApproved: false,
       }),
-    ).toEqual(['FEDERATION', 'STEAM', 'FACEIT', 'IDENTITY']);
+    ).toEqual(['STEAM', 'FACEIT', 'IDENTITY']);
   });
 });

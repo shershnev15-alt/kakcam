@@ -34,7 +34,7 @@ export default async function HomePage() {
               <br />В ЦИФРАХ
             </h1>
             <p className="mt-7 max-w-xl text-base leading-7 text-[var(--text-2)] md:text-lg">
-              В общий доступ попадают только игроки с подтверждением местной федерации, фотографией
+              В общий доступ попадают только игроки с одобренной заявкой, фотографией
               и проверенными аккаунтами Steam и FACEIT.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -138,7 +138,7 @@ export default async function HomePage() {
               <div className="mt-7 grid gap-3 text-sm">
                 {[
                   'Самостоятельный Claim Profile',
-                  'Подтверждение местной федерации',
+                  'Ручная модерация заявки',
                   'Проверенная фотография',
                   'Подтверждённый Steam',
                   'Подтверждённый FACEIT',

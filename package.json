@@ -15,6 +15,12 @@
     "format:check": "prettier --check .",
     "performance:check": "node scripts/check-performance-budgets.mjs",
     "security:check": "node scripts/check-security-baseline.mjs",
+    "stage14:verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm performance:check && pnpm security:check && pnpm stage14:smoke",
+    "stage14:smoke": "node scripts/stage14-smoke.mjs",
+    "stage14:migrate": "docker compose -f docker-compose.production.yml --env-file .env.production run --rm api-migrate",
+    "stage14:up": "docker compose -f docker-compose.production.yml --env-file .env.production up -d --build",
+    "stage14:down": "docker compose -f docker-compose.production.yml --env-file .env.production down",
+    "stage14:launch": "pnpm stage14:up && ADMIN_WEB_URL=${ADMIN_WEB_URL:-${PUBLIC_WEB_URL:-http://localhost:3000}/admin} PUBLIC_WEB_URL=${PUBLIC_WEB_URL:-http://localhost:3000} API_URL=http://localhost:${API_PORT:-4000} METRICS_TOKEN=$METRICS_TOKEN pnpm stage14:smoke",
     "db:generate": "pnpm --filter @arena/api prisma:generate",
     "db:migrate": "pnpm --filter @arena/api prisma:migrate",
     "db:seed": "pnpm --filter @arena/api prisma:seed"

@@ -171,7 +171,6 @@ export class VerificationService {
       if (!player.publication || player.publication.status !== 'PUBLISHED') {
         throw new ConflictException('Профиль уже закрыт для общего доступа');
       }
-      await this.assertFederationReviewer(reviewerId, player.publication.federationId);
       const now = new Date();
       const publication = await this.prisma.$transaction(async (tx) => {
         await tx.verification.update({
@@ -199,8 +198,6 @@ export class VerificationService {
       return this.publicationDto(publication, player.accounts);
     }
 
-    await this.assertFederationReviewer(reviewerId, input.federationId);
-
     if (player.publication?.status === 'PUBLISHED') {
       if (
         player.publication.selfClaimId === input.selfClaimId &&
@@ -224,11 +221,11 @@ export class VerificationService {
         where: { claimId: input.selfClaimId, status: 'APPROVED' },
       }),
     ]);
+    if (!federation) throw new NotFoundException('Выбранная организация не найдена');
     const providers = new Set(player.accounts.map((account) => account.provider));
     const signals = {
       approvedSelfClaim:
         claim?.playerId === player.id && claim.userId.length > 0 && claim.status === 'APPROVED',
-      federationApproval: federation?.isFederation === true,
       approvedPhoto: Boolean(
         photoEvidence &&
           claim &&
@@ -264,7 +261,7 @@ export class VerificationService {
           subjectType: 'Player',
           subjectId: player.id,
           level: 4,
-          method: `FEDERATION:${federation!.slug}`,
+          method: `PUBLISHED:${federation.slug}`,
           status: 'APPROVED',
           reviewerId,
           reason: input.reason,

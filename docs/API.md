@@ -116,7 +116,7 @@ Query parameters:
 
 Пользователь создаёт claim с одним restricted evidence и может дополнить его после `EVIDENCE_REQUESTED`. Модератор с `claim.review` видит evidence, принимает решение и обязан указать reason. `APPROVED` создаёт Verification level 2, обновляет aggregate badge, добавляет роль `VERIFIED_PLAYER` и AuditLog, но не открывает профиль.
 
-Публикация требует отдельной команды scoped-проверяющего местной федерации и всех пяти сигналов: approved self-claim, federation, restricted photo evidence с безопасной публичной производной копией, verified Steam CS2 и verified FACEIT CS2. Любой отсутствующий или отозванный сигнал исключает игрока из всех public projections; закрытый и неизвестный slug одинаково возвращают `404`. Повторное решение по terminal claim возвращает `409 Conflict`; публичный endpoint никогда не возвращает evidence reference.
+Публикация требует отдельной команды с `player.publish` и всех обязательных сигналов: approved self-claim, restricted photo evidence с безопасной публичной производной копией, verified Steam CS2, verified FACEIT CS2 и approved identity/KYC. Любой отсутствующий или отозванный сигнал исключает игрока из всех public projections; закрытый и неизвестный slug одинаково возвращают `404`. Повторное решение по terminal claim возвращает `409 Conflict`; публичный endpoint никогда не возвращает evidence reference.
 
 ## Контрактные правила
 

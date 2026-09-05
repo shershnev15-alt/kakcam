@@ -3,6 +3,7 @@ import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { HttpRequest } from '../http.types';
 import { AuthService } from './auth.service';
+import { AuthRateLimitService } from './auth-rate-limit.service';
 import type { AuthenticatedRequest } from './auth.types';
 import { PERMISSIONS_KEY } from './auth.decorators';
 
@@ -55,23 +56,18 @@ export class CsrfGuard implements CanActivate {
 
 @Injectable()
 export class AuthRateLimitGuard implements CanActivate {
-  private readonly attempts = new Map<string, { count: number; resetAt: number }>();
+  constructor(private readonly rateLimit: AuthRateLimitService) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<HttpRequest>();
     const key = `${request.ip}:${request.route?.path ?? request.path}`;
-    const now = Date.now();
-    const current = this.attempts.get(key);
-    if (!current || current.resetAt <= now) {
-      this.attempts.set(key, { count: 1, resetAt: now + 15 * 60 * 1_000 });
-      return true;
-    }
-    if (current.count >= 10)
+    const result = await this.rateLimit.consume(key);
+    if (!result.allowed) {
       throw new HttpException(
         'Слишком много попыток. Попробуйте позже',
         HttpStatus.TOO_MANY_REQUESTS,
       );
-    current.count += 1;
+    }
     return true;
   }
 }

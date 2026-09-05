@@ -31,4 +31,4 @@
 4. Включить webhook HMAC SHA-256 или SHA-512 и проверить `GREEN`, `RETRY` и окончательный отказ.
 5. До live-запуска утвердить consent, биометрию, residency, retention, удаление и апелляцию с юристом/DPO.
 
-`GET /api/v1/integrations/status` показывает readiness без раскрытия credentials. Перед production нужно пройти один полный staging smoke: email → Steam/FACEIT → Sumsub → модерация → федерация → публикация → revoke.
+`GET /api/v1/integrations/status` показывает readiness без раскрытия credentials. Перед production нужно пройти один полный staging smoke: email → Steam/FACEIT → Sumsub → модерация → публикация → revoke.

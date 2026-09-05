@@ -40,7 +40,7 @@ describe('verification validation', () => {
     expect(parseModerationQuery({ status: 'resolved' })).toEqual({ status: 'RESOLVED' });
   });
 
-  it('requires complete federation publication evidence and a safe photo URL', () => {
+  it('requires complete publication evidence and a safe photo URL', () => {
     expect(
       parsePublicationDecision({
         decision: 'PUBLISH',
@@ -48,7 +48,7 @@ describe('verification validation', () => {
         federationId: '00000000-0000-4000-8000-000000000002',
         photoEvidenceId: '00000000-0000-4000-8000-000000000003',
         publicPhotoUrl: '/media/players/frostbyte.webp',
-        reason: 'Личность подтверждена региональной федерацией',
+        reason: 'Публикация подтверждена внутренней проверкой',
       }),
     ).toMatchObject({ decision: 'PUBLISH', publicPhotoUrl: '/media/players/frostbyte.webp' });
 
@@ -59,7 +59,7 @@ describe('verification validation', () => {
         federationId: '00000000-0000-4000-8000-000000000002',
         photoEvidenceId: '00000000-0000-4000-8000-000000000003',
         publicPhotoUrl: 'http://insecure.example/photo.jpg',
-        reason: 'Личность подтверждена региональной федерацией',
+        reason: 'Публикация подтверждена внутренней проверкой',
       }),
     ).toThrow('publicPhotoUrl');
   });

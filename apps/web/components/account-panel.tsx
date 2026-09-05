@@ -231,8 +231,8 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
     ['Подтвердить Steam', onboarding?.steamVerified],
     ['Подтвердить FACEIT', onboarding?.faceitVerified],
     ['Документ, лицо и liveness', onboarding?.identityApproved],
-    ['Проверка местной федерацией', onboarding?.federationApproved],
-    ['Ручное одобрение публикации', onboarding?.manualApproval],
+    ['Ручная проверка заявки', onboarding?.federationApproved],
+    ['Профиль опубликован', onboarding?.manualApproval],
   ] as const;
   const activeClaim = claims.find((item) =>
     ['SUBMITTED', 'EVIDENCE_REQUESTED', 'IN_REVIEW'].includes(item.status),
@@ -347,7 +347,7 @@ export function AccountPanel({ initialPlayerSlug = '' }: { initialPlayerSlug?: s
         <div className="mt-5 grid gap-2 sm:grid-cols-2">
           {[
             'Самостоятельно подтвердить профиль',
-            'Получить подтверждение местной федерации',
+            'Пройти ручную модерацию заявки',
             'Предоставить обязательное фото',
             'Привязать и подтвердить Steam',
             'Привязать и подтвердить FACEIT',
