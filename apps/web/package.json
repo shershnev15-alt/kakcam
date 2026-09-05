@@ -14,17 +14,17 @@
     "@arena/config": "workspace:*",
     "@arena/demo-data": "workspace:*",
     "@arena/types": "workspace:*",
-    "@tailwindcss/postcss": "4.1.13",
-    "next": "16.3.3",
+    "@tailwindcss/postcss": "4.3.3",
+    "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "tailwindcss": "4.1.13"
+    "tailwindcss": "4.3.3"
   },
   "devDependencies": {
     "@testing-library/react": "16.3.0",
     "@types/node": "24.3.0",
-    "@types/react": "19.1.12",
-    "@types/react-dom": "19.1.9",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
     "jsdom": "26.1.0",
     "typescript": "5.9.2",
     "vitest": "3.2.4"
